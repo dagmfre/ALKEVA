@@ -1,0 +1,19 @@
+{
+  "name": "alkeva",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@11.2.2",
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
+    "dev:api": "pnpm --filter @alkeva/api dev",
+    "dev:web": "pnpm --filter @alkeva/web dev",
+    "dev:worker": "pnpm --filter @alkeva/worker dev",
+    "build": "pnpm -r build",
+    "db:generate": "pnpm --filter @alkeva/db generate",
+    "db:migrate": "pnpm --filter @alkeva/db migrate",
+    "db:seed": "pnpm --filter @alkeva/db seed",
+    "typecheck": "pnpm -r typecheck"
+  }
+}
