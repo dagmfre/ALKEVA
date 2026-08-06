@@ -1,0 +1,34 @@
+{
+  "common": {
+    "appName": "ALKEVA",
+    "tagline": "Digital precious metals for Ethiopia",
+    "loading": "Loading…",
+    "logout": "Log out",
+    "language": "Language"
+  },
+  "auth": {
+    "registerTitle": "Create your account",
+    "loginTitle": "Welcome back",
+    "fullName": "Full name",
+    "email": "Email",
+    "password": "Password",
+    "registerButton": "Create account",
+    "loginButton": "Log in",
+    "haveAccount": "Already have an account? Log in",
+    "needAccount": "New to ALKEVA? Create an account",
+    "errorInvalidCredentials": "Incorrect email or password.",
+    "errorEmailTaken": "An account with this email already exists.",
+    "errorValidation": "Please check the form: password needs at least 8 characters and a valid email.",
+    "errorGeneric": "Something went wrong. Please try again."
+  },
+  "dashboard": {
+    "title": "Live prices",
+    "gold": "Gold",
+    "platinum": "Platinum",
+    "perGram": "per gram",
+    "updated": "Updated",
+    "stale": "Price feed delayed — showing last known price",
+    "source": "Source",
+    "signedInAs": "Signed in as"
+  }
+}

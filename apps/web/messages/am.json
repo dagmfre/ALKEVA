@@ -1,0 +1,34 @@
+{
+  "common": {
+    "appName": "አልኬቫ",
+    "tagline": "ዲጂታል የከበሩ ማዕድናት ለኢትዮጵያ",
+    "loading": "በመጫን ላይ…",
+    "logout": "ውጣ",
+    "language": "ቋንቋ"
+  },
+  "auth": {
+    "registerTitle": "መለያዎን ይፍጠሩ",
+    "loginTitle": "እንኳን ደህና መጡ",
+    "fullName": "ሙሉ ስም",
+    "email": "ኢሜይል",
+    "password": "የይለፍ ቃል",
+    "registerButton": "መለያ ፍጠር",
+    "loginButton": "ግባ",
+    "haveAccount": "መለያ አለዎት? ይግቡ",
+    "needAccount": "አዲስ ነዎት? መለያ ይፍጠሩ",
+    "errorInvalidCredentials": "ኢሜይል ወይም የይለፍ ቃል ትክክል አይደለም።",
+    "errorEmailTaken": "በዚህ ኢሜይል መለያ አስቀድሞ አለ።",
+    "errorValidation": "ቅጹን ያረጋግጡ፦ የይለፍ ቃል ቢያንስ 8 ፊደላት እና ትክክለኛ ኢሜይል ያስፈልጋል።",
+    "errorGeneric": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።"
+  },
+  "dashboard": {
+    "title": "የቀጥታ ዋጋዎች",
+    "gold": "ወርቅ",
+    "platinum": "ፕላቲነም",
+    "perGram": "በግራም",
+    "updated": "ተዘምኗል",
+    "stale": "የዋጋ ምንጭ ዘግይቷል — የመጨረሻውን የታወቀ ዋጋ በማሳየት ላይ",
+    "source": "ምንጭ",
+    "signedInAs": "የገቡት እንደ"
+  }
+}

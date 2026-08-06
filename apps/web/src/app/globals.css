@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-ethiopic), var(--font-inter), system-ui, sans-serif;
+  --color-gold-500: #d4a017;
+  --color-gold-600: #b8860b;
+}
+
+body {
+  @apply bg-neutral-950 text-neutral-100 antialiased;
+}

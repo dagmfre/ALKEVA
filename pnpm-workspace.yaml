@@ -2,5 +2,8 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
+  '@nestjs/core': true
+  '@swc/core': true
   argon2: true
   esbuild: true
+  sharp: true

@@ -1,0 +1,75 @@
+# ALKEVA — Render blueprint (web + api + worker + key-value).
+# Postgres lives on Supabase; paste its session-pooler DATABASE_URL when prompted.
+# Paid instances for web/api on purpose: free tier cold-starts would stall the demo.
+
+services:
+  - type: web
+    name: alkeva-api
+    runtime: node
+    plan: starter
+    buildCommand: corepack enable && pnpm install --frozen-lockfile
+    preDeployCommand: pnpm db:migrate && pnpm db:seed
+    startCommand: pnpm --filter @alkeva/api start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        sync: false # paste the Supabase session-pooler connection string
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: alkeva-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: WEB_ORIGIN
+        sync: false # https://alkeva-web.onrender.com once known
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
+      - key: FEE_COMMISSION_PCT
+        value: "2.0"
+      - key: TREASURY_FLOAT_ETB_CENTS
+        value: "1000000000"
+      - key: TREASURY_HALT_CENTS
+        value: "150000000"
+      - key: SELLBACK_DAILY_CEILING_CENTS
+        value: "500000000"
+
+  - type: web
+    name: alkeva-web
+    runtime: node
+    plan: starter
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @alkeva/web build
+    startCommand: pnpm --filter @alkeva/web start
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: API_URL
+        sync: false # https://alkeva-api.onrender.com once known
+
+  - type: worker
+    name: alkeva-worker
+    runtime: node
+    plan: starter
+    buildCommand: corepack enable && pnpm install --frozen-lockfile
+    startCommand: pnpm --filter @alkeva/worker start
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: alkeva-redis
+          property: connectionString
+
+  - type: keyvalue
+    name: alkeva-redis
+    plan: free
+    ipAllowList: [] # internal access only
