@@ -1,0 +1,234 @@
+diff --git a/C:\Users\hp\Desktop\Projects\ALKEVA\docs\System_Design_and_Architecture.md "b/C:\\Users\\hp\\Desktop\\Projects\\ALKEVA\\docs\\System_Design_and_Architecture.md"
+index e69de29..64c44ea 100644
+--- a/C:\Users\hp\Desktop\Projects\ALKEVA\docs\System_Design_and_Architecture.md
++++ "b/C:\\Users\\hp\\Desktop\\Projects\\ALKEVA\\docs\\System_Design_and_Architecture.md"
+@@ -0,0 +1,229 @@
++# ALKEVA — System Design & Architecture
++
++| | |
++|---|---|
++| **Version** | 1.0 |
++| **Date** | 6 August 2026 |
++| **Status** | Final for the 13 Aug demo build |
++| **Inputs** | `ALKEVA_Spec_v1.0.md` (scope) · `Technical_FactCheck.md` (verified claims) · Decision Log in `CLAUDE.md` (6 Aug decisions) |
++
++Every element here was re-derived from the spec and the fact-check — where this document disagrees with `Convo_With_Claude.ai.md`, this document wins, and the fact-check explains why.
++
++---
++
++## 1. System overview
++
++ALKEVA is a **principal dealer**: users buy metal *from* the platform and sell *back to* the platform at quoted prices. There is no order book, no user-to-user matching, no user-to-user transfers (Q33). The platform's word is only as good as its ledger — which is why the ledger, not the UI, is the center of this design.
++
++```
++┌──────────────────────────────────────────────────────────────┐
++│  Next.js mobile web app        Amharic-first · Trust-Wallet  │
++│  (user app + admin console)    style · passkey biometrics    │
++└──────────────────────┬───────────────────────────────────────┘
++                       │ HTTPS/JSON · JWT
++┌──────────────────────▼───────────────────────────────────────┐
++│  NestJS API  (one deployable, modular)                       │
++│                                                              │
++│  ┌─────────┐ ┌──────────────┐ ┌────────────┐ ┌────────────┐  │
++│  │ Identity │ │ TRADING CORE │ │ COMPLIANCE │ │ AI (Gemini │  │
++│  │ + KYC    │ │ quote·order  │ │ rules eng. │ │ JS SDK)    │  │
++│  │ tiers    │ │ ledger·fees  │ │ freeze     │ │ READ-ONLY  │  │
++│  └─────────┘ └──────────────┘ └────────────┘ └────────────┘  │
++│  ┌─────────┐ ┌──────────────┐ ┌────────────┐ ┌────────────┐  │
++│  │ Treasury │ │ Payments     │ │ Admin      │ │ Audit log  │  │
++│  │ float·   │ │ (Chapa)      │ │ (RBAC)     │ │ append-    │  │
++│  │ reserve  │ │ webhooks     │ │            │ │ only       │  │
++│  └─────────┘ └──────────────┘ └────────────┘ └────────────┘  │
++└───────┬───────────────┬──────────────────────────────────────┘
++        │               │
++┌───────▼──────┐  ┌─────▼─────────────────────────────────────┐
++│ Price worker │  │ External: Chapa (sandbox) · Gemini API ·  │
++│ 30s tick     │  │ gold-api.com / Swissquote · open.er-api   │
++└───────┬──────┘  └───────────────────────────────────────────┘
++        │
++┌───────▼──────────────┐   ┌─────────────────┐
++│ Postgres (Supabase)  │   │ Redis (Render)  │
++│ single source of     │   │ idempotency ·   │
++│ truth for all money  │   │ rate limiting   │
++└──────────────────────┘   └─────────────────┘
++```
++
++**Three deployables on Render** (all from one monorepo): `web` (Next.js), `api` (NestJS), `worker` (price tick — a small Node process sharing the api's db layer). Postgres on Supabase, Redis on Render. No Python (fact-check §3.1).
++
++### The five non-negotiables (design invariants)
++
++1. **AI never writes** — its only capabilities are three read-only tools (§8).
++2. **Balances are never edited** — `ledger_entry` is append-only; balance = SUM projection.
++3. **Quotes expire** — orders execute a stored quote's integers, never a live price.
++4. **No solo money movement** — privileged actions audit-logged; approvals separated where staffing allows.
++5. **Reserve gate inside the buy transaction** — `SUM(user grams) ≤ vault grams` checked under the same locks that post the entries. No override.
++
++---
++
++## 2. Monorepo layout
++
++```
++alkeva/
++├── apps/
++│   ├── web/          # Next.js — user app + /admin routes
++│   ├── api/          # NestJS — all modules below
++│   └── worker/       # price-tick loop (imports from packages/db)
++├── packages/
++│   ├── db/           # schema + migrations + typed queries (shared)
++│   └── shared/       # DTOs, config schema, i18n keys
++├── docs/
++└── CLAUDE.md
++```
++
++NestJS modules: `auth`, `kyc`, `prices`, `quotes`, `orders`, `ledger`, `fees`, `treasury`, `payments`, `payouts`, `compliance`, `ai`, `admin`, `audit`, `notifications`, `badges`, `delivery`.
++
++---
++
++## 3. Data model
++
++All money integers: **ETB in cents** (`bigint`), **metal in milligrams** (`bigint`). Every table gets `created_at`; nothing money-shaped gets `updated_at` because nothing money-shaped updates.
++
++### 3.1 Ledger core
++
++| Table | Key fields | Notes |
++|---|---|---|
++| `account` | `id`, `owner_type` (user/system), `user_id?`, `asset` (ETB/XAU/XPT), `system_name?` | One row per (owner, asset). System accounts: `system:cash`, `system:vault:XAU`, `system:vault:XPT`, `system:fees`, `system:external` (Chapa in/out), `system:tax`, `system:reforestation` |
++| `ledger_transaction` | `id`, `kind` (deposit/buy/sell/withdrawal/fee/adjustment-treasury), `order_id?`, `payment_id?`, `initiated_by` | Groups entries; the unit of atomicity |
++| `ledger_entry` | `id`, `transaction_id`, `account_id`, `asset`, `amount` (signed bigint) | **Append-only.** DB trigger rejects UPDATE/DELETE. Per transaction, entries must sum to zero per asset — enforced in `LedgerService.post()` and by a deferred constraint trigger |
++
++Balance = `SELECT SUM(amount) FROM ledger_entry WHERE account_id = $1`. A cached `account.balance_cache` may exist for list screens but is never used for spend checks — those recompute under `FOR UPDATE`.
++
++**Concurrency rule (fact-check §2.2):** every posting transaction runs `READ COMMITTED`, first acquiring `SELECT … FOR UPDATE` on all touched `account` rows in a **fixed global order** (by account id) to prevent deadlocks, then checks invariants (sufficient balance, reserve gate, float ceiling), then inserts entries, then commits.
++
++### 3.2 Trading
++
++| Table | Key fields | Notes |
++|---|---|---|
++| `price_tick` | `id`, `asset`, `usd_per_oz_micro`, `etb_rate_micro`, `etb_per_mg`, `source`, `fx_source`, `ts` | Written by worker every ~30s per asset. Source + FX stored for audit (fact-check §7.4) |
++| `quote` | `id`, `user_id`, `side`, `asset`, `grams_mg`, `price_tick_id`, `unit_price_cents_per_g`, `fee_cents`, `tax_cents`, `total_cents`, `expires_at` | **All rounding happens here, once** (fact-check §1.3). Postgres, not Redis. TTL 30s |
++| `order` | `id`, `quote_id`, `user_id`, `status`, `idempotency_key` (unique), `ledger_transaction_id?`, `failure_reason?` | FSM: `created → settled | rejected` (single-step in demo — quote confirm settles atomically or fails with a reason: expired quote, insufficient balance, reserve halt, float halt, tier cap, frozen account) |
++| `fee_schedule` | config-shaped: `commission_pct`, `service_fee_cents`, `tax_pct`, `reforestation_pct` | Loaded from env/config (Decision A1); admin-visible, not admin-editable in demo |
++
++### 3.3 Money in/out
++
++| Table | Key fields | Notes |
++|---|---|---|
++| `payment` | `id`, `user_id`, `chapa_tx_ref` (unique), `amount_cents`, `status` (initiated/webhook_received/verified/credited/failed), `raw_webhook?` | Credit to ledger **only** after server-side `GET /v1/transaction/verify/<tx_ref>` succeeds (fact-check §6.3). Webhook alone never credits |
++| `payout` | `id`, `user_id`, `amount_cents`, `status` (requested/approved/processing/settled/rejected), `approved_by?`, `chapa_transfer_ref?` | Withdrawal: debit user ETB → hold → admin approval → Chapa transfer (or sandbox-mark, fact-check §6.4) |
++
++### 3.4 Treasury & inventory
++
++| Table | Key fields | Notes |
++|---|---|---|
++| `vault_holding` | `id`, `asset`, `grams_mg`, `kind` (intake/outtake), `reference`, `recorded_by` | Physical inventory movements; two-signature in production, single admin + audit log in demo |
++| `treasury_config` | `float_target_cents`, `halt_threshold_cents`, `daily_sellback_ceiling_cents` | Config-driven (Decision A2), demo-labeled values |
++
++Derived, not stored: **reserve ratio** = vault grams vs SUM(user metal accounts); **float** = balance of `system:cash`. Both shown live on the admin treasury panel and the user-facing trust panel.
++
++### 3.5 Identity, compliance, misc
++
++| Table | Notes |
++|---|---|
++| `user` | contact, locale, status (active/frozen), kyc_tier, holding_tier (computed but cached), passkey credentials |
++| `kyc_submission` | doc type (Fayda/passport/licence/kebele), file ref, state (pending/approved/rejected), reviewer |
++| `holding_tier_config` | gemstone tiers: band min/max (ETB cents, USD reference), per-txn cap, daily cap, delivery_eligible (Decision A3) |
++| `compliance_event` | rule key (Q55 set), evidence JSON, action (flag/freeze/review), resolved_by? |
++| `freeze` | user, reason, created_by (rules-engine/admin), lifted_by?, lifted_at? |
++| `audit_log` | append-only: actor, action, target, before/after JSON, ip, ts — every privileged action |
++| `delivery_request` | eligibility snapshot, status (requested/reviewing/approved/scheduled) — request flow only (C6) |
++| `badge`, `user_badge` | activity-only; computed on read (fact-check §3.7) |
++| `ai_conversation`, `ai_message` | chat history, token counts, tool calls made |
++| `notification` | email queue rows (provider send + status) |
++
++---
++
++## 4. The trading spine
++
++```
++price_tick ──► quote ──► order ──► ledger_transaction ──► balances (projection)
++ (30s tick)   (30s TTL,  (idempotent,  (atomic, row-locked,
++  worker)      integers   single-step   invariant-checked)
++               locked)    FSM)
++```
++
++**Buy flow** (sell is the mirror):
++
++1. `POST /quotes {side: buy, asset: XAU, grams_mg | etb_cents}` → quote engine reads latest `price_tick`, computes unit price, commission, tax; **rounds once**; stores quote with `expires_at = now() + 30s`; returns integers + expiry countdown.
++2. `POST /orders {quote_id, idempotency_key}` → single DB transaction:
++   - replay check on `idempotency_key` (return original result if seen)
++   - lock accounts in id order: user ETB, user XAU, `system:cash`, `system:vault:XAU`, `system:fees`
++   - checks: quote unexpired & unused · account unfrozen · user ETB balance ≥ total · **reserve gate**: vault mg − SUM(all user XAU) ≥ quote mg · tier per-txn/daily caps · compliance pre-check (≥ETB 500k → route to review state instead of settling)
++   - post entries: user ETB −total · `system:cash` +total−fee−tax · `system:fees` +fee · `system:tax` +tax · user XAU +mg · `system:vault:XAU` −mg
++   - mark order settled, mark quote consumed, commit.
++3. Failure at any check → order `rejected` with machine-readable reason; nothing posted.
++
++**Sell adds:** float ceiling check (balance of `system:cash` − payout holds ≥ quote total, and daily sell-back ceiling not exceeded) → otherwise order rejects with `float_halt` and the UI explains the published ceiling (C8).
++
++---
++
++## 5. Payments (Chapa, sandbox)
++
++**Deposit:** `POST /payments` → Chapa `transaction/initialize` (unique `tx_ref`) → redirect to `checkout_url` → user pays (test numbers) → webhook `charge.success` arrives (verify **both** HMAC headers) → server calls `verify/<tx_ref>` → on success, ledger: `system:external` −amount / user ETB +amount → payment `credited`. Return-URL landing polls payment status; it never credits.
++
++**Withdrawal:** `POST /payouts` → ledger moves user ETB → payout-hold sub-account → admin approves in console → Chapa `POST /v1/transfers` (or sandbox-mark if transfers don't run in test mode — pending live-key check, fact-check §6.4) → `payout.success` webhook settles it.
++
++**Channel limits** (fact-check §6.5): deposit UI surfaces per-channel caps (Telebirr 75k, CBEBirr 150k, …) from a config table.
++
++---
++
++## 6. Prices & FX
++
++Worker loop every 30s per asset: fetch gold-api.com → on failure/staleness fetch Swissquote → convert with hourly-cached USD→ETB from open.er-api.com → write `price_tick` (with `source`, `fx_source`). If both sources fail: serve last tick, flag `stale=true`; quote engine refuses to quote on ticks older than 3 minutes (protects against stale-price arbitrage — same reasoning as quote expiry). Chart ranges (24h/7d/30d/1y) read from `price_tick` aggregates; 1y backfilled from seed data for the demo.
++
++---
++
++## 7. Compliance engine
++
++Deterministic rules (Q55 selections), evaluated on order/payment events and login:
++
++| Rule | Action |
++|---|---|
++| Single txn ≥ ETB 500,000 (Q57) | Order → `review` state; human approves/rejects (F21) |
++| Velocity: >N txns in M minutes | Flag → freeze at threshold |
++| Structuring: repeated txns just under 500k | Flag |
++| New device login / many failed logins | Flag; freeze on threshold |
++| Aggregate daily > tier cap | Reject at order time |
++
++Actions write `compliance_event` + optional `freeze` + audit log. **The rules engine freezes; the AI only explains the freeze afterwards** (C2). Unfreeze: compliance role only, never the freezer's own freeze in production (demo: single compliance user, audit-logged). AML export: CSV of flagged events (F22).
++
++---
++
++## 8. AI assistant (Gemini)
++
++- **Model:** `gemini-3.6-flash` (demo), `3.5-flash-lite` (rehearsal) via `@google/genai` in the NestJS `ai` module. No 2.5-series (shutdown 16 Oct 2026).
++- **Tools (read-only, the architectural guarantee):** `get_my_portfolio()`, `get_price(asset, range)`, `get_my_history(limit)`. No write tool exists in the tool list — prompt injection cannot move money because there is nothing to call.
++- **Guardrails:** system prompt = explain, educate, alert; refuse buy/sell recommendations (Decision A4); respond in user's locale (Amharic default). Server-side: tool results are scoped to the authenticated user's id from the JWT — the model never chooses whose data it reads.
++- **Freeze explanation:** when a `freeze` exists, the chat surface injects the freeze reason as context so the assistant explains it in plain Amharic (C2).
++- **Price alerts (F24):** deterministic worker check (e.g. daily move ≥5%) → notification + a non-advisory templated message. The LLM phrases; thresholds trigger.
++
++---
++
++## 9. Identity, roles, admin
++
++- **Auth:** email + password (argon2) with JWT access/refresh; **passkey (WebAuthn) enrollment** post-signup = the "biometric" feature (C3, fact-check §3.4). Account recovery via email.
++- **KYC:** document upload (Fayda/passport/licence/kebele) → review queue → tier assignment. KYC tiers gate deposit/trade activation; holding (gemstone) tiers gate caps + delivery eligibility (Decision A3).
++- **Staff roles (Q47):** `administrator` (config, users, roles — **cannot touch balances**), `compliance` (KYC queue, freezes, AML export), `finance` (treasury panel, payout approvals, reconciliation). Admin console = `/admin` route group in the same Next.js app, role-guarded server-side. Auditor role exists in the model, unused in demo.
++- **No balance-adjust field exists anywhere in the admin UI or API.** Gram supply changes only via settled orders or `vault_holding` treasury operations.
++
++---
++
++## 10. Deployment & operations
++
++| Concern | Demo setup |
++|---|---|
++| Environments | `production` only (demo *is* production) + local dev via Docker Compose (Postgres + Redis) |
++| Render services | `web` (paid instance — no cold starts on stage), `api` (paid), `worker` (background worker) |
++| DB | Supabase Postgres; daily automatic backups; migrations run on deploy |
++| Secrets | Render env groups: `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `CHAPA_SECRET_KEY`, `CHAPA_WEBHOOK_HASH`, `GEMINI_API_KEY`, `FEE_*`, `TREASURY_*`, `TIER_*` |
++| Deploy | Push-to-deploy from GitHub `main`; deployed on Day 1 with a hello-world spine |
++| Monitoring | Render health checks + a `/healthz` endpoint (DB, Redis, price-feed staleness); error alerting via provider email |
++| Seed | Script creating: demo users with history (badges, charts), one frozen account with a compliance trail, vault intake records, treasury config, 1y of backfilled price ticks |
++
++**Third-party dependency list:** Chapa (sandbox keys — created 6 Aug), Gemini (AI Studio key — created 6 Aug), gold-api.com + Swissquote (keyless), open.er-api.com (keyless), email provider (transactional, e.g. Resend free tier), Supabase, Render, domain (client-owned, open item).
++
++**Explicitly not in this design** (spec §5.4): SMS, lending, producer/government dashboards, sentiment analysis, voice, native apps, user-to-user transfers, multi-currency, pen-testing. The permission model accommodates a future regulator read-only role without redesign; it is not built.

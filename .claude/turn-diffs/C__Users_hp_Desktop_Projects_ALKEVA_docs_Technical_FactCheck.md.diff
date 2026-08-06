@@ -1,0 +1,44 @@
+diff --git a/C:\Users\hp\Desktop\Projects\ALKEVA\docs\Technical_FactCheck.md "b/C:\\Users\\hp\\Desktop\\Projects\\ALKEVA\\docs\\Technical_FactCheck.md"
+index 857d361..1d3b951 100644
+--- a/C:\Users\hp\Desktop\Projects\ALKEVA\docs\Technical_FactCheck.md
++++ "b/C:\\Users\\hp\\Desktop\\Projects\\ALKEVA\\docs\\Technical_FactCheck.md"
+@@ -74,13 +74,19 @@
+ 
+ ## 7. Price feed APIs — gold + platinum in ETB every ~30s
+ 
+-> 🔬 **RESEARCH IN PROGRESS** — comparing GoldAPI, Metals-API, metals.dev and alternatives against the 30s tick + XAU/XPT + ≤$100/month requirements; USD→ETB source included.
++*Verified against provider pricing pages and live endpoints, 6 Aug 2026.*
+ 
+-Claims under test: "GoldAPI / Metals-API to start — cheap, fine for a demo"; a 30-second tick worker is sustainable on free/cheap tiers; platinum is covered; a reliable USD→ETB source exists.
++| # | Claim | Verdict | Evidence & notes | Impact on build |
++|---|---|---|---|---|
++| 7.1 | "GoldAPI / Metals-API to start — cheap, fine for a demo" | ❌ | **Neither free tier survives a 30s tick.** GoldAPI free = 100 req/**month** (≈1 poll per 7 hours) and has **no ETB** at any price. Metals-API has no free tier; sub-minute updates require its $149.99 tier — over the $100 budget — [goldapi.io](https://www.goldapi.io/), [metals-api.com/pricing](https://metals-api.com/pricing). | The convo's named vendors are the wrong choice. Use the alternatives below. |
++| 7.2 | A free 30s gold+platinum feed exists for the demo | ✅ | Two verified keyless free sources: **gold-api.com** (XAU, XPT, USD, unlimited, no key) and **Swissquote's public quote feed** (live bid/ask JSON for XAU/USD and XPT/USD, ms timestamps) — both confirmed serving live data. | **Demo period = $0**: poll one (other as fallback) every 30s, convert via cached USD→ETB. No SLA on either — the fallback source is not optional. |
++| 7.3 | Production within $100/month | ✅ | **metals.dev**: `&currency=ETB` native, one call returns all metals, 60s max data delay on every tier. $19.99/mo = 50k req (~52s polling); $39.99/mo = 100k req (~26s) — [metals.dev/pricing](https://metals.dev/pricing). | Production pick: **metals.dev $19.99–39.99/mo**, keeping the free feeds as outage fallback. Budget holds with big headroom. |
++| 7.4 | USD→ETB conversion is solvable | ✅ (nuance) | Free market-rate APIs: `open.er-api.com` (keyless, daily update), Open Exchange Rates (hourly, 1,000 req/mo free). **The official NBE indicative rate has no public API** — it's a daily weighted average published on nbe.gov.et (scrape) or via paid third parties (Fluentax). | FX is repriced daily/hourly, so one cached fetch per hour costs nothing. **Design decision for grill-me: market rate vs NBE indicative rate** — they can differ, and which one prices gold in birr is a business choice the client should own. Store the rate used on every `price_tick` for auditability. |
++| 7.5 | Platinum feed is available wherever gold is | ✅ | XPT confirmed on gold-api.com, Swissquote, metals.dev, GoldAPI, Metals-API, Twelve Data. | Platinum stays feasible; its cut-list position is about UI/testing time, not data availability. |
+ 
+ ## 8. Day-plan feasibility (re-scored for the real calendar)
+ 
+-The claude.ai 8-day plan assumed a start on Mon 3 Aug. **Nothing has been built and today is Wed 6 Aug** — the remaining window to Thu 13 Aug is ~5.5 working days. Verdict on "8 days is enough as planned": ⚠️ **stale — must be re-planned**, which is exactly what `Phase_Plan.md` does. Key corrections:
++The claude.ai 8-day plan assumed a start on Mon 3 Aug. **Nothing has been built and today is Thu 6 Aug** (evening) — of the spec's 8 working days, 3 are already gone. Remaining on the spec's business-day calendar: Fri 7, Mon 10, Tue 11, Wed 12 (+demo-day morning) ≈ **4.5 days**; working the weekend (Sat 8, Sun 9) brings it to **~6.5 days**. The phase plan assumes weekend work. Verdict on "8 days is enough as planned": ⚠️ **stale — must be re-planned**, which is exactly what `Phase_Plan.md` does. Key corrections:
+ 
+ 1. **Foundation + money core must compress** (spec allotted 4 days; ~2.5 available). Achievable only because the ledger design arrives pre-decided (this document, §1–2) instead of being designed mid-build.
+ 2. **The cut list activates immediately**, not "when behind": SMS (already cut), badges → if time, platinum → gold-first with platinum behind a flag, withdrawal approval → single-step, 3D → build last with 2D fallback ready.
+@@ -89,4 +95,15 @@ The claude.ai 8-day plan assumed a start on Mon 3 Aug. **Nothing has been built
+ 
+ ---
+ 
+-*Sections 5–7 will be finalised from live research before this document is considered complete.*
++## Summary of corrections that change the build
++
++1. **Drop the FastAPI/LangGraph sidecar** — Gemini function calling works from the JS SDK; one less runtime (§3.1, §5.3).
++2. **Price feed: not GoldAPI/Metals-API.** Demo on free keyless feeds (gold-api.com / Swissquote) with a fallback source; production on metals.dev with native ETB (§7).
++3. **Languages: Amharic + English only for 13 Aug.** Tigrigna/Afaan Oromo/Somali are not demo-quality on Gemini — set client expectations now (§5.1).
++4. **Ledger: row locks, not SERIALIZABLE; quotes in Postgres, not Redis; reserve gate enforced inside the buy transaction** (§2).
++5. **Rounding happens once, in the quote engine**; orders copy quote integers verbatim (§1.3).
++6. **Chapa is confirmed viable in sandbox** — but the dashboard account must be created immediately, and two items need live test keys to resolve (wallet bank codes; transfers-in-test-mode) (§6).
++7. **Deposit UI must respect per-channel limits** (Telebirr caps at ETB 75,000/txn) (§6.5).
++8. **The 8-day schedule is stale** — 5.5 working days remain; the cut list activates from day one (§8).
++
++*All sections verified. Document complete as of 6 Aug 2026, ~22:30.*

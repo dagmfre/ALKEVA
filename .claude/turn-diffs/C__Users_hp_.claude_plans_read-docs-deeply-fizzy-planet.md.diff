@@ -1,0 +1,96 @@
+diff --git a/C:\Users\hp\.claude\plans\read-docs-deeply-fizzy-planet.md "b/C:\\Users\\hp\\.claude\\plans\\read-docs-deeply-fizzy-planet.md"
+index e69de29..0f1017e 100644
+--- a/C:\Users\hp\.claude\plans\read-docs-deeply-fizzy-planet.md
++++ "b/C:\\Users\\hp\\.claude\\plans\\read-docs-deeply-fizzy-planet.md"
+@@ -0,0 +1,91 @@
++# ALKEVA — Project Onboarding, Fact-Check & Planning Docs
++
++## Context
++
++ALKEVA is a gold/precious-minerals trading platform for Ethiopia (client: Tekleweyni Berhe). The deliverable on **Thu 13 Aug 2026** is an investor/bank **demo** — real ledger, real KYC, real price feed, Chapa in sandbox. The repo is empty except `docs/` (4 files; `ALKEVA_Contract.md` is empty — contract not written yet, known gap).
++
++**Today is Wed 6 Aug.** The spec's schedule started Mon 3 Aug and assumed Milestone 1 done by Wed 5 Aug — **we are ~2 working days behind before writing a line of code**. The deadline stays 13 Aug (user confirmed), so the phase plan must compress 8 planned working days into ~5.5 actual ones. This is the single most important planning fact.
++
++User-confirmed inputs:
++- Deadline: **13 Aug 2026** (spec wins over "10 days").
++- The 3 Aug meeting happened; blocking answers A1–A6 (fee %, sell-back reserve, tier structure, AI advise-vs-explain, equity) **are known** → collect them in the grill-me session.
++- Fact-check scope: **technical claims only** — ignore legal/regulatory claims.
++- Contract file: skip; not yet drafted.
++
++User's working rules (must be encoded into CLAUDE.md so they persist):
++1. **Never guess external APIs** — for Chapa (and any un-indexed docs), ask the user for docs/context before integrating.
++2. **No coded tests** (no unit/e2e suites). After each feature: I verify it manually myself, then hand the user written manual-testing steps.
++3. Track every change/progress in CLAUDE.md with date/time.
++
++This task produces **documents only** — no application code. Coding starts after these docs are approved.
++
++## Deliverables (in order)
++
++### 1. Technical fact-check pass → `docs/Technical_FactCheck.md`
++
++Re-verify the technical claims made in `docs/Convo_With_Claude.ai.md` and `docs/ALKEVA_Spec_v1.0.md` (skip all legal/regulatory points). Use WebSearch/firecrawl for anything post-cutoff or uncertain; for Chapa specifics, **ask the user for docs rather than guessing**. Claims to verify:
++
++- **Gemini Amharic/Tigrigna/Afaan Oromo quality** — client selected Gemini (Q45); Q39 lists 5 launch languages. Verify current Gemini multilingual support + free-tier limits.
++- **Chapa**: does it actually aggregate Telebirr and CBE Birr (spec C7's core justification)? Sandbox availability, webhook signature scheme, payout/transfer API for withdrawals. → flag as "needs user-provided docs" where the public web is thin.
++- **Gold/platinum price APIs** (GoldAPI, Metals-API, alternatives): free-tier rate limits vs a 30s tick worker, platinum support, USD→ETB rate source.
++- **Money-math rules**: integers only (ETB cents as bigint, gold milligrams as bigint) — confirm the schema approach and where rounding happens (fee calc, gram↔birr conversion).
++- **Ledger claims**: double-entry append-only with balance-as-projection; SERIALIZABLE vs row-locking claim; quote-TTL-in-Redis pattern; idempotency keys.
++- **Stack sanity for a solo 5.5-day build**: the spec prescribes Next.js + NestJS + FastAPI/LangGraph + Postgres + Redis — three runtimes. Assess whether the FastAPI/LangGraph sidecar earns its place vs calling Gemini from the Node backend directly (this becomes a grill-me question, with my recommendation).
++- **Three.js 3D visualisation** effort vs animated 2D fallback (spec cut-list item 6).
++- **Trust Wallet–style mobile web UI** with shadcn/ui + Amharic-first i18n — feasibility notes.
++- **Day-plan feasibility**: re-score the claude.ai 8-day plan against 5.5 remaining days; produce a corrected cut-list ordering.
++
++Output format: table of claim → verdict (Confirmed / Wrong / Unverifiable-needs-user-input) → evidence → impact on the build.
++
++### 2. Grill-me session (Skill: `grill-me`)
++
++Run after the fact-check so questions are informed. Must collect:
++- **A1** exact commission/service-fee percentages (fee engine input)
++- **A2** dedicated sell-back reserve number (treasury halt threshold)
++- **A3** tier structure semantics (Q32 mixes holding limits with gemstone tier names — what does a "Tanzanite tier" actually gate?)
++- **A4** final AI scope: explain-only confirmed, or did the client reopen advice?
++- Architecture decisions: single Node backend vs NestJS+FastAPI split; monorepo layout; hosting target (which cloud, one region); price API choice + tick interval; Chapa docs handover; Gemini API key ownership; seed/demo data strategy; Amharic translation workflow (who reviews machine output).
++- Demo-day script priorities (Q67's five points) — what must be bulletproof vs merely present.
++
++### 3. `CLAUDE.md` at repo root (the /init deliverable)
++
++Structured as a living project file:
++- Project one-liner, deadline, non-negotiables (the 5 rules: AI never writes; balances never edited; quotes expire; maker-checker; never sell unowned grams).
++- Stack + commands (filled in once scaffolding exists).
++- **Working rules** (the user's 3 rules above, verbatim intent).
++- **Progress log**: append-only, `YYYY-MM-DD HH:MM — what changed — status` entries; every working session appends here.
++- **Decision log**: date-stamped record of grill-me answers and any later scope decisions.
++- Pointers to the other docs (spec, fact-check, system design, phase plan).
++
++### 4. `docs/System_Design_and_Architecture.md`
++
++Rebuilt from scratch (not copied from claude.ai; every element re-justified, corrected by the fact-check + grill-me outcomes):
++- System context diagram and service layout (final, post-decision — e.g. if FastAPI sidecar is dropped, it's not in this doc).
++- Data model (the ~19 entities in spec §7, with the money-integer rules and system-account design).
++- The trading spine: price tick → quote → order FSM → ledger entry → balance projection.
++- Treasury/reserve-gate/float mechanics with the real A2 number.
++- AI sidecar contract: read-only tools, guardrail prompt, freeze-explanation flow.
++- Compliance rules engine (Q55 triggers, ETB 500k review, freeze/unfreeze roles).
++- Auth/KYC tiers, roles matrix (3 staff roles per Q47).
++- Deploy topology (Day-1 deploy rule), env/secret inventory, third-party dependency list.
++
++### 5. `docs/Phase_Plan.md`
++
++High-level phase-by-phase division (explicitly NOT a technical implementation plan): sections/sub-sections from start to finish, re-planned for **Wed 6 → Wed 13 Aug** (not the spec's stale Mon-3-Aug calendar). Per phase: goal, sub-sections, "done when", what the user manually tests (with steps to be delivered per feature), and the milestone/payment mapping (M2 payment was due Fri 7 Aug per spec — flag that the payment calendar needs re-anchoring too). Include the corrected cut-list (what drops first if behind) and the never-cut four (ledger correctness, reserve gate, quote expiry, audit log).
++
++## Execution order
++
++1. Fact-check research (WebSearch/firecrawl; ask user for Chapa docs) → write `Technical_FactCheck.md`
++2. `/grill-me` session with the user (collect A1–A4 + architecture decisions)
++3. Write `CLAUDE.md` (seeded with decisions + first progress-log entry)
++4. Write `System_Design_and_Architecture.md`
++5. Write `Phase_Plan.md`
++6. Present all docs; per the user's global preference, end with the changed-files table.
++
++## Verification
++
++- Fact-check doc: every claim row has a verdict and a source (or an explicit "needs user docs" flag) — no unresolved "probably" rows.
++- CLAUDE.md: contains the 3 working rules, the 5 non-negotiables, and a dated first progress entry.
++- System design doc: contains zero features marked OUT OF SCOPE in spec §5.4, and reflects grill-me decisions (not claude.ai defaults).
++- Phase plan: dates run Aug 6→13, total effort ≤ 5.5 working days, cut-list present, no legal-precondition tasks assigned to the developer.
++- User reviews all three docs before any code is written.

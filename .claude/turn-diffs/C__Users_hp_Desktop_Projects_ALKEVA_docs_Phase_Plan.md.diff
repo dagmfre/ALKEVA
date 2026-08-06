@@ -1,0 +1,144 @@
+diff --git a/C:\Users\hp\Desktop\Projects\ALKEVA\docs\Phase_Plan.md "b/C:\\Users\\hp\\Desktop\\Projects\\ALKEVA\\docs\\Phase_Plan.md"
+index e69de29..c94e9b1 100644
+--- a/C:\Users\hp\Desktop\Projects\ALKEVA\docs\Phase_Plan.md
++++ "b/C:\\Users\\hp\\Desktop\\Projects\\ALKEVA\\docs\\Phase_Plan.md"
+@@ -0,0 +1,139 @@
++# ALKEVA — Phase Plan (Thu 6 Aug → Thu 13 Aug 2026)
++
++| | |
++|---|---|
++| **Date** | 6 August 2026 (evening) |
++| **Nature** | High-level phase-by-phase division of the project — **not** a technical implementation plan. Each phase names its sections and the outcome that gates the next. |
++| **Reality check** | The spec's calendar started Mon 3 Aug; 3 of its 8 working days are already gone with zero code. This plan re-anchors from tonight and **assumes the weekend is worked** (~6.5 days to demo). |
++
++## Ground rules carried into every phase
++
++- **Deploy on Day 1**, push daily thereafter — no big-bang deploy near demo day.
++- **No UI investment beyond a button and a number until the money core works** (Phase 2 gates Phase 3).
++- **Manual verification, not coded tests**: each feature is verified end-to-end by the developer, then documented as **manual testing steps handed to Dagmfre** so every feature's health is independently checkable. Each phase below lists what gets manually tested.
++- **Never guess an external API** — Chapa/Gemini work happens against verified docs + real test keys; unknowns escalate to Dagmfre rather than guessed.
++- When behind, cut from §Cut-list order — never from the never-cut four.
++
++---
++
++## Phase 0 — Unblock (tonight, Thu 6)
++
++**Goal:** nothing external can stall the build later.
++
++- 0.1 Create Chapa dashboard account → test keys (`CHAPUBK_TEST`/`CHASECK_TEST`); note webhook secret-hash
++- 0.2 Create Google AI Studio key; check real free-tier limits on the rate-limit dashboard
++- 0.3 Create/confirm Render + Supabase accounts (paid instance for web/api — no cold starts on stage)
++- 0.4 GitHub repo + monorepo skeleton (`apps/web`, `apps/api`, `apps/worker`, `packages/db`, `packages/shared`)
++
++**Done when:** all four credentials/accounts exist and the empty monorepo pushes to GitHub.
++
++## Phase 1 — Foundation (Fri 7)
++
++**Goal:** a deployed skeleton with real prices and real login.
++
++- 1.1 Local dev: Docker Compose (Postgres + Redis); Supabase connection for deploy
++- 1.2 Full database schema + migrations (all tables from Design §3 — schema lands once, complete)
++- 1.3 Auth: register, login (argon2 + JWT/refresh), account recovery stub; i18n scaffolding (Amharic default, Noto Sans Ethiopic) wired now, not later
++- 1.4 Price worker: 30s tick, gold-api.com → Swissquote fallback, hourly FX cache, `price_tick` writes, staleness flag
++- 1.5 **First production deploy** (web + api + worker on Render, DB on Supabase, `/healthz`)
++
++**Done when:** on a real URL, a user registers, logs in, and watches the live gold price in birr update.
++**Manually tested:** signup/login/refresh flows; price updating every ~30s; kill-primary-feed fallback; health endpoint.
++
++## Phase 2 — The money core (Sat 8) — *the most important day*
++
++**Goal:** money moves correctly and only correctly.
++
++- 2.1 Ledger service: post-transaction with zero-sum enforcement, append-only trigger, fixed-order row locking, balance projection
++- 2.2 Quote engine: single rounding point, 30s expiry, refuse-on-stale-tick
++- 2.3 Config-driven fee engine (env keys; tax/reforestation default 0)
++- 2.4 Buy + sell flows: idempotency keys, reserve gate **inside** the transaction, float ceiling + daily sell-back ceiling, tier caps
++- 2.5 Treasury seed: vault intake records, float config, reserve-ratio + float projections
++- 2.6 Throwaway UI: two buttons and numbers
++
++**Done when:** buy 5g, sell 2g, repeat under button-mashing (idempotency), balances reconcile to the entry, buying halts when the vault would go short, selling halts at the float ceiling.
++**Manually tested:** the exact scenario above plus: expired-quote rejection, insufficient-balance rejection, double-submit returns the same order.
++**Gate:** Phase 3 does not start until this passes. *(This is the re-anchored Milestone 2 — spec payment 1, originally due Fri 7, now maps here.)*
++
++## Phase 3 — What the user sees (Sun 9)
++
++**Goal:** ALKEVA looks like a product, not a prototype.
++
++- 3.1 Real UI shell: Trust Wallet-style layout, Amharic-first, mobile web
++- 3.2 Portfolio: holdings, live ETB value, cost basis, gain/loss; holding-tier (gemstone) status display
++- 3.3 Price chart (24h/7d/30d/1y, seed-backfilled) + buy/sell screens with quote countdown and the trust panel (reserve ratio, fees shown pre-confirm)
++- 3.4 Transaction history + serial-numbered receipts
++- 3.5 Badges (computed on read) if time — else cut-listed
++
++**Done when:** the full user journey price → quote → buy → portfolio → history looks demo-worthy on a phone in Amharic and English.
++**Manually tested:** the journey on a real phone (Android Chrome + iOS Safari), both locales, plus chart ranges and receipt content.
++
++## Phase 4 — Money in and out (Mon 10)
++
++**Goal:** birr enters and leaves through Chapa sandbox; identity is verified.
++
++- 4.1 Deposit: Chapa initialize → hosted checkout → signed webhook → server-side verify → ledger credit; per-channel limit display
++- 4.2 Withdrawal: request → ledger hold → approval queue → Chapa transfer (or sandbox-mark fallback, per fact-check §6.4)
++- 4.3 KYC: document upload, review queue, tier assignment gating deposits/trading
++- 4.4 Passkey (WebAuthn) enrollment + login — the "biometric" feature
++- 4.5 Live `/v1/banks` call to resolve wallet bank codes; empirically test transfers-in-sandbox (the two open Chapa questions)
++
++**Done when:** test-number deposit lands in the ledger only after verification; a withdrawal runs the full approve path; an un-KYC'd user cannot deposit.
++**Manually tested:** deposit happy path + webhook-signature tamper rejection + double-webhook idempotency; withdrawal approve and reject; KYC approve/reject; passkey login on a real phone.
++*(Re-anchored Milestone 3 — spec payment 2 maps to end of this phase.)*
++
++## Phase 5 — Control room and intelligence (Tue 11)
++
++**Goal:** staff can run the platform; the AI explains it.
++
++- 5.1 Admin console (`/admin`, role-guarded): users, KYC queue, transaction search, payout approvals
++- 5.2 Treasury panel: vault vs user grams, float, halts; finance role
++- 5.3 Compliance: rules engine (500k review, velocity, structuring, device flags), freeze/unfreeze with role separation, AML CSV export, audit-log viewer
++- 5.4 AI assistant: Gemini chat endpoint, three read-only tools, guardrail prompt, Amharic/English, freeze explanation, price alerts
++- 5.5 Email notifications (receipts, freeze, payout status)
++
++**Done when:** a compliance officer catches and freezes a suspicious seeded account, the user's AI chat explains the freeze in Amharic, and an admin cannot find any way to edit a balance.
++**Manually tested:** each staff role's permitted/forbidden actions; a scripted freeze scenario; AI answering portfolio/price/history questions in both languages and *refusing* "should I buy?" prompts; prompt-injection attempt against the tools.
++
++## Phase 6 — Ship it (Wed 12)
++
++**Goal:** demo-ready product and demo-ready story.
++
++- 6.1 3D gold visualisation (mass ∝ grams, synced label) — **last feature in**, 2D animated fallback ready
++- 6.2 Amharic full pass: Dagmfre reviews every string; client spot-check requested today
++- 6.3 Landing page + terms acceptance (client's text or placeholder)
++- 6.4 Seed data: demo users with a year of history, badges, one frozen account with trail, treasury panels populated
++- 6.5 Empty/loading/error states; polish pass on the demo path only
++- 6.6 **Demo script written; full rehearsal ×2 on production** (Flash-Lite for rehearsal to preserve free-tier quota)
++
++**Done when:** two clean rehearsal runs of the full money loop on production, on a phone, from the actual demo script.
++**Manually tested:** the entire demo script, twice, including the deliberate failure demos (reserve halt, freeze).
++
++## Phase 7 — Demo day (Thu 13)
++
++Morning: final rehearsal, seed reset, quota check (Gemini billing safety net attached), backup phone + backup screenshots of every screen. Then the presentation: live full money loop — register → KYC → deposit → buy → portfolio/3D → sell → withdraw → admin approve → AI explains in Amharic — with seeded accounts carrying the history/compliance/treasury story.
++*(Re-anchored Milestone 4 — spec payment 3 due within 3 working days after.)*
++
++---
++
++## Cut list (drop from the top when behind)
++
++| # | Cut | Saves | Consequence |
++|---|---|---|---|
++| 1 | Badges | 2–3h | None for demo |
++| 2 | Platinum in UI (keep in schema/feed) | 3–4h | "Gold today, platinum next" is a fine demo line |
++| 3 | 3D → 2D animated stack | 0.5–1d | Still looks good; fallback is pre-planned |
++| 4 | Delivery request flow | 2–3h | Mention verbally; form is trivial post-demo |
++| 5 | Price alerts | 2h | AI chat still shows price awareness |
++| 6 | Passkey login (keep password) | 3h | Biometric story told, not shown |
++| 7 | Compliance rules beyond 500k-review + manual freeze | 3–4h | Freeze demo still works |
++| 8 | KYC review queue → auto-approve with stored docs | 2h | Flow still demonstrable |
++
++**Never cut:** ledger correctness · reserve gate · quote expiry · audit log. These four are what make it a financial platform instead of a mockup — and they're exactly what a partner bank will probe.
++
++## Standing risks this plan absorbs
++
++- **Client scope-push before demo** (lending, dashboards, more providers): answer stays "yes, separately quoted, and it moves the 13th" (spec §14).
++- **Payment calendar is stale**: spec tied payments to calendar dates now passed; this plan re-anchors them to phases 2/4/7 — flag to client for written acknowledgment.
++- **Blocking answers**: 24h rule (spec assumption 6) — escalate same-day via Goitom.
++- **Free-feed outage on stage**: dual price sources + seeded ticks mean the demo never shows an empty chart.

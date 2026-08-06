@@ -1,0 +1,29 @@
+diff --git a/C:\Users\hp\Desktop\Projects\ALKEVA\CLAUDE.md "b/C:\\Users\\hp\\Desktop\\Projects\\ALKEVA\\CLAUDE.md"
+index 87f8e48..7bf83a9 100644
+--- a/C:\Users\hp\Desktop\Projects\ALKEVA\CLAUDE.md
++++ "b/C:\\Users\\hp\\Desktop\\Projects\\ALKEVA\\CLAUDE.md"
+@@ -24,6 +24,19 @@
+ 4. **No one moves money alone.** Privileged actions require a second approver (demo: single-step allowed on cut list, audit-logged always).
+ 5. **Never sell a gram the vault doesn't hold.** Reserve gate enforced *inside* the buy transaction. No admin override.
+ 
++## The per-phase build loop (agreed 6 Aug 2026)
++
++Every phase in `docs/Phase_Plan.md` runs this exact loop:
++
++1. **Plan** — Claude prepares an implementation plan for the phase **in plan mode**; Dagmfre approves it.
++2. **Build** — Claude implements the phase.
++3. **Self-verify** — Claude verifies its own implementation end-to-end (running code, checking flows — no coded tests).
++4. **Joint verification** — Claude hands Dagmfre **step-by-step manual testing instructions**; Dagmfre runs the app and tests each feature himself.
++5. **Fix loop** — bugs found in 3–4 are fixed and re-verified; repeat until both are satisfied with the phase.
++6. **Handoff** — Claude runs the `/handoff` skill to produce a handoff document; Dagmfre compacts the session; the next phase starts fresh from CLAUDE.md + the handoff.
++
++Rules inside the loop: progress/decisions are logged here as they happen (not at handoff time); a phase is never declared done while a known bug is open; the next phase's plan starts only after the previous handoff.
++
+ ## Working rules (how this project is built)
+ 
+ 1. **Never guess an external API.** For Chapa or any un-indexed/uncertain external docs: ask Dagmfre for docs/context first. (Chapa endpoints verified 6 Aug against developer.chapa.co — see fact-check §6; two items still need live test keys: wallet `bank_code` values, transfers-in-test-mode.)
+@@ -83,3 +96,4 @@
+ - 2026-08-06 22:50 — `docs/System_Design_and_Architecture.md` written: monorepo layout, data model, trading spine, Chapa flows, price/FX pipeline, compliance engine, AI contract, roles, deploy topology — done
+ - 2026-08-06 23:00 — `docs/Phase_Plan.md` written: Phases 0–7 re-anchored Thu 6→Thu 13 Aug (weekend worked), per-phase done-when + manual-test lists, cut list, payment re-anchoring flag. Weekday correction: today is **Thu** 6 Aug, ~4.5 business days (+weekend) remain — done
+ - 2026-08-06 23:00 — **Planning complete. Next session: Phase 0 (credentials + repo scaffold), pending Dagmfre's review of the three new docs** — ready
++- 2026-08-06 23:10 — Per-phase build loop documented (plan → build → self-verify → joint manual verification → fix loop → /handoff → compact). Starting Phase 1 implementation plan — in progress
