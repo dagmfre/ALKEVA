@@ -7,6 +7,7 @@ import { FaucetModule } from "./faucet/faucet.module.js";
 import { HealthController } from "./health/health.controller.js";
 import { LedgerModule } from "./ledger/ledger.module.js";
 import { PricesModule } from "./prices/prices.module.js";
+import { QuotesModule } from "./quotes/quotes.module.js";
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { PricesModule } from "./prices/prices.module.js";
     PricesModule,
     LedgerModule,
     FaucetModule,
+    QuotesModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
