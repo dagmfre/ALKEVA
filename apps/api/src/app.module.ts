@@ -9,6 +9,7 @@ import { LedgerModule } from "./ledger/ledger.module.js";
 import { OrdersModule } from "./orders/orders.module.js";
 import { PricesModule } from "./prices/prices.module.js";
 import { QuotesModule } from "./quotes/quotes.module.js";
+import { TreasuryModule } from "./treasury/treasury.module.js";
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { QuotesModule } from "./quotes/quotes.module.js";
     FaucetModule,
     QuotesModule,
     OrdersModule,
+    TreasuryModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
