@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import type { MeResponse, PriceLatestResponse } from "@alkeva/shared";
+import type { BalancesResponse, MeResponse, PriceLatestResponse } from "@alkeva/shared";
 import { api, ApiError } from "@/lib/api";
 import { LocaleSwitcher } from "./locale-switcher";
+import { TradePanel } from "./trade-panel";
 
 const REFRESH_MS = 30_000;
 
@@ -64,9 +65,19 @@ export function Dashboard() {
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
   const router = useRouter();
+  const tt = useTranslations("trade");
   const [me, setMe] = useState<MeResponse | null>(null);
   const [gold, setGold] = useState<PriceLatestResponse | null>(null);
   const [platinum, setPlatinum] = useState<PriceLatestResponse | null>(null);
+  const [balances, setBalances] = useState<BalancesResponse | null>(null);
+
+  const loadBalances = useCallback(async () => {
+    try {
+      setBalances(await api<BalancesResponse>("/ledger/balances"));
+    } catch {
+      /* balances strip just stays empty; auth issues surface via /auth/me */
+    }
+  }, []);
 
   const loadPrices = useCallback(async () => {
     try {
@@ -91,9 +102,10 @@ export function Dashboard() {
 
   useEffect(() => {
     void loadPrices();
+    void loadBalances();
     const id = setInterval(() => void loadPrices(), REFRESH_MS);
     return () => clearInterval(id);
-  }, [loadPrices]);
+  }, [loadPrices, loadBalances]);
 
   async function logout() {
     try {
@@ -110,11 +122,30 @@ export function Dashboard() {
         <LocaleSwitcher />
       </header>
 
+      {balances && (
+        <section className="flex justify-between rounded-2xl border border-neutral-800 bg-neutral-900 p-4 text-sm tabular-nums">
+          <div className="flex flex-col">
+            <span className="text-neutral-400">{tt("balanceEtb")}</span>
+            <span className="font-semibold">{formatEtbPerGram(balances.etbCents)}</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-neutral-400">{tt("balanceGold")}</span>
+            <span className="font-semibold">{Number(balances.xauMg) / 1000} g</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-neutral-400">{tt("balancePlatinum")}</span>
+            <span className="font-semibold">{Number(balances.xptMg) / 1000} g</span>
+          </div>
+        </section>
+      )}
+
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-semibold">{t("title")}</h2>
         <PriceCard label={t("gold")} price={gold} t={t} />
         <PriceCard label={t("platinum")} price={platinum} t={t} />
       </section>
+
+      <TradePanel onSettled={() => void loadBalances()} />
 
       <footer className="mt-auto flex items-center justify-between border-t border-neutral-800 pt-4 text-sm text-neutral-400">
         <span>
