@@ -12,12 +12,20 @@ export type Db = ReturnType<typeof createDb>["db"];
  * `max` stays small — Supabase's session pooler and Render instances are modest.
  */
 export function createDb(databaseUrl: string, opts?: { max?: number }) {
-  const client = postgres(databaseUrl, {
+  // Defend against a common dashboard paste mistake: surrounding quotes or stray
+  // whitespace. Without this, postgres-js fails to parse the URL and silently
+  // falls back to localhost:5432 (ECONNREFUSED in production).
+  const url = databaseUrl.trim().replace(/^["']|["']$/g, "");
+  if (!/^postgres(ql)?:\/\//i.test(url)) {
+    throw new Error(
+      `DATABASE_URL is not a valid postgres connection string (must start with postgres:// or postgresql://). ` +
+        `Check for surrounding quotes or a wrong value in the environment.`,
+    );
+  }
+  const client = postgres(url, {
     max: opts?.max ?? 10,
     // Supabase requires SSL in production; local docker does not offer it.
-    ssl: databaseUrl.includes("localhost") || databaseUrl.includes("127.0.0.1")
-      ? false
-      : "require",
+    ssl: url.includes("localhost") || url.includes("127.0.0.1") ? false : "require",
   });
   const db = drizzle(client, { schema });
   return { db, client };
