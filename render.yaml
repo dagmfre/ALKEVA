@@ -6,7 +6,7 @@ services:
   - type: web
     name: alkeva-api
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: corepack enable && pnpm install --frozen-lockfile
     preDeployCommand: pnpm db:migrate && pnpm db:seed
     startCommand: pnpm --filter @alkeva/api start
