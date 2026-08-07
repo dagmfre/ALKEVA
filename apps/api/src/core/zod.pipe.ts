@@ -1,10 +1,11 @@
 import { BadRequestException, Injectable, type PipeTransform } from "@nestjs/common";
-import type { ZodSchema } from "zod";
+import type { ZodType, ZodTypeDef } from "zod";
 
-/** Per-route request validation using the shared zod DTOs. */
+/** Per-route request validation using the shared zod DTOs.
+ * Input type is `unknown` so transforming schemas (e.g. string → bigint) fit. */
 @Injectable()
 export class ZodPipe<T> implements PipeTransform<unknown, T> {
-  constructor(private readonly schema: ZodSchema<T>) {}
+  constructor(private readonly schema: ZodType<T, ZodTypeDef, unknown>) {}
 
   transform(value: unknown): T {
     const result = this.schema.safeParse(value);
