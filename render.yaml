@@ -1,6 +1,13 @@
-# ALKEVA — Render blueprint (web + api + worker + key-value).
+# ALKEVA — Render blueprint (web + api + key-value), free tier.
 # Postgres lives on Supabase; paste its session-pooler DATABASE_URL when prompted.
-# Paid instances for web/api on purpose: free tier cold-starts would stall the demo.
+#
+# Free-tier constraints handled here:
+#  - No preDeployCommand on free → migrate+seed run at the start of the api startCommand (both idempotent).
+#  - No background-worker service on free → the price-tick loop runs INSIDE the api web service,
+#    backgrounded before the API starts. The web dashboard polls /prices every ~30s, which is
+#    external traffic that keeps the free instance awake (and ticking) during an active demo.
+#  - Free web services sleep after ~15 min idle → first hit after idle cold-starts ~50s and ticks
+#    pause while asleep. (This is the trade-off vs. the earlier paid-instances decision.)
 
 services:
   - type: web
@@ -8,8 +15,8 @@ services:
     runtime: node
     plan: free
     buildCommand: corepack enable && pnpm install --frozen-lockfile
-    preDeployCommand: pnpm db:migrate && pnpm db:seed
-    startCommand: pnpm --filter @alkeva/api start
+    # migrate + seed (idempotent) → background the price worker → start the API in the foreground.
+    startCommand: pnpm db:migrate && pnpm db:seed && (pnpm --filter @alkeva/worker start &) && pnpm --filter @alkeva/api start
     healthCheckPath: /healthz
     envVars:
       - key: NODE_VERSION
@@ -43,7 +50,7 @@ services:
   - type: web
     name: alkeva-web
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @alkeva/web build
     startCommand: pnpm --filter @alkeva/web start
     envVars:
@@ -51,23 +58,6 @@ services:
         value: "22"
       - key: API_URL
         sync: false # https://alkeva-api.onrender.com once known
-
-  - type: worker
-    name: alkeva-worker
-    runtime: node
-    plan: starter
-    buildCommand: corepack enable && pnpm install --frozen-lockfile
-    startCommand: pnpm --filter @alkeva/worker start
-    envVars:
-      - key: NODE_VERSION
-        value: "22"
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: alkeva-redis
-          property: connectionString
 
   - type: keyvalue
     name: alkeva-redis
