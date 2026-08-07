@@ -6,6 +6,8 @@ import {
   accounts,
   feeConfig,
   holdingTierConfig,
+  ledgerEntries,
+  ledgerTransactions,
   treasuryConfig,
   users,
   vaultHoldings,
@@ -76,20 +78,31 @@ try {
   console.log("✓ fee + treasury config");
 
   // 3. Holding tiers from TIER_BANDS_JSON (Decision A3).
+  // Caps are optional in the JSON; absent = NULL = uncapped.
   const bands = parseTierBands(env.TIER_BANDS_JSON);
   for (const [i, band] of bands.entries()) {
+    const caps = {
+      perTxnCapCents: band.perTxnCapCents ? BigInt(band.perTxnCapCents) : null,
+      dailyCapCents: band.dailyCapCents ? BigInt(band.dailyCapCents) : null,
+    };
     await db
       .insert(holdingTierConfig)
       .values({
         name: band.name,
         rank: i + 1,
         maxUsd: band.maxUsd,
+        ...caps,
         // Delivery reserved for the top two tiers (Q35: high-value holdings only).
         deliveryEligible: i >= bands.length - 2,
       })
       .onConflictDoUpdate({
         target: holdingTierConfig.name,
-        set: { rank: i + 1, maxUsd: band.maxUsd, deliveryEligible: i >= bands.length - 2 },
+        set: {
+          rank: i + 1,
+          maxUsd: band.maxUsd,
+          ...caps,
+          deliveryEligible: i >= bands.length - 2,
+        },
       });
   }
   console.log(`✓ ${bands.length} holding tiers`);
@@ -137,6 +150,55 @@ try {
     console.log("✓ demo vault intake");
   } else {
     console.log("✓ vault already has records, skipping seed intake");
+  }
+
+  // 6. Opening float — one treasury-kind ledger transaction funding
+  // system:cash from system:external, so sells can pay out and the float
+  // projection is real. Idempotent: only while system:cash has no entries.
+  if (env.TREASURY_FLOAT_ETB_CENTS > 0n) {
+    const [cashAccount] = await db
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(eq(accounts.systemName, "system:cash"))
+      .limit(1);
+    const [externalAccount] = await db
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(eq(accounts.systemName, "system:external"))
+      .limit(1);
+    if (!cashAccount || !externalAccount) throw new Error("system accounts missing");
+
+    const cashEntryCount = await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(ledgerEntries)
+      .where(eq(ledgerEntries.accountId, cashAccount.id));
+
+    if ((cashEntryCount[0]?.n ?? 0) === 0) {
+      await db.transaction(async (tx) => {
+        const [txn] = await tx
+          .insert(ledgerTransactions)
+          .values({ kind: "treasury", note: "opening_float (seed)" })
+          .returning({ id: ledgerTransactions.id });
+        if (!txn) throw new Error("failed to create opening-float transaction");
+        await tx.insert(ledgerEntries).values([
+          {
+            transactionId: txn.id,
+            accountId: externalAccount.id,
+            asset: "ETB",
+            amount: -env.TREASURY_FLOAT_ETB_CENTS,
+          },
+          {
+            transactionId: txn.id,
+            accountId: cashAccount.id,
+            asset: "ETB",
+            amount: env.TREASURY_FLOAT_ETB_CENTS,
+          },
+        ]);
+      });
+      console.log("✓ opening float posted");
+    } else {
+      console.log("✓ system:cash already funded, skipping opening float");
+    }
   }
 
   console.log("Seed complete.");

@@ -1,0 +1,1 @@
+ALTER TABLE "quote" ADD COLUMN "reforest_cents" bigint DEFAULT 0 NOT NULL;

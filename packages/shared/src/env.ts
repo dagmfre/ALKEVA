@@ -65,6 +65,19 @@ export const envSchema = z.object({
     .default("https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument"),
   FX_URL: z.string().url().default("https://open.er-api.com/v6/latest/USD"),
 
+  // Phase 2 — demo faucet: self-serve test money until Chapa deposits land
+  // (Phase 4). One flag turns it off; the cap bounds a single credit.
+  // z.enum+transform, NOT z.coerce.boolean — the latter coerces "false" to true.
+  DEMO_FAUCET_ENABLED: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((v) => v === "true"),
+  DEMO_FAUCET_MAX_CENTS: z.coerce.bigint().positive().default(20_000_000n),
+
+  // Phase 2 — compliance pre-check (Q57): orders at/above this route to
+  // review instead of settling. Resolution UI arrives in Phase 5.
+  COMPLIANCE_REVIEW_THRESHOLD_CENTS: z.coerce.bigint().positive().default(50_000_000n),
+
   SEED_ADMIN_EMAIL: z.string().email().default("admin@alkeva.local"),
   SEED_ADMIN_PASSWORD: z.string().min(8).default("change-me-on-first-login"),
 
@@ -88,7 +101,14 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
 }
 
 export const tierBandSchema = z.array(
-  z.object({ name: z.string(), maxUsd: z.number().nullable() }),
+  z.object({
+    name: z.string(),
+    maxUsd: z.number().nullable(),
+    // Optional trading caps (Decision A3); omitted = uncapped (NULL in DB).
+    // String bigints because JSON numbers can't hold ETB cents safely.
+    perTxnCapCents: z.string().regex(/^[0-9]+$/).optional(),
+    dailyCapCents: z.string().regex(/^[0-9]+$/).optional(),
+  }),
 );
 export type TierBand = z.infer<typeof tierBandSchema>[number];
 

@@ -212,6 +212,7 @@ export const quotes = pgTable(
     subtotalCents: bigint("subtotal_cents", { mode: "bigint" }).notNull(),
     feeCents: bigint("fee_cents", { mode: "bigint" }).notNull(),
     taxCents: bigint("tax_cents", { mode: "bigint" }).notNull(),
+    reforestCents: bigint("reforest_cents", { mode: "bigint" }).notNull().default(sql`0`),
     totalCents: bigint("total_cents", { mode: "bigint" }).notNull(),
     status: quoteStatusEnum("status").notNull().default("open"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),

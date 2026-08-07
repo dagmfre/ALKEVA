@@ -15,6 +15,13 @@
       "when": 1786050596725,
       "tag": "0001_append_only_and_zero_sum",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786136268664,
+      "tag": "0002_reforest_cents",
+      "breakpoints": true
     }
   ]
 }

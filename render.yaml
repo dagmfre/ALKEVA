@@ -46,6 +46,10 @@ services:
         value: "150000000"
       - key: SELLBACK_DAILY_CEILING_CENTS
         value: "500000000"
+      - key: DEMO_FAUCET_ENABLED
+        value: "true" # flip to "false" when Chapa deposits land (Phase 4)
+      - key: COMPLIANCE_REVIEW_THRESHOLD_CENTS
+        value: "50000000"
 
   - type: web
     name: alkeva-web
