@@ -12,7 +12,15 @@ export function loadDotenvUpwards(startDir: string = process.cwd()): void {
   for (let i = 0; i < 6; i++) {
     const candidate = path.join(dir, ".env");
     if (existsSync(candidate)) {
+      // process.loadEnvFile OVERWRITES process.env, which would let a stray
+      // .env shadow platform-injected secrets (Render/Docker). Snapshot the
+      // real environment and restore it afterwards so the file only fills
+      // gaps — on a money platform, "which config won" must never be a guess.
+      const injected = { ...process.env };
       process.loadEnvFile(candidate);
+      for (const [key, value] of Object.entries(injected)) {
+        if (value !== undefined) process.env[key] = value;
+      }
       return;
     }
     const parent = path.dirname(dir);

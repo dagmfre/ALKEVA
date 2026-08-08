@@ -41,29 +41,40 @@ The money core. Every step says what you should see — anything else is a bug: 
 16. **Daily sell-back ceiling:** `UPDATE treasury_config SET daily_sellback_ceiling_cents = 1000 WHERE id = 1;` → any sell → **"Today's sell-back ceiling has been reached."** Restore: `UPDATE treasury_config SET daily_sellback_ceiling_cents = 500000000 WHERE id = 1;`
 17. **Frozen account:** `UPDATE "user" SET status = 'frozen' WHERE email = '<your test email>';` → any order → **"Your account is frozen."** Restore with `status = 'active'`.
 
-## F. Compliance review (500k rule)
+## F. Tier caps (psql-assisted — caps ship unset, i.e. uncapped, until the client gives real numbers)
 
-18. Faucet up to ~600k birr (3 calls, ~1 min apart for the rate limit), then buy ~30 g gold (total ≥ 500,000 birr) → the order returns **"submitted for review"** (not settled, not an error). psql: `SELECT rule_key, action FROM compliance_event ORDER BY created_at DESC LIMIT 1;` → `txn_over_500k | review`; balances **unchanged** (nothing posted); the quote is consumed.
+18. Set a cap and assign yourself to that tier:
+    `UPDATE holding_tier_config SET per_txn_cap_cents = 3000000, daily_cap_cents = 5000000 WHERE name = 'Gold';`
+    `UPDATE "user" SET holding_tier = 'Gold' WHERE email = '<your test email>';`
+    (30,000 birr per transaction, 50,000 birr per day.)
+19. Buy 2 g (~45,000 birr) → **"exceeds your tier's per-transaction limit"**. Buy 1 g (~22,500) → settles.
+20. Buy 1 g again (cumulative ~45,900, still under 50,000) → settles. Buy 1 g once more (~68,800 > 50,000) → **"reached your tier's daily limit"**.
+21. Restore: `UPDATE holding_tier_config SET per_txn_cap_cents = NULL, daily_cap_cents = NULL WHERE name = 'Gold';` and `UPDATE "user" SET holding_tier = NULL WHERE email = '<your test email>';`
 
-## G. Stale-price protection
+## G. Compliance review (500k rule)
 
-19. Stop the worker (`Ctrl+C` in its terminal), wait 3+ minutes, then request any quote → **"Price feed is delayed — please try again shortly."** No quote is created. Restart the worker → quoting resumes within ~30s.
+22. Faucet up to ~600k birr (3 calls, ~1 min apart for the rate limit), then buy ~30 g gold (total ≥ 500,000 birr) → the order returns **"submitted for review"** (not settled, not an error). psql: `SELECT rule_key, action FROM compliance_event ORDER BY created_at DESC LIMIT 1;` → `txn_over_500k | review`; balances **unchanged** (nothing posted); the quote is consumed.
+    *Note: the review gate is checked **before** the funds check, so a huge order routes to review even if you couldn't afford it. That ordering is deliberate — compliance sees the intent.*
 
-## H. Ledger immutability & final reconciliation
+## H. Stale-price protection
 
-20. psql: `UPDATE ledger_entry SET amount = 1 WHERE amount <> 1;` → FAILS: `ledger_entry is append-only`.
-21. `SELECT asset, SUM(amount) FROM ledger_entry GROUP BY asset;` → all **0**. `SELECT count(*) FROM ledger_entry WHERE amount = 0;` → **0**.
-22. `GET /treasury/summary` → hand-check: `float.cashCents` = 1,000,000,000 (opening) + Σ buy subtotals − Σ sell subtotals; `reserves[XAU].issuedMg` = total user gold in mg.
+23. Stop the worker (`Ctrl+C` in its terminal), wait 3+ minutes, then request any quote → **"Price feed is delayed — please try again shortly."** No quote is created. Restart the worker → quoting resumes within ~30s.
 
-## I. Amharic pass
+## I. Ledger immutability & final reconciliation
 
-23. Switch to አማ and repeat steps 5, 10, 11, 15 → every label, notice, and error renders in Amharic (no English leaking, no tofu boxes).
+24. psql: `UPDATE ledger_entry SET amount = 1 WHERE amount <> 1;` → FAILS: `ledger_entry is append-only`. Same for `DELETE FROM ledger_entry;`.
+25. `SELECT asset, SUM(amount) FROM ledger_entry GROUP BY asset;` → all **0**. `SELECT count(*) FROM ledger_entry WHERE amount = 0;` → **0**.
+26. `GET /treasury/summary` → hand-check: `float.cashCents` = 1,000,000,000 (opening) + Σ buy subtotals − Σ sell subtotals; `reserves[XAU].issuedMg` = total user gold in mg.
 
-## J. Phase 1 carry-over (production — once the Render deploy is green)
+## J. Amharic pass
 
-24. `https://alkeva-api.onrender.com/healthz` → all ok (per `docs/deploy/render-setup.md`; DATABASE_URL fix from 7 Aug applies).
-25. Repeat Phase 1 steps 8–16 on the production URL.
-26. Repeat this doc's steps 3–7 (the money core) on production, on your phone.
+27. Switch to አማ and repeat steps 5, 10, 11, and 19 → every label, notice, and error renders in Amharic (no English leaking, no tofu boxes).
+
+## K. Phase 1 carry-over (production — once the Render deploy is green)
+
+28. `https://alkeva-api.onrender.com/healthz` → all ok (per `docs/deploy/render-setup.md`; DATABASE_URL fix from 7 Aug applies).
+29. Repeat Phase 1 steps 8–16 on the production URL.
+30. Repeat this doc's steps 3–7 (the money core) on production, on your phone.
 
 ---
-**Result:** note each failed step number (if any) and report back. Phase 2 closes only when A–I pass locally; J closes the Phase 1 deploy carry-over.
+**Result:** note each failed step number (if any) and report back. Phase 2 closes only when A–J pass locally; K closes the Phase 1 deploy carry-over.
