@@ -239,11 +239,18 @@ export const orders = pgTable(
       () => ledgerTransactions.id,
     ),
     failureReason: text("failure_reason"),
+    /**
+     * Receipt number (F12). Allocated from `receipt_serial_seq` when the order
+     * settles — NULL for created/review/rejected, because only a settled order
+     * has a receipt. Migration 0003.
+     */
+    receiptSerial: bigint("receipt_serial", { mode: "bigint" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     settledAt: timestamp("settled_at", { withTimezone: true }),
   },
   (t) => [
     uniqueIndex("order_idem_uq").on(t.idempotencyKey),
+    uniqueIndex("order_receipt_serial_uq").on(t.receiptSerial),
     index("order_user_idx").on(t.userId),
     index("order_status_idx").on(t.status),
   ],

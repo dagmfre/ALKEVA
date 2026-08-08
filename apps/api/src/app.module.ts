@@ -7,6 +7,7 @@ import { FaucetModule } from "./faucet/faucet.module.js";
 import { HealthController } from "./health/health.controller.js";
 import { LedgerModule } from "./ledger/ledger.module.js";
 import { OrdersModule } from "./orders/orders.module.js";
+import { PortfolioModule } from "./portfolio/portfolio.module.js";
 import { PricesModule } from "./prices/prices.module.js";
 import { QuotesModule } from "./quotes/quotes.module.js";
 import { TreasuryModule } from "./treasury/treasury.module.js";
@@ -22,6 +23,7 @@ import { TreasuryModule } from "./treasury/treasury.module.js";
     FaucetModule,
     QuotesModule,
     OrdersModule,
+    PortfolioModule,
     TreasuryModule,
   ],
   controllers: [HealthController],

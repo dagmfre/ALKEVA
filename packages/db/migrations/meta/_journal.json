@@ -22,6 +22,13 @@
       "when": 1786136268664,
       "tag": "0002_reforest_cents",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786222668664,
+      "tag": "0003_receipt_serial",
+      "breakpoints": true
     }
   ]
 }

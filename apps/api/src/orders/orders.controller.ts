@@ -1,5 +1,22 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, UseGuards } from "@nestjs/common";
-import { createOrderDto, type CreateOrderDto, type OrderResponse } from "@alkeva/shared";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
+import {
+  createOrderDto,
+  listOrdersDto,
+  type CreateOrderDto,
+  type ListOrdersDto,
+  type OrderListResponse,
+  type OrderResponse,
+  type ReceiptResponse,
+} from "@alkeva/shared";
 import { Auth, AuthGuard } from "../auth/auth.guard.js";
 import type { AccessPayload } from "../auth/auth.service.js";
 import { ZodPipe } from "../core/zod.pipe.js";
@@ -18,6 +35,15 @@ export class OrdersController {
     return this.orders.execute(auth.sub, dto);
   }
 
+  @Get()
+  @UseGuards(AuthGuard)
+  list(
+    @Auth() auth: AccessPayload,
+    @Query(new ZodPipe(listOrdersDto)) query: ListOrdersDto,
+  ): Promise<OrderListResponse> {
+    return this.orders.list(auth.sub, query);
+  }
+
   @Get(":id")
   @UseGuards(AuthGuard)
   get(
@@ -25,5 +51,14 @@ export class OrdersController {
     @Param("id", ParseUUIDPipe) id: string,
   ): Promise<OrderResponse> {
     return this.orders.getOwn(auth.sub, id);
+  }
+
+  @Get(":id/receipt")
+  @UseGuards(AuthGuard)
+  receipt(
+    @Auth() auth: AccessPayload,
+    @Param("id", ParseUUIDPipe) id: string,
+  ): Promise<ReceiptResponse> {
+    return this.orders.receipt(auth.sub, id);
   }
 }

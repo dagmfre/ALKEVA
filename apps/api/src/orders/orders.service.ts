@@ -6,12 +6,14 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, lt, sql } from "drizzle-orm";
 import {
   complianceEvents,
+  feeConfig,
   freezes,
   holdingTierConfig,
   orders,
+  priceTicks,
   quotes,
   treasuryConfig,
   users,
@@ -21,9 +23,14 @@ import {
 import type {
   CreateOrderDto,
   Env,
+  ListOrdersDto,
   MetalAsset,
+  OrderListItem,
+  OrderListResponse,
   OrderResponse,
   OrderSide,
+  OrderStatus,
+  ReceiptResponse,
   SystemAccountName,
 } from "@alkeva/shared";
 import { DB, ENV } from "../core/core.module.js";
@@ -234,7 +241,14 @@ export class OrdersService {
         await tx.update(quotes).set({ status: "consumed" }).where(eq(quotes.id, quote.id));
         const settled = await tx
           .update(orders)
-          .set({ status: "settled", ledgerTransactionId: txnId, settledAt: sql`now()` })
+          .set({
+            status: "settled",
+            ledgerTransactionId: txnId,
+            settledAt: sql`now()`,
+            // Receipt numbers are allocated at settle, not at insert — only a
+            // settled order has a receipt (migration 0003).
+            receiptSerial: sql`nextval('receipt_serial_seq')`,
+          })
           .where(eq(orders.id, order.id))
           .returning();
         return { outcome: "settled", order: settled[0] ?? order, quote };
@@ -406,6 +420,116 @@ export class OrdersService {
         ),
       );
     return BigInt(rows[0]?.total ?? "0");
+  }
+
+  /**
+   * Transaction history (Phase 3.4). Keyset pagination on `created_at` rather
+   * than OFFSET: new orders arrive while a user scrolls, and offsets would
+   * duplicate or skip rows when they do.
+   */
+  async list(userId: string, dto: ListOrdersDto): Promise<OrderListResponse> {
+    const where = dto.before
+      ? and(eq(orders.userId, userId), lt(orders.createdAt, new Date(dto.before)))
+      : eq(orders.userId, userId);
+
+    const rows = await this.db
+      .select({
+        id: orders.id,
+        side: orders.side,
+        asset: orders.asset,
+        status: orders.status,
+        failureReason: orders.failureReason,
+        receiptSerial: orders.receiptSerial,
+        createdAt: orders.createdAt,
+        settledAt: orders.settledAt,
+        gramsMg: quotes.gramsMg,
+        unitEtbCentsPerGram: quotes.unitEtbCentsPerGram,
+        totalCents: quotes.totalCents,
+      })
+      .from(orders)
+      .innerJoin(quotes, eq(orders.quoteId, quotes.id))
+      .where(where)
+      .orderBy(desc(orders.createdAt))
+      .limit(dto.limit + 1); // one extra row answers "is there a next page?"
+
+    const page = rows.slice(0, dto.limit);
+    const last = page[page.length - 1];
+
+    const items: OrderListItem[] = page.map((r) => ({
+      id: r.id,
+      side: r.side as OrderSide,
+      asset: r.asset as MetalAsset,
+      status: r.status as OrderStatus,
+      failureReason: r.failureReason,
+      gramsMg: r.gramsMg.toString(),
+      unitEtbCentsPerGram: r.unitEtbCentsPerGram.toString(),
+      totalCents: r.totalCents.toString(),
+      receiptSerial: r.receiptSerial === null ? null : r.receiptSerial.toString(),
+      createdAt: r.createdAt.toISOString(),
+      settledAt: r.settledAt ? r.settledAt.toISOString() : null,
+    }));
+
+    return {
+      orders: items,
+      nextCursor: rows.length > dto.limit && last ? last.createdAt.toISOString() : null,
+    };
+  }
+
+  /**
+   * Serial-numbered receipt (F12). Settled orders only — a rejected order has
+   * no receipt because no money moved. Carries the price provenance (feed,
+   * FX source, exact tick timestamp), which is what makes this a receipt
+   * rather than a note: the price was not invented, it came from a named
+   * source at a named moment.
+   */
+  async receipt(userId: string, orderId: string): Promise<ReceiptResponse> {
+    const rows = await this.db
+      .select({ order: orders, quote: quotes, tick: priceTicks })
+      .from(orders)
+      .innerJoin(quotes, eq(orders.quoteId, quotes.id))
+      .innerJoin(priceTicks, eq(quotes.priceTickId, priceTicks.id))
+      .where(and(eq(orders.id, orderId), eq(orders.userId, userId)))
+      .limit(1);
+
+    const row = rows[0];
+    if (!row) throw new NotFoundException("order_not_found");
+    if (row.order.status !== "settled" || row.order.receiptSerial === null) {
+      throw new NotFoundException("receipt_not_available");
+    }
+
+    const cfgRows = await this.db
+      .select({ commissionPctMilli: feeConfig.commissionPctMilli })
+      .from(feeConfig)
+      .where(eq(feeConfig.id, 1))
+      .limit(1);
+
+    const settledAt = row.order.settledAt ?? row.order.createdAt;
+    const serial = row.order.receiptSerial;
+
+    return {
+      orderId: row.order.id,
+      serial: `ALK-${settledAt.getUTCFullYear()}-${serial.toString().padStart(6, "0")}`,
+      serialNumber: serial.toString(),
+      side: row.order.side as OrderSide,
+      asset: row.order.asset as MetalAsset,
+      gramsMg: row.quote.gramsMg.toString(),
+      unitEtbCentsPerGram: row.quote.unitEtbCentsPerGram.toString(),
+      subtotalCents: row.quote.subtotalCents.toString(),
+      feeCents: row.quote.feeCents.toString(),
+      taxCents: row.quote.taxCents.toString(),
+      reforestCents: row.quote.reforestCents.toString(),
+      totalCents: row.quote.totalCents.toString(),
+      commissionPctMilli: cfgRows[0]?.commissionPctMilli ?? 0,
+      settledAt: settledAt.toISOString(),
+      ledgerTransactionId: row.order.ledgerTransactionId,
+      price: {
+        source: row.tick.source,
+        fxSource: row.tick.fxSource,
+        usdPerOzMicro: row.tick.usdPerOzMicro.toString(),
+        etbRateMicro: row.tick.etbRateMicro.toString(),
+        at: row.tick.at.toISOString(),
+      },
+    };
   }
 
   private isPgError(err: unknown, code: string): boolean {

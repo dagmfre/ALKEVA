@@ -41,7 +41,7 @@ Test before committing: *if someone could guess this design from the words "gold
 - **Rounding for looks.** Money is integer cents end to end; the UI shows exactly what the ledger holds.
 - **Proportional numerals.** Every money, gram, percentage, and countdown value is `tabular-nums`. Prices tick every 30 seconds; proportional digits make the whole balance shuffle sideways on each tick.
 - **Odometer / rolling / counting-up numbers.** A number mid-animation is a number you cannot read. Money crossfades.
-- **Fake precision.** Do not render `14,206.5039` because a float produced it. The quote engine rounds exactly once; the UI displays that number and no other.
+- **Fake precision.** Do not render `22,525.8541` because a float produced it. The quote engine rounds exactly once; the UI displays that number and no other.
 - **Fabricated data.** No placeholder sparklines, no invented percentages, no "sample" chart shapes. If data is missing the design shows a skeleton or an empty state. This is a financial product; an invented number in a demo screenshot is a liability.
 - **Colour-only gain/loss.** Always sign + arrow + colour. ~8% of male users cannot separate this red from this green.
 - **Hiding costs behind a disclosure.** Every fee line is visible before the confirm tap. No "see details" for the thing the user is agreeing to pay.

@@ -3,7 +3,7 @@
 Seven screens plus system states. Every number below is **real output shape from the live API** (Phase 2 is built and verified), and every Amharic string is the one already shipping in `apps/web/messages/am.json`. Design against these, not against placeholder text — Amharic runs longer than English and the layouts have to survive it.
 
 Reference numbers used throughout (plausible live values):
-`XAU 14,206.50 ETB/g` · `XPT 4,462.80 ETB/g` · commission 2% · FX ≈ 132 ETB/USD
+`XAU 22,525.85 ETB/g` · `XPT 9,091.66 ETB/g` · commission 2% · FX ≈ 161.31 ETB/USD
 
 ---
 
@@ -41,7 +41,7 @@ The screen the shop owner opens ten times a day. It answers "what is gold worth 
 
 **Order of content:**
 
-1. **Balance strip** — `ETB 79,958.10` · `ወርቅ 5.000 ግ` · `ፕላቲነም 2.000 ግ`. Tabular, high contrast. If all three are zero, this collapses into a single "get started" line instead of three zeros.
+1. **Balance strip** — `ETB 130,812.57` · `ወርቅ 5.000 ግ` · `ፕላቲነም 2.000 ግ`. Tabular, high contrast. If all three are zero, this collapses into a single "get started" line instead of three zeros.
 2. **Metal price cards** — XAU and XPT. Each: price per gram, 24h delta (`+1.24%` with sign and up-arrow, gain colour), last tick time (`ተዘምኗል 14:32`), source. Tapping a card selects it for the chart.
 3. **Price chart** — the selected metal, range tabs `24h · 7d · 30d · 1y`. Drag to read a point (value + timestamp). 1y data is seed-backfilled so all four ranges always have a line; no range is ever empty.
 4. **Trust panel** — the reserve statement. Plain sentence plus figures: physical grams in vault, grams issued to users, coverage. **Note for design: demo coverage is enormous** (5,000 g held against ~130 g issued ≈ 38× backed), so do not design a gauge that assumes a 0–200% range. A ratio this large should read as reassuring, not broken.
@@ -61,7 +61,7 @@ The most important surface in the product. Two stages in one sheet; the user mus
 - Side toggle `ግዛ` (Buy) / `ሽጥ` (Sell)
 - Amount field, `inputMode="decimal"`, unit inside the field (`ግራም`)
 - Quick chips: 1 g · 5 g · 10 g · max
-- Below the field, live: "≈ 71,032.50 ETB at the current price" — an estimate, clearly not a quote
+- Below the field, live: "≈ 112,629.25 ETB at the current price" — an estimate, clearly not a quote
 - Available balance shown inline so the user knows their ceiling before being refused
 
 ### Stage B — the quote (the trust artefact)
@@ -69,12 +69,12 @@ The most important surface in the product. Two stages in one sheet; the user mus
 A binding 30-second price. Everything visible, nothing behind a disclosure:
 
 ```
-ዋጋ በግራም      14,206.50
+ዋጋ በግራም      22,525.85
 ግራም                5.000
-ንዑስ ድምር       71,032.50
-ኮሚሽን            1,420.65
+ንዑስ ድምር       112,629.25
+ኮሚሽን            2,252.58
 ─────────────────────────
-የሚከፍሉት        72,453.15  ETB
+የሚከፍሉት        114,881.83  ETB
 ```
 
 Zero-value lines (tax, reforestation) are **omitted**, not shown as `0.00`.
@@ -117,11 +117,11 @@ These are not edge cases; they are how the platform explains its own safety rule
 
 ## 4. Portfolio
 
-1. **Total value** — display size, `79,958.10 ETB`, with gain/loss beneath: `−1,420.65 · −1.96%` (sign + arrow + colour).
+1. **Total value** — display size, `130,812.57 ETB`, with gain/loss beneath: `−2,252.58 · −1.96%` (sign + arrow + colour).
 2. **Per-metal holdings** — grams, current value, cost basis, gain/loss. Gold row uses gold-400 for its value; platinum uses platinum-400.
 3. **TierCard** — gemstone tier with progress to the next band.
 
-**The first-loss problem — design for this explicitly.** A user who buys and immediately opens Portfolio sees a loss exactly equal to the commission they just paid (buy 5 g at 72,453.15, hold 5 g worth 71,032.50, down 1,420.65). That is correct and honest, and it is also the first thing a brand-new user sees. The design must make it legible rather than alarming: gain/loss is stated calmly, at a smaller weight than the holding itself, with the commission explicable. Do not hide it, do not make it red-and-huge.
+**The first-loss problem — design for this explicitly.** A user who buys and immediately opens Portfolio sees a loss exactly equal to the commission they just paid (buy 5 g at 114,881.83, hold 5 g worth 112,629.25, down 2,252.58). That is correct and honest, and it is also the first thing a brand-new user sees. The design must make it legible rather than alarming: gain/loss is stated calmly, at a smaller weight than the holding itself, with the commission explicable. Do not hide it, do not make it red-and-huge.
 
 **Tier bands** (USD reference, stored ETB — Discovery Q32):
 

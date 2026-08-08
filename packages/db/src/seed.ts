@@ -1,6 +1,14 @@
 import argon2 from "argon2";
 import { eq, sql } from "drizzle-orm";
-import { loadDotenvUpwards, loadEnv, parseTierBands, SYSTEM_ACCOUNTS } from "@alkeva/shared";
+import {
+  loadDotenvUpwards,
+  loadEnv,
+  METAL_ASSETS,
+  parseTierBands,
+  SYSTEM_ACCOUNTS,
+  UNITS,
+  type MetalAsset,
+} from "@alkeva/shared";
 import { createDb } from "./index.js";
 import {
   accounts,
@@ -8,6 +16,7 @@ import {
   holdingTierConfig,
   ledgerEntries,
   ledgerTransactions,
+  priceTicks,
   treasuryConfig,
   users,
   vaultHoldings,
@@ -199,6 +208,95 @@ try {
     } else {
       console.log("✓ system:cash already funded, skipping opening float");
     }
+  }
+
+  // 7. One year of price history — the 30d and 1y chart ranges (Phase 3.3)
+  // have nothing to draw otherwise, since the live worker only started ticking
+  // this week. Daily synthetic ticks, clearly labelled `seed-backfill` so no
+  // one mistakes them for observed prices, and deterministic so re-seeding
+  // reproduces the same chart.
+  //
+  // Idempotent on its own marker rather than on tick age: a few real ticks
+  // from a day of local testing must not be mistaken for a year of history.
+  // Real ticks are never modified — the synthetic series ends where the real
+  // feed begins, so the two join without a gap or an overlap.
+  const backfilled = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(priceTicks)
+    .where(eq(priceTicks.source, "seed-backfill"));
+
+  if ((backfilled[0]?.n ?? 0) === 0) {
+    // Anchors: plausible mid-2026 spot, used only when the worker has not yet
+    // written a real tick to anchor against.
+    const FALLBACK_USD_PER_OZ_MICRO: Record<MetalAsset, bigint> = {
+      XAU: 3_300_000_000n,
+      XPT: 1_050_000_000n,
+    };
+    const FALLBACK_FX_MICRO = 132_000_000n;
+    const DAYS = 365;
+
+    // Deterministic LCG (glibc constants) — no Math.random, so the seeded
+    // chart is identical on every machine and every re-run.
+    let lcg = 20260809;
+    const nextUnit = (): number => {
+      lcg = (lcg * 1103515245 + 12345) % 2147483648;
+      return lcg / 2147483648; // [0, 1)
+    };
+
+    const rows: (typeof priceTicks.$inferInsert)[] = [];
+
+    for (const asset of METAL_ASSETS) {
+      // Anchor on the OLDEST real tick: the synthetic series walks backwards
+      // from where the live feed starts, so there is no overlap and no step
+      // at the seam. With no real ticks at all, anchor on now + a plausible
+      // spot price so a fresh database still charts.
+      const [earliest] = await db
+        .select({
+          usd: priceTicks.usdPerOzMicro,
+          fx: priceTicks.etbRateMicro,
+          at: priceTicks.at,
+        })
+        .from(priceTicks)
+        .where(eq(priceTicks.asset, asset))
+        .orderBy(sql`${priceTicks.at} asc`)
+        .limit(1);
+
+      const endUsd = earliest?.usd ?? FALLBACK_USD_PER_OZ_MICRO[asset];
+      const fxMicro = earliest?.fx ?? FALLBACK_FX_MICRO;
+      const anchorAt = earliest?.at ?? new Date();
+
+      let usd = endUsd;
+      for (let daydiff = 1; daydiff <= DAYS; daydiff++) {
+        // ±0.9% per day, with a mild downward drift going back in time so the
+        // year reads as gradual appreciation rather than a flat line.
+        const driftBp = Math.round((nextUnit() - 0.5) * 180) - 4;
+        usd = (usd * BigInt(10_000 - driftBp)) / 10_000n;
+        if (usd <= 0n) usd = endUsd;
+
+        const at = new Date(anchorAt);
+        at.setUTCHours(12, 0, 0, 0);
+        at.setUTCDate(at.getUTCDate() - daydiff);
+
+        rows.push({
+          asset,
+          usdPerOzMicro: usd,
+          etbRateMicro: fxMicro,
+          // Identical formula to the worker (apps/worker/src/main.ts).
+          etbCentsPerGram:
+            (usd * fxMicro * 100_000n) / (UNITS.MICRO * UNITS.MICRO * UNITS.TROY_OZ_MG),
+          source: "seed-backfill",
+          fxSource: "seed-backfill",
+          at,
+        });
+      }
+    }
+
+    for (let i = 0; i < rows.length; i += 500) {
+      await db.insert(priceTicks).values(rows.slice(i, i + 500));
+    }
+    console.log(`✓ ${rows.length} backfilled price ticks (${DAYS}d × ${METAL_ASSETS.length})`);
+  } else {
+    console.log("✓ price history already present, skipping backfill");
   }
 
   console.log("Seed complete.");
