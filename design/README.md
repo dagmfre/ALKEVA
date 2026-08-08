@@ -7,7 +7,9 @@
 
 ## The prompt
 
-> Design the mobile-web interface for **ALKEVA**, a gold and platinum trading platform for Ethiopia where the platform itself is the counterparty — it sells you grams it holds in a vault, and it is forbidden from selling a gram it does not hold.
+> Design the interface for **ALKEVA**, a gold and platinum trading platform for Ethiopia where the platform itself is the counterparty — it sells you grams it holds in a vault, and it is forbidden from selling a gram it does not hold.
+>
+> **This is a responsive website / web app** (Next.js 15 + Tailwind 4 + shadcn/ui), **not a native mobile app.** It renders in a browser: no native chrome, no iOS/Android platform conventions, no phone bezel. It is *mobile-first* because the primary user opens it on a phone browser — design the 360–480px viewport as the primary composition, and on desktop the same column centres at 480px max-width on the page canvas (`design.md` §6). The previews in `previews/` show that primary viewport; they are website screenshots at phone width, not app screens.
 >
 > The user is a shop owner in Mekelle checking prices on a three-year-old Android phone in direct afternoon sun. She reads Amharic. She is moving real savings out of cash and into metal, and before she taps anything she wants to know exactly what it costs and whether ALKEVA actually holds the gold.
 >
