@@ -1,0 +1,182 @@
+<!-- @dsCard group="Concepts" name="Receipt — the document" subtitle="Serial number, price provenance, ledger reference · am + en" viewport="820x900" -->
+<!doctype html>
+<html lang="am">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ALKEVA — Receipt</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+Ethiopic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --background: oklch(0.145 0.004 95);
+    --card: oklch(0.196 0.004 95);
+    --popover: oklch(0.238 0.005 95);
+    --border: oklch(0.30 0.005 95);
+    --foreground: oklch(0.968 0.003 95);
+    --muted-foreground: oklch(0.735 0.008 95);
+    --subtle-foreground: oklch(0.62 0.008 95);
+    --gold-400: oklch(0.79 0.142 85);
+    --gold-500: oklch(0.723 0.146 84);
+    --platinum-400: oklch(0.86 0.018 240);
+    --radius: 0.875rem;
+    --font-latin: "Inter", system-ui, sans-serif;
+    --font-ethiopic: "Noto Sans Ethiopic", "Nyala", "Kefa", "Abyssinica SIL", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 22px; background: oklch(0.11 0.003 95);
+    font-family: var(--font-ethiopic), var(--font-latin);
+    -webkit-font-smoothing: antialiased;
+    display: flex; justify-content: center; gap: 22px; flex-wrap: wrap;
+  }
+  .tnum { font-family: var(--font-latin); font-variant-numeric: tabular-nums; }
+
+  .doc {
+    width: 376px; background: var(--card); color: var(--foreground);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 26px 24px 22px;
+  }
+  .doc-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding-bottom: 18px; border-bottom: 1px solid var(--border);
+  }
+  .mark { display: flex; align-items: center; gap: 9px; }
+  .mark span { font-size: 0.9375rem; font-weight: 600; letter-spacing: 0.02em; }
+  .serial-lbl { font-size: 0.75rem; color: var(--subtle-foreground); font-family: var(--font-latin); text-align: end; }
+  .serial {
+    font-family: var(--font-latin); font-variant-numeric: tabular-nums;
+    font-size: 1rem; font-weight: 600; color: var(--gold-400); margin-top: 2px;
+  }
+
+  .title { font-size: 1.125rem; font-weight: 600; line-height: 1.5; margin: 20px 0 2px; }
+  .when { font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.7; margin-bottom: 20px; }
+
+  .rows { border-top: 1px solid var(--border); }
+  .r {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.9375rem;
+  }
+  .r .k { color: var(--muted-foreground); line-height: 1.7; }
+  .r .v { font-family: var(--font-latin); font-variant-numeric: tabular-nums; font-weight: 500; }
+  .r.total { padding: 15px 0; }
+  .r.total .k { color: var(--foreground); font-weight: 600; font-size: 1rem; }
+  .r.total .v { font-size: 1.25rem; font-weight: 600; }
+  .r.total .cur { font-size: 0.8125rem; font-weight: 400; color: var(--muted-foreground); margin-inline-start: 5px; }
+
+  .prov {
+    margin-top: 18px; padding: 13px 14px; background: var(--background);
+    border: 1px solid var(--border); border-radius: 0.75rem;
+  }
+  .prov .lbl { font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.7; margin-bottom: 4px; }
+  .prov .val { font-family: var(--font-latin); font-size: 0.8125rem; line-height: 1.6; color: var(--foreground); }
+
+  .refs { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .ref { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+  .ref .k { font-size: 0.9375rem; color: var(--subtle-foreground); line-height: 1.7; }
+  .ref .v {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.6875rem; color: var(--subtle-foreground);
+    word-break: break-all; text-align: end;
+  }
+
+  .vlabel { font-family: var(--font-latin); font-size: 0.75rem; color: var(--subtle-foreground); margin: 0 0 8px; }
+  .col { width: 376px; }
+  .en { font-family: var(--font-latin); }
+  .en .k, .en .lbl, .en .when { line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div class="col">
+  <p class="vlabel">Amharic — the original</p>
+  <div class="doc">
+    <div class="doc-head">
+      <div class="mark">
+        <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <circle cx="12.5" cy="16" r="8.5" stroke="var(--gold-500)" stroke-width="2.25"/>
+          <circle cx="19.5" cy="16" r="8.5" stroke="var(--platinum-400)" stroke-width="2.25"/>
+        </svg>
+        <span>ALKEVA</span>
+      </div>
+      <div>
+        <div class="serial-lbl">RECEIPT</div>
+        <div class="serial">ALK-2026-000148</div>
+      </div>
+    </div>
+
+    <div class="title">የወርቅ ግዢ ደረሰኝ</div>
+    <div class="when">ነሐሴ 3 ቀን 2018 · 14:32:11</div>
+
+    <div class="rows">
+      <div class="r"><span class="k">ማዕድን</span><span class="v" style="font-family:var(--font-ethiopic)">ወርቅ (XAU)</span></div>
+      <div class="r"><span class="k">መጠን</span><span class="v">5.000 ግ</span></div>
+      <div class="r"><span class="k">ዋጋ በግራም</span><span class="v">14,206.50</span></div>
+      <div class="r"><span class="k">ንዑስ ድምር</span><span class="v">71,032.50</span></div>
+      <div class="r"><span class="k">ኮሚሽን (2.00%)</span><span class="v">1,420.65</span></div>
+      <div class="r total"><span class="k">የተከፈለ</span><span class="v">72,453.15<span class="cur">ብር</span></span></div>
+    </div>
+
+    <div class="prov">
+      <div class="lbl">የዋጋ ምንጭ</div>
+      <div class="val">gold-api.com · 2026-08-09 14:32:04 UTC<br>USD/ETB 132.0400 · open.er-api.com</div>
+    </div>
+
+    <div class="refs">
+      <div class="ref"><span class="k">የትእዛዝ መለያ</span><span class="v">3f9a2c81-7b04-4e13-9d55-a1c8e0f2b746</span></div>
+      <div class="ref"><span class="k">የመዝገብ መለያ</span><span class="v">a07e14d2-55bc-4a90-8f31-6d2b91c74e08</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="col">
+  <p class="vlabel">English — same document, same grid</p>
+  <div class="doc en">
+    <div class="doc-head">
+      <div class="mark">
+        <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <circle cx="12.5" cy="16" r="8.5" stroke="var(--gold-500)" stroke-width="2.25"/>
+          <circle cx="19.5" cy="16" r="8.5" stroke="var(--platinum-400)" stroke-width="2.25"/>
+        </svg>
+        <span>ALKEVA</span>
+      </div>
+      <div>
+        <div class="serial-lbl">RECEIPT</div>
+        <div class="serial">ALK-2026-000148</div>
+      </div>
+    </div>
+
+    <div class="title">Gold purchase receipt</div>
+    <div class="when">9 August 2026 · 14:32:11</div>
+
+    <div class="rows">
+      <div class="r"><span class="k">Metal</span><span class="v">Gold (XAU)</span></div>
+      <div class="r"><span class="k">Quantity</span><span class="v">5.000 g</span></div>
+      <div class="r"><span class="k">Price per gram</span><span class="v">14,206.50</span></div>
+      <div class="r"><span class="k">Subtotal</span><span class="v">71,032.50</span></div>
+      <div class="r"><span class="k">Commission (2.00%)</span><span class="v">1,420.65</span></div>
+      <div class="r total"><span class="k">Total paid</span><span class="v">72,453.15<span class="cur">ETB</span></span></div>
+    </div>
+
+    <div class="prov">
+      <div class="lbl">Price source</div>
+      <div class="val">gold-api.com · 2026-08-09 14:32:04 UTC<br>USD/ETB 132.0400 · open.er-api.com</div>
+    </div>
+
+    <div class="refs">
+      <div class="ref"><span class="k">Order ID</span><span class="v">3f9a2c81-7b04-4e13-9d55-a1c8e0f2b746</span></div>
+      <div class="ref"><span class="k">Ledger transaction</span><span class="v">a07e14d2-55bc-4a90-8f31-6d2b91c74e08</span></div>
+    </div>
+  </div>
+
+  <p class="vlabel" style="margin-top:18px">
+    The provenance block is what separates ALKEVA from a spreadsheet: the price was not invented,
+    it came from a named feed at a named moment. Keep it on every receipt.
+    <br><br>
+    Open question for the client: the Amharic date above uses the Ethiopian calendar (ነሐሴ 3, 2018).
+    Gregorian with Amharic month names is the safer demo default — needs a decision.
+  </p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!-- @dsCard group="Concepts" name="Home — market & trust panel" subtitle="Balances, price cards, chart ranges, reserve proof · Amharic" viewport="420x1000" -->
+<!doctype html>
+<html lang="am">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ALKEVA — Home</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+Ethiopic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --background: oklch(0.145 0.004 95);
+    --card: oklch(0.196 0.004 95);
+    --popover: oklch(0.238 0.005 95);
+    --border: oklch(0.30 0.005 95);
+    --input: oklch(0.34 0.005 95);
+    --foreground: oklch(0.968 0.003 95);
+    --muted-foreground: oklch(0.735 0.008 95);
+    --subtle-foreground: oklch(0.62 0.008 95);
+    --gold-400: oklch(0.79 0.142 85);
+    --gold-500: oklch(0.723 0.146 84);
+    --platinum-400: oklch(0.86 0.018 240);
+    --gain: oklch(0.76 0.115 152);
+    --loss: oklch(0.70 0.160 25);
+    --primary: var(--gold-500);
+    --primary-foreground: oklch(0.16 0.010 84);
+    --radius: 0.875rem;
+    --font-latin: "Inter", system-ui, sans-serif;
+    --font-ethiopic: "Noto Sans Ethiopic", "Nyala", "Kefa", "Abyssinica SIL", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 22px; background: oklch(0.11 0.003 95);
+    font-family: var(--font-ethiopic), var(--font-latin);
+    -webkit-font-smoothing: antialiased;
+    display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;
+  }
+  .phone {
+    width: 376px; background: var(--background); color: var(--foreground);
+    border-radius: 30px; border: 1px solid var(--border);
+    overflow: hidden; position: relative; padding-bottom: 74px;
+  }
+  .tnum { font-family: var(--font-latin); font-variant-numeric: tabular-nums; }
+  .pad { padding: 0 16px; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 16px 14px;
+  }
+  .mark { display: flex; align-items: center; gap: 9px; }
+  .mark span { font-size: 1rem; font-weight: 600; letter-spacing: 0.01em; }
+  .locale {
+    font-family: var(--font-latin); font-size: 0.8125rem; color: var(--muted-foreground);
+    border: 1px solid var(--input); border-radius: 999px; padding: 6px 12px; min-height: 32px;
+  }
+
+  /* balances */
+  .balances {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; margin-bottom: 14px;
+  }
+  .bal-label { font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.7; }
+  .bal-total { font-size: 2.25rem; font-weight: 600; line-height: 1.1; margin: 2px 0 12px; }
+  .bal-total .cur { font-size: 1rem; font-weight: 500; color: var(--muted-foreground); margin-inline-start: 6px; }
+  .bal-metals { display: flex; gap: 22px; border-top: 1px solid var(--border); padding-top: 12px; }
+  .bal-metals div { font-size: 0.9375rem; }
+  .bal-metals .k { color: var(--muted-foreground); line-height: 1.7; }
+  .bal-metals .v { font-weight: 600; font-size: 1.0625rem; }
+
+  /* price cards */
+  .pcard {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 10px; position: relative;
+  }
+  .pcard.sel { border-color: oklch(0.723 0.146 84 / 0.55); }
+  .pcard .row1 { display: flex; align-items: baseline; justify-content: space-between; }
+  .pcard .name { font-size: 1rem; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 999px; flex: none; }
+  .pcard .price { font-size: 1.5rem; font-weight: 600; }
+  .pcard .row2 {
+    display: flex; align-items: baseline; justify-content: space-between; margin-top: 4px;
+  }
+  .pcard .per { font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.7; }
+  .delta { font-size: 0.9375rem; font-weight: 600; }
+  .up { color: var(--gain); } .down { color: var(--loss); }
+  .stamp { font-size: 0.9375rem; color: var(--subtle-foreground); line-height: 1.7; margin-top: 6px; }
+
+  /* chart */
+  .chart-wrap {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 4px 12px; margin: 14px 0;
+  }
+  .ranges { display: flex; gap: 4px; padding: 0 12px 12px; }
+  .ranges button {
+    font-family: var(--font-latin); font-size: 0.8125rem; font-weight: 500;
+    padding: 7px 13px; border-radius: 999px; border: 0; min-height: 34px;
+    background: transparent; color: var(--muted-foreground); cursor: pointer;
+  }
+  .ranges button.on { background: var(--popover); color: var(--foreground); }
+
+  /* trust panel */
+  .trust {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; margin-bottom: 14px;
+  }
+  .trust h2 { font-size: 1.125rem; font-weight: 600; line-height: 1.55; margin: 0 0 4px; }
+  .trust p { font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.7; margin: 0 0 14px; }
+  .trust-figs { display: flex; gap: 8px; }
+  .fig {
+    flex: 1; background: var(--background); border: 1px solid var(--border);
+    border-radius: 0.75rem; padding: 11px 12px;
+  }
+  .fig .k { font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.55; }
+  .fig .v { font-size: 1.125rem; font-weight: 600; margin-top: 3px; }
+
+  .cta {
+    display: block; width: 100%; font-family: inherit; font-size: 1rem; font-weight: 600;
+    min-height: 52px; border-radius: 0.75rem; border: 0;
+    background: var(--primary); color: var(--primary-foreground); cursor: pointer;
+    margin-bottom: 18px;
+  }
+
+  /* tab bar */
+  .tabs {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 66px;
+    background: oklch(0.196 0.004 95 / 0.96); border-top: 1px solid var(--border);
+    display: flex; align-items: center;
+  }
+  .tabs a {
+    flex: 1; text-align: center; text-decoration: none; color: var(--subtle-foreground);
+    font-size: 0.75rem; line-height: 1.5; display: flex; flex-direction: column;
+    align-items: center; gap: 3px; min-height: 48px; justify-content: center;
+  }
+  .tabs a.on { color: var(--gold-400); }
+  .tabs .ico { font-size: 1.0625rem; line-height: 1; }
+
+  /* side variants */
+  .col { width: 376px; }
+  .vlabel {
+    font-family: var(--font-latin); font-size: 0.75rem; color: var(--subtle-foreground);
+    margin: 0 0 8px;
+  }
+  .banner-caution {
+    background: var(--popover); border: 1px solid var(--border); color: var(--platinum-400);
+    border-radius: var(--radius); padding: 13px 15px; font-size: 0.9375rem; line-height: 1.7;
+    display: flex; gap: 9px; margin-bottom: 18px;
+  }
+  .sk { background: var(--popover); border-radius: 6px; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <header>
+    <div class="mark">
+      <svg width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <circle cx="12.5" cy="16" r="8.5" stroke="var(--gold-500)" stroke-width="2.25"/>
+        <circle cx="19.5" cy="16" r="8.5" stroke="var(--platinum-400)" stroke-width="2.25"/>
+      </svg>
+      <span>ALKEVA</span>
+    </div>
+    <button class="locale">አማ · EN</button>
+  </header>
+
+  <div class="pad">
+    <div class="balances">
+      <div class="bal-label">ጠቅላላ ንብረት</div>
+      <div class="bal-total tnum">79,958.10<span class="cur">ብር</span></div>
+      <div class="bal-metals">
+        <div><div class="k">ወርቅ</div><div class="v tnum">5.000 <span style="font-size:0.875rem;font-weight:400;color:var(--muted-foreground)">ግ</span></div></div>
+        <div><div class="k">ፕላቲነም</div><div class="v tnum">2.000 <span style="font-size:0.875rem;font-weight:400;color:var(--muted-foreground)">ግ</span></div></div>
+        <div><div class="k">ብር</div><div class="v tnum">0.00</div></div>
+      </div>
+    </div>
+
+    <div class="pcard sel">
+      <div class="row1">
+        <span class="name"><span class="dot" style="background:var(--gold-500)"></span>ወርቅ</span>
+        <span class="price tnum" style="color:var(--gold-400)">14,206.50</span>
+      </div>
+      <div class="row2">
+        <span class="per">በግራም</span>
+        <span class="delta up tnum">↑ +2.41%</span>
+      </div>
+      <div class="stamp">ተዘምኗል 14:32 · gold-api.com</div>
+    </div>
+
+    <div class="pcard">
+      <div class="row1">
+        <span class="name"><span class="dot" style="background:var(--platinum-400)"></span>ፕላቲነም</span>
+        <span class="price tnum" style="color:var(--platinum-400)">4,462.80</span>
+      </div>
+      <div class="row2">
+        <span class="per">በግራም</span>
+        <span class="delta down tnum">↓ −0.83%</span>
+      </div>
+      <div class="stamp">ተዘምኗል 14:32 · gold-api.com</div>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="ranges">
+        <button class="on">24h</button><button>7d</button><button>30d</button><button>1y</button>
+      </div>
+      <svg viewBox="0 0 344 150" width="100%" height="150" preserveAspectRatio="none" aria-label="Gold price, last 24 hours">
+        <defs>
+          <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="oklch(0.79 0.142 85)" stop-opacity="0.18"/>
+            <stop offset="100%" stop-color="oklch(0.79 0.142 85)" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <line x1="0" y1="26" x2="344" y2="26" stroke="oklch(0.30 0.005 95 / 0.4)" stroke-width="1"/>
+        <line x1="0" y1="72" x2="344" y2="72" stroke="oklch(0.30 0.005 95 / 0.4)" stroke-width="1"/>
+        <line x1="0" y1="118" x2="344" y2="118" stroke="oklch(0.30 0.005 95 / 0.4)" stroke-width="1"/>
+        <path d="M0,104 L28,97 L57,108 L86,84 L115,90 L143,71 L172,76 L201,54 L229,61 L258,42 L287,49 L315,33 L344,29 L344,150 L0,150 Z" fill="url(#fade)"/>
+        <path d="M0,104 L28,97 L57,108 L86,84 L115,90 L143,71 L172,76 L201,54 L229,61 L258,42 L287,49 L315,33 L344,29"
+              fill="none" stroke="oklch(0.79 0.142 85)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="344" cy="29" r="3.5" fill="oklch(0.79 0.142 85)"/>
+      </svg>
+    </div>
+
+    <div class="trust">
+      <h2>የካዝና ዋስትና</h2>
+      <p>አልኬቫ በካዝና ውስጥ የሌለውን ግራም አይሸጥም። ይህ በእያንዳንዱ ግዢ ውስጥ ይረጋገጣል።</p>
+      <div class="trust-figs">
+        <div class="fig"><div class="k">በካዝና</div><div class="v tnum">5,000.000 <span style="font-size:0.8125rem;font-weight:400;color:var(--muted-foreground)">ግ</span></div></div>
+        <div class="fig"><div class="k">ለተጠቃሚዎች</div><div class="v tnum">128.500 <span style="font-size:0.8125rem;font-weight:400;color:var(--muted-foreground)">ግ</span></div></div>
+        <div class="fig"><div class="k">ድጋፍ</div><div class="v tnum" style="color:var(--gold-400)">38.9×</div></div>
+      </div>
+    </div>
+
+    <button class="cta">ወርቅ ግዛ</button>
+  </div>
+
+  <nav class="tabs">
+    <a class="on" href="#"><span class="ico">◈</span>መነሻ</a>
+    <a href="#"><span class="ico">⇄</span>ግብይት</a>
+    <a href="#"><span class="ico">◱</span>ንብረቴ</a>
+    <a href="#"><span class="ico">☰</span>ታሪክ</a>
+    <a href="#"><span class="ico">◎</span>መለያ</a>
+  </nav>
+</div>
+
+<div class="col">
+  <p class="vlabel">Stale feed — prices stay visible, timestamp becomes the story</p>
+  <div class="banner-caution"><span>◑</span><span>የዋጋ ምንጭ ዘግይቷል — የመጨረሻውን የታወቀ ዋጋ በማሳየት ላይ</span></div>
+
+  <p class="vlabel">Loading — skeletons match the final layout, never a spinner</p>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:18px">
+    <div class="sk" style="width:84px;height:13px;margin-bottom:10px"></div>
+    <div class="sk" style="width:198px;height:34px;margin-bottom:16px"></div>
+    <div style="border-top:1px solid var(--border);padding-top:13px;display:flex;gap:22px">
+      <div><div class="sk" style="width:44px;height:12px;margin-bottom:7px"></div><div class="sk" style="width:62px;height:17px"></div></div>
+      <div><div class="sk" style="width:56px;height:12px;margin-bottom:7px"></div><div class="sk" style="width:62px;height:17px"></div></div>
+    </div>
+  </div>
+
+  <p class="vlabel">Empty — teaches the first action, never “No data”</p>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 16px;margin-bottom:18px;color:var(--foreground)">
+    <div style="font-size:1rem;font-weight:600;line-height:1.55;margin-bottom:5px">እስካሁን ወርቅ የለዎትም</div>
+    <div style="font-size:0.9375rem;color:var(--muted-foreground);line-height:1.7;margin-bottom:14px">ከ1 ግራም ጀምሮ መግዛት ይችላሉ።</div>
+    <button class="cta" style="margin:0">ወርቅ ግዛ</button>
+  </div>
+
+  <p class="vlabel">English — the same layout must hold the longer strings</p>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;font-family:var(--font-latin);color:var(--foreground)">
+    <div style="font-size:0.875rem;color:var(--muted-foreground)">Total holdings</div>
+    <div class="tnum" style="font-size:2.25rem;font-weight:600;line-height:1.1;margin:2px 0 12px">79,958.10<span style="font-size:1rem;font-weight:500;color:var(--muted-foreground);margin-left:6px">ETB</span></div>
+    <div style="border-top:1px solid var(--border);padding-top:12px;display:flex;gap:22px;font-size:0.875rem">
+      <div><div style="color:var(--muted-foreground)">Gold</div><div class="tnum" style="font-weight:600;font-size:1.0625rem">5.000 g</div></div>
+      <div><div style="color:var(--muted-foreground)">Platinum</div><div class="tnum" style="font-weight:600;font-size:1.0625rem">2.000 g</div></div>
+      <div><div style="color:var(--muted-foreground)">Birr</div><div class="tnum" style="font-weight:600;font-size:1.0625rem">0.00</div></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

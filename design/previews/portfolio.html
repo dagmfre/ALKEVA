@@ -1,0 +1,193 @@
+<!-- @dsCard group="Concepts" name="Portfolio — holdings & tier" subtitle="Cost basis, the first-loss problem, gemstone tier card" viewport="420x900" -->
+<!doctype html>
+<html lang="am">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ALKEVA — Portfolio</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+Ethiopic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --background: oklch(0.145 0.004 95);
+    --card: oklch(0.196 0.004 95);
+    --popover: oklch(0.238 0.005 95);
+    --border: oklch(0.30 0.005 95);
+    --input: oklch(0.34 0.005 95);
+    --foreground: oklch(0.968 0.003 95);
+    --muted-foreground: oklch(0.735 0.008 95);
+    --subtle-foreground: oklch(0.62 0.008 95);
+    --gold-400: oklch(0.79 0.142 85);
+    --gold-500: oklch(0.723 0.146 84);
+    --platinum-400: oklch(0.86 0.018 240);
+    --gain: oklch(0.76 0.115 152);
+    --loss: oklch(0.70 0.160 25);
+    --radius: 0.875rem;
+    --font-latin: "Inter", system-ui, sans-serif;
+    --font-ethiopic: "Noto Sans Ethiopic", "Nyala", "Kefa", "Abyssinica SIL", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 22px; background: oklch(0.11 0.003 95);
+    font-family: var(--font-ethiopic), var(--font-latin);
+    -webkit-font-smoothing: antialiased;
+    display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;
+  }
+  .phone {
+    width: 376px; background: var(--background); color: var(--foreground);
+    border-radius: 30px; border: 1px solid var(--border); overflow: hidden; padding: 20px 16px 26px;
+  }
+  .tnum { font-family: var(--font-latin); font-variant-numeric: tabular-nums; }
+  h1 { font-size: 1.5rem; font-weight: 600; line-height: 1.45; margin: 0 0 16px; }
+
+  .hero { margin-bottom: 20px; }
+  .hero .k { font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.7; }
+  .hero .v { font-size: 2.25rem; font-weight: 600; line-height: 1.1; margin: 2px 0 6px; }
+  .hero .v .cur { font-size: 1rem; font-weight: 500; color: var(--muted-foreground); margin-inline-start: 6px; }
+  .delta { font-size: 0.9375rem; font-weight: 600; }
+  .down { color: var(--loss); } .up { color: var(--gain); }
+
+  .explain {
+    font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.7;
+    background: var(--popover); border: 1px solid var(--border); border-radius: 0.75rem;
+    padding: 11px 13px; margin-top: 10px;
+  }
+
+  .holding {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 15px 16px; margin-bottom: 10px;
+  }
+  .h-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+  .h-name { font-size: 1rem; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 999px; flex: none; }
+  .h-grams { font-size: 1.25rem; font-weight: 600; }
+  .h-rows { border-top: 1px solid var(--border); padding-top: 11px; }
+  .hr { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; font-size: 0.9375rem; }
+  .hr .k { color: var(--muted-foreground); line-height: 1.7; }
+  .hr .v { font-family: var(--font-latin); font-variant-numeric: tabular-nums; font-weight: 500; }
+
+  /* tier */
+  .tier {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; margin-top: 16px;
+  }
+  .tier-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .facet { flex: none; }
+  .tier-name { font-size: 1.125rem; font-weight: 600; line-height: 1.5; }
+  .tier-sub { font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.7; }
+  .bar { height: 6px; border-radius: 999px; background: var(--popover); overflow: hidden; margin-bottom: 9px; }
+  .bar span { display: block; height: 100%; border-radius: 999px; background: var(--platinum-400); width: 60.6%; }
+  .bar-legend { display: flex; justify-content: space-between; font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.7; }
+  .unlock {
+    font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.7;
+    border-top: 1px solid var(--border); margin-top: 13px; padding-top: 12px;
+  }
+
+  .col { width: 376px; }
+  .vlabel { font-family: var(--font-latin); font-size: 0.75rem; color: var(--subtle-foreground); margin: 0 0 8px; }
+  .ladder { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 16px; }
+  .lrow {
+    display: flex; align-items: center; gap: 11px; padding: 11px 0;
+    border-bottom: 1px solid var(--border); font-size: 0.9375rem;
+  }
+  .lrow:last-child { border-bottom: 0; }
+  .lrow.now { color: var(--foreground); }
+  .lrow .band {
+    margin-inline-start: auto; font-family: var(--font-latin);
+    font-variant-numeric: tabular-nums; font-size: 0.8125rem; color: var(--subtle-foreground);
+  }
+  .lname { color: var(--muted-foreground); }
+  .lrow.now .lname { color: var(--foreground); font-weight: 600; }
+  .badge-now {
+    font-size: 0.75rem; font-family: var(--font-latin); font-weight: 600;
+    background: var(--popover); color: var(--platinum-400);
+    border-radius: 999px; padding: 3px 9px;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <h1>ንብረቴ</h1>
+
+  <div class="hero">
+    <div class="k">ጠቅላላ ዋጋ</div>
+    <div class="v tnum">79,958.10<span class="cur">ብር</span></div>
+    <div class="delta down tnum">↓ −1,420.65 · −1.96%</div>
+    <div class="explain">ይህ የገዙበት ኮሚሽን ነው። ዋጋው ሲጨምር ይመለሳል።</div>
+  </div>
+
+  <div class="holding">
+    <div class="h-top">
+      <span class="h-name"><span class="dot" style="background:var(--gold-500)"></span>ወርቅ</span>
+      <span class="h-grams tnum">5.000 <span style="font-size:0.875rem;font-weight:400;color:var(--muted-foreground)">ግ</span></span>
+    </div>
+    <div class="h-rows">
+      <div class="hr"><span class="k">የአሁኑ ዋጋ</span><span class="v" style="color:var(--gold-400)">71,032.50</span></div>
+      <div class="hr"><span class="k">የገዙበት ዋጋ</span><span class="v">72,453.15</span></div>
+      <div class="hr"><span class="k">ትርፍ / ኪሳራ</span><span class="v" style="color:var(--loss)">↓ −1,420.65</span></div>
+    </div>
+  </div>
+
+  <div class="holding">
+    <div class="h-top">
+      <span class="h-name"><span class="dot" style="background:var(--platinum-400)"></span>ፕላቲነም</span>
+      <span class="h-grams tnum">2.000 <span style="font-size:0.875rem;font-weight:400;color:var(--muted-foreground)">ግ</span></span>
+    </div>
+    <div class="h-rows">
+      <div class="hr"><span class="k">የአሁኑ ዋጋ</span><span class="v" style="color:var(--platinum-400)">8,925.60</span></div>
+      <div class="hr"><span class="k">የገዙበት ዋጋ</span><span class="v">8,747.30</span></div>
+      <div class="hr"><span class="k">ትርፍ / ኪሳራ</span><span class="v" style="color:var(--gain)">↑ +178.30</span></div>
+    </div>
+  </div>
+
+  <div class="tier">
+    <div class="tier-top">
+      <svg class="facet" width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true">
+        <path d="M17 3 L28 12 L23.5 27 H10.5 L6 12 Z" stroke="var(--platinum-400)" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M6 12 H28 M17 3 V27 M10.5 27 L17 12 L23.5 27" stroke="var(--platinum-400)" stroke-width="1" opacity="0.55"/>
+      </svg>
+      <div>
+        <div class="tier-name">ወርቅ ደረጃ</div>
+        <div class="tier-sub">አምስተኛ ደረጃ · ከ$1,000 በታች</div>
+      </div>
+    </div>
+    <div class="bar"><span></span></div>
+    <div class="bar-legend">
+      <span class="tnum">$605.74</span>
+      <span>ወደ ታንዛናይት $1,000</span>
+    </div>
+    <div class="unlock">የሚቀጥለው ደረጃ ከፍ ያለ የግብይት ጣሪያ ይሰጣል።</div>
+  </div>
+</div>
+
+<div class="col">
+  <p class="vlabel">Tier ladder — the mark carries identity, never a colour fill that competes with the assets</p>
+  <div class="ladder">
+    <div class="lrow now">
+      <svg width="20" height="20" viewBox="0 0 34 34" fill="none"><path d="M17 3 L28 12 L23.5 27 H10.5 L6 12 Z" stroke="var(--platinum-400)" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span class="lname">ወርቅ</span><span class="badge-now">አሁን</span><span class="band">&lt; $1,000</span>
+    </div>
+    <div class="lrow">
+      <svg width="20" height="20" viewBox="0 0 34 34" fill="none"><path d="M17 4 L27 13 L17 30 L7 13 Z" stroke="var(--muted-foreground)" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span class="lname">ታንዛናይት</span><span class="band">$1,000–5,000</span>
+    </div>
+    <div class="lrow">
+      <svg width="20" height="20" viewBox="0 0 34 34" fill="none"><rect x="8" y="8" width="18" height="18" rx="2" transform="rotate(45 17 17)" stroke="var(--muted-foreground)" stroke-width="2"/></svg>
+      <span class="lname">ሩቢ</span><span class="band">$5,000–15,000</span>
+    </div>
+    <div class="lrow">
+      <svg width="20" height="20" viewBox="0 0 34 34" fill="none"><path d="M17 4 L29 17 L17 30 L5 17 Z" stroke="var(--muted-foreground)" stroke-width="2" stroke-linejoin="round"/><path d="M5 17 H29" stroke="var(--muted-foreground)" stroke-width="1" opacity="0.5"/></svg>
+      <span class="lname">ሰንፔር</span><span class="band">$15,000–30,000</span>
+    </div>
+    <div class="lrow">
+      <svg width="20" height="20" viewBox="0 0 34 34" fill="none"><path d="M11 5 H23 L29 14 L17 30 L5 14 Z" stroke="var(--muted-foreground)" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span class="lname">ኤመራልድ</span><span class="band">$30,000+</span>
+    </div>
+  </div>
+
+  <p class="vlabel" style="margin-top:20px">The first-loss problem — buy 5 g and Portfolio immediately shows a loss equal to the commission. Correct, honest, and the first thing a new user sees. State it calmly; never hide it, never make it red-and-huge.</p>
+</div>
+
+</body>
+</html>
