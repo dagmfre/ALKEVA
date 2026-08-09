@@ -1,0 +1,329 @@
+<!-- @dsCard group="Screens — desktop (primary)" name="Trade — 1440 three-panel workspace" subtitle="Field-styled selection · amount + quote with inset summary, countdown, glossy CTA · labeled live chart" viewport="1440x900" -->
+<!doctype html>
+<html lang="am">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ALKEVA — Trade (desktop)</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+Ethiopic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --background: oklch(0.145 0.008 85);
+    --card: oklch(0.196 0.010 85);
+    --popover: oklch(0.238 0.010 85);
+    --border: oklch(0.30 0.010 85);
+    --input: oklch(0.34 0.010 85);
+    --foreground: oklch(0.968 0.004 90);
+    --muted-foreground: oklch(0.735 0.010 90);
+    --subtle-foreground: oklch(0.62 0.010 90);
+    --gold-400: oklch(0.79 0.142 85);
+    --gold-500: oklch(0.735 0.146 84.3);
+    --gold-600: oklch(0.652 0.132 81.6);
+    --platinum-400: oklch(0.86 0.018 240);
+    --gain: oklch(0.76 0.115 152);
+    --loss: oklch(0.70 0.160 25);
+    --primary-foreground: oklch(0.16 0.010 84);
+    --gold-gradient: linear-gradient(180deg, oklch(0.85 0.16 90) 0%, oklch(0.735 0.146 84.3) 55%, oklch(0.652 0.132 81.6) 100%);
+    --gloss: inset 0 1px 0 oklch(0.92 0.12 95 / 0.5);
+    --radius: 0.875rem;
+    --font-latin: "Inter", system-ui, sans-serif;
+    --font-ethiopic: "Noto Sans Ethiopic", "Nyala", "Kefa", "Abyssinica SIL", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: oklch(0.11 0.006 85);
+    font-family: var(--font-ethiopic), var(--font-latin);
+    -webkit-font-smoothing: antialiased; color: var(--foreground);
+  }
+  .tnum { font-family: var(--font-latin); font-variant-numeric: tabular-nums; }
+
+  .frame {
+    width: 1440px; height: 900px; margin: 0 auto; background: var(--background);
+    display: grid; grid-template-columns: 240px 1fr; overflow: hidden;
+  }
+
+  aside { border-inline-end: 1px solid var(--border); padding: 22px 14px 18px; display: flex; flex-direction: column; gap: 4px; }
+  .mark { display: flex; align-items: center; gap: 10px; padding: 0 12px 22px; }
+  .mark .glyph { width: 26px; height: 26px; border-radius: 999px; border: 2.5px solid var(--gold-500); position: relative; }
+  .mark .glyph::after { content: ""; position: absolute; inset: 4px -8px auto auto; width: 14px; height: 14px; border-radius: 999px; border: 2.5px solid var(--platinum-400); }
+  .mark span { font-family: var(--font-latin); font-size: 1.0625rem; font-weight: 600; letter-spacing: 0.01em; }
+  nav { display: flex; flex-direction: column; gap: 4px; }
+  nav a {
+    display: flex; align-items: center; gap: 12px; text-decoration: none;
+    min-height: 46px; padding: 0 14px; border-radius: 0.75rem;
+    color: var(--muted-foreground); font-size: 1rem; line-height: 1.7;
+  }
+  nav a .ico { font-family: var(--font-latin); width: 20px; text-align: center; }
+  nav a.on { background: var(--gold-gradient); box-shadow: var(--gloss); color: var(--primary-foreground); font-weight: 600; }
+  .side-foot { margin-top: auto; }
+  .tier-chip { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 0.75rem; padding: 12px 14px; }
+  .tier-chip .t1 { font-size: 0.9375rem; font-weight: 600; line-height: 1.6; }
+  .tier-chip .t2 { font-family: var(--font-latin); font-size: 0.8125rem; color: var(--muted-foreground); }
+
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  .topbar { display: flex; align-items: center; gap: 26px; padding: 0 28px; min-height: 64px; border-bottom: 1px solid var(--border); }
+  .topbar h1 { font-size: 1.25rem; font-weight: 600; margin: 0; line-height: 1.45; }
+  .ticker { display: flex; align-items: center; gap: 22px; }
+  .tick { display: flex; align-items: baseline; gap: 8px; }
+  .tick .dot { width: 7px; height: 7px; border-radius: 999px; flex: none; align-self: center; }
+  .tick .sym { font-size: 0.9375rem; color: var(--muted-foreground); }
+  .tick .px { font-size: 0.9375rem; font-weight: 600; }
+  .tick .d { font-size: 0.8125rem; font-weight: 600; }
+  .d.up { color: var(--gain); } .d.down { color: var(--loss); }
+  .top-right { display: flex; align-items: center; gap: 12px; margin-inline-start: auto; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid var(--input); border-radius: 999px; font-size: 0.9375rem; }
+  .chip .k { color: var(--muted-foreground); }
+  .avatar { width: 38px; height: 38px; border-radius: 999px; background: var(--popover); border: 1px solid var(--input); display: grid; place-items: center; font-size: 0.9375rem; }
+
+  .content {
+    flex: 1; padding: 24px 28px;
+    display: grid; grid-template-columns: 300px 500px 1fr; gap: 16px; align-content: start;
+  }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+
+  /* left — selection, field-styled */
+  .field-label { font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.7; margin: 0 0 6px; }
+  .select {
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 48px; padding: 0 14px; margin-bottom: 14px;
+    background: var(--popover); border: 1px solid var(--input); border-radius: 0.75rem;
+    font-size: 1rem; font-weight: 500;
+  }
+  .select .metal { display: flex; align-items: center; gap: 9px; }
+  .select .car { font-family: var(--font-latin); color: var(--muted-foreground); font-size: 0.8125rem; }
+  .dot { width: 8px; height: 8px; border-radius: 999px; flex: none; }
+  .seg { display: flex; background: var(--popover); border-radius: 999px; padding: 4px; margin-bottom: 16px; }
+  .seg button {
+    flex: 1; min-height: 40px; border: 0; border-radius: 999px; cursor: pointer;
+    background: transparent; color: var(--muted-foreground);
+    font-family: inherit; font-size: 0.9375rem; font-weight: 500;
+  }
+  .seg .on-gold { background: var(--gold-gradient); box-shadow: var(--gloss); color: var(--primary-foreground); font-weight: 600; }
+  .kv { display: flex; align-items: baseline; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .kv:last-child { border-bottom: 0; }
+  .kv .k { font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.7; }
+  .kv .v { font-weight: 600; font-size: 1rem; }
+  .spot { margin-top: 14px; background: var(--popover); border-radius: 0.75rem; padding: 12px 14px; }
+  .spot .k { font-size: 0.875rem; color: var(--muted-foreground); line-height: 1.65; }
+  .spot .v { font-size: 1.25rem; font-weight: 600; color: var(--gold-400); }
+  .spot .s { font-family: var(--font-latin); font-size: 0.75rem; color: var(--subtle-foreground); margin-top: 2px; }
+
+  /* centre — amount + quote */
+  .quote-title { font-size: 1.125rem; font-weight: 600; margin: 0 0 14px; line-height: 1.55; }
+  .amount {
+    display: flex; align-items: center; gap: 10px;
+    min-height: 52px; padding: 0 8px 0 14px; margin-bottom: 10px;
+    background: var(--popover); border: 1px solid var(--input); border-radius: 0.75rem;
+  }
+  .amount .num { flex: 1; font-family: var(--font-latin); font-variant-numeric: tabular-nums; font-size: 1.25rem; font-weight: 600; }
+  .amount .unit { font-size: 0.9375rem; color: var(--muted-foreground); }
+  .amount .max {
+    font-family: var(--font-latin); font-size: 0.8125rem; font-weight: 600;
+    color: var(--gold-400); border: 1px solid var(--input); border-radius: 999px;
+    padding: 7px 12px; background: transparent; cursor: pointer;
+  }
+  .chips { display: flex; gap: 8px; margin-bottom: 16px; }
+  .chips button {
+    font-family: var(--font-latin); font-size: 0.8125rem; font-weight: 500;
+    min-height: 36px; padding: 0 14px; border-radius: 999px; cursor: pointer;
+    background: transparent; border: 1px solid var(--input); color: var(--muted-foreground);
+  }
+  .chips .on { border-color: var(--gold-500); color: var(--gold-400); }
+  .est { font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.7; margin: 0 0 16px; }
+  .ringrow { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .ring { position: relative; width: 56px; height: 56px; flex: none; }
+  .ring .sec { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 600; font-size: 1.0625rem; }
+  .summary { background: var(--popover); border-radius: 0.75rem; padding: 6px 16px 12px; margin-bottom: 14px; }
+  .brow { display: flex; align-items: baseline; justify-content: space-between; padding: 9px 0; }
+  .brow .k { font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.7; }
+  .brow .v { font-weight: 500; font-size: 1rem; }
+  .btotal { display: flex; align-items: baseline; justify-content: space-between; border-top: 1px solid var(--input); margin-top: 4px; padding-top: 12px; }
+  .btotal .k { font-size: 1rem; font-weight: 600; }
+  .btotal .v { font-size: 1.375rem; font-weight: 600; }
+  .btotal .cur { font-size: 0.9375rem; font-weight: 500; color: var(--muted-foreground); margin-inline-start: 5px; }
+  .cta {
+    display: block; width: 100%; min-height: 52px; border: 0; border-radius: 0.75rem; cursor: pointer;
+    background: var(--gold-gradient); box-shadow: var(--gloss); color: var(--primary-foreground);
+    font-family: inherit; font-size: 1.0625rem; font-weight: 600;
+  }
+  .provenance { display: flex; gap: 8px; font-size: 0.9375rem; color: var(--subtle-foreground); line-height: 1.65; margin: 12px 0 0; }
+
+  /* right — labeled chart */
+  .chart-panel { padding: 20px 20px 14px; display: flex; flex-direction: column; border-color: oklch(0.735 0.146 84.3 / 0.35); }
+  .chart-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .chart-title { font-size: 1.125rem; font-weight: 600; display: flex; align-items: center; gap: 9px; }
+  .ranges { display: flex; gap: 4px; }
+  .ranges button {
+    font-family: var(--font-latin); font-size: 0.8125rem; font-weight: 500;
+    min-height: 34px; padding: 0 12px; border-radius: 999px; border: 0; cursor: pointer;
+    background: transparent; color: var(--muted-foreground);
+  }
+  .ranges .on { background: var(--popover); color: var(--foreground); }
+  .ohlc { display: flex; gap: 16px; margin-bottom: 10px; flex-wrap: wrap; }
+  .ohlc div { display: flex; gap: 7px; align-items: baseline; }
+  .ohlc .k { font-size: 0.875rem; color: var(--muted-foreground); line-height: 1.65; }
+  .ohlc .v { font-size: 0.875rem; font-weight: 600; }
+  .plot { display: grid; grid-template-columns: 1fr 84px; flex: 1; }
+  .yaxis { position: relative; font-family: var(--font-latin); font-size: 0.75rem; color: var(--subtle-foreground); }
+  .yaxis span { position: absolute; right: 0; transform: translateY(-50%); font-variant-numeric: tabular-nums; }
+  .ytag {
+    position: absolute; right: 0; transform: translateY(-50%);
+    background: var(--gold-500); color: var(--primary-foreground);
+    font-weight: 600; padding: 3px 8px; border-radius: 6px; font-variant-numeric: tabular-nums;
+  }
+  .xaxis { display: flex; justify-content: space-between; font-family: var(--font-latin); font-size: 0.75rem; color: var(--subtle-foreground); padding: 8px 84px 0 0; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <aside>
+    <div class="mark"><span class="glyph"></span><span>ALKEVA</span></div>
+    <nav>
+      <a href="#"><span class="ico">◈</span>መነሻ</a>
+      <a class="on" href="#"><span class="ico">⇄</span>ግብይት</a>
+      <a href="#"><span class="ico">◱</span>ንብረቴ</a>
+      <a href="#"><span class="ico">☰</span>ታሪክ</a>
+      <a href="#"><span class="ico">◎</span>መለያ</a>
+    </nav>
+    <div class="side-foot">
+      <div class="tier-chip">
+        <svg width="26" height="26" viewBox="0 0 34 34" fill="none" aria-hidden="true">
+          <path d="M17 3 L28 12 L23.5 27 H10.5 L6 12 Z" stroke="var(--platinum-400)" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M6 12 H28 M17 3 V27" stroke="var(--platinum-400)" stroke-width="1" opacity="0.55"/>
+        </svg>
+        <div>
+          <div class="t1">ወርቅ</div>
+          <div class="t2">&lt; $1,000</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <h1>ግብይት</h1>
+      <div class="ticker">
+        <div class="tick"><span class="dot" style="background:var(--gold-500)"></span><span class="sym">ወርቅ</span><span class="px tnum">22,525.85</span><span class="d up tnum">↑ +2.41%</span></div>
+        <div class="tick"><span class="dot" style="background:var(--platinum-400)"></span><span class="sym">ፕላቲነም</span><span class="px tnum">9,091.66</span><span class="d down tnum">↓ −0.83%</span></div>
+      </div>
+      <div class="top-right">
+        <span class="chip"><span class="k">ቀሪ ሂሳብ</span><span class="tnum" style="font-weight:600">172,502.76 ብር</span></span>
+        <span class="chip">አማ · EN</span>
+        <span class="avatar">ዳ</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- left: selection & context -->
+      <div class="panel">
+        <p class="field-label">ማዕድን ይምረጡ</p>
+        <div class="select">
+          <span class="metal"><span class="dot" style="background:var(--gold-500)"></span>ወርቅ</span>
+          <span class="car">▾</span>
+        </div>
+        <p class="field-label">አይነት</p>
+        <div class="seg">
+          <button class="on-gold">↓ ግዛ</button>
+          <button>↑ ሽጥ</button>
+        </div>
+        <div>
+          <div class="kv"><span class="k">ቀሪ ሂሳብ</span><span class="v tnum">172,502.76</span></div>
+          <div class="kv"><span class="k">የያዙት ወርቅ</span><span class="v tnum">5.000 <span style="font-size:0.875rem;font-weight:400;color:var(--muted-foreground)">ግ</span></span></div>
+          <div class="kv"><span class="k">የዛሬ ገደብ</span><span class="v" style="font-size:0.9375rem;color:var(--muted-foreground)">ያለገደብ</span></div>
+        </div>
+        <div class="spot">
+          <div class="k">የአሁኑ ዋጋ · በግራም</div>
+          <div class="v tnum">22,525.85</div>
+          <div class="s">ተዘምኗል 14:32 · gold-api.com</div>
+        </div>
+      </div>
+
+      <!-- centre: amount + the binding quote -->
+      <div class="panel">
+        <h2 class="quote-title">ግዛ ወርቅ</h2>
+
+        <p class="field-label">መጠን</p>
+        <div class="amount">
+          <span class="num">5.000</span>
+          <span class="unit">ግራም</span>
+          <button class="max">MAX</button>
+        </div>
+        <div class="chips">
+          <button>1 ግ</button><button class="on">5 ግ</button><button>10 ግ</button><button>ከፍተኛ</button>
+        </div>
+        <p class="est">≈ 112,629.25 ብር በአሁኑ ዋጋ — ግምት ነው፣ የተያዘ ዋጋ አይደለም።</p>
+
+        <div class="ringrow">
+          <span class="ring">
+            <svg viewBox="0 0 56 56" width="56" height="56" aria-hidden="true">
+              <circle cx="28" cy="28" r="24" fill="none" stroke="var(--popover)" stroke-width="4"/>
+              <circle cx="28" cy="28" r="24" fill="none" stroke="var(--gold-500)" stroke-width="4"
+                      stroke-linecap="round" stroke-dasharray="150.8" stroke-dashoffset="35"
+                      transform="rotate(-90 28 28)"/>
+            </svg>
+            <span class="sec tnum">23</span>
+          </span>
+          <span style="font-size:0.9375rem;color:var(--muted-foreground);line-height:1.7">ዋጋው በ23 ሰከንድ ያበቃል</span>
+        </div>
+
+        <div class="summary">
+          <div class="brow"><span class="k">ዋጋ በግራም</span><span class="v tnum">22,525.85</span></div>
+          <div class="brow"><span class="k">ግራም</span><span class="v tnum">5.000</span></div>
+          <div class="brow"><span class="k">ንዑስ ድምር</span><span class="v tnum">112,629.25</span></div>
+          <div class="brow"><span class="k">ኮሚሽን</span><span class="v tnum">2,252.58</span></div>
+          <div class="btotal"><span class="k">የሚከፍሉት</span><span class="v tnum">114,881.83<span class="cur">ብር</span></span></div>
+        </div>
+
+        <button class="cta">አረጋግጥ</button>
+        <p class="provenance"><span>◆</span><span>ዋጋው ከgold-api.com በ14:32:04 ተወስዷል። ይህ ዋጋ ለ30 ሰከንድ ብቻ ተስማሚ ነው።</span></p>
+      </div>
+
+      <!-- right: labeled live chart of the selection -->
+      <div class="panel chart-panel">
+        <div class="chart-head">
+          <span class="chart-title"><span class="dot" style="background:var(--gold-500)"></span>ወርቅ</span>
+          <div class="ranges">
+            <button class="on">24h</button><button>7d</button><button>30d</button><button>1y</button>
+          </div>
+        </div>
+        <div class="ohlc" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px">
+          <div><span class="k">መክፈቻ</span><span class="v tnum">22,120.00</span></div>
+          <div><span class="k">ከፍተኛ</span><span class="v tnum">22,580.00</span></div>
+          <div><span class="k">ዝቅተኛ</span><span class="v tnum">22,050.00</span></div>
+          <div><span class="k">የአሁኑ</span><span class="v tnum" style="color:var(--gold-400)">22,525.85</span></div>
+        </div>
+        <div class="plot">
+          <svg viewBox="0 0 436 540" width="100%" height="540" preserveAspectRatio="none" aria-label="Gold price, last 24 hours">
+            <defs>
+              <linearGradient id="fade2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="oklch(0.79 0.142 85)" stop-opacity="0.18"/>
+                <stop offset="100%" stop-color="oklch(0.79 0.142 85)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <line x1="0" y1="34" x2="436" y2="34" stroke="oklch(0.30 0.010 85 / 0.4)" stroke-width="1"/>
+            <line x1="0" y1="191" x2="436" y2="191" stroke="oklch(0.30 0.010 85 / 0.4)" stroke-width="1"/>
+            <line x1="0" y1="349" x2="436" y2="349" stroke="oklch(0.30 0.010 85 / 0.4)" stroke-width="1"/>
+            <line x1="0" y1="506" x2="436" y2="506" stroke="oklch(0.30 0.010 85 / 0.4)" stroke-width="1"/>
+            <path d="M0,353 L36,336 L73,364 L109,300 L145,316 L182,262 L218,275 L254,209 L291,228 L327,173 L363,192 L400,110 L436,92 L436,540 L0,540 Z" fill="url(#fade2)"/>
+            <path d="M0,353 L36,336 L73,364 L109,300 L145,316 L182,262 L218,275 L254,209 L291,228 L327,173 L363,192 L400,110 L436,92"
+                  fill="none" stroke="oklch(0.79 0.142 85)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle cx="436" cy="92" r="4" fill="oklch(0.79 0.142 85)"/>
+          </svg>
+          <div class="yaxis">
+            <span style="top:34px">22,600</span>
+            <span style="top:191px">22,400</span>
+            <span style="top:349px">22,200</span>
+            <span style="top:506px">22,000</span>
+            <span class="ytag" style="top:92px">22,525.85</span>
+          </div>
+        </div>
+        <div class="xaxis">
+          <span>15:00</span><span>21:00</span><span>03:00</span><span>09:00</span><span>14:30</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

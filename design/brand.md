@@ -1,8 +1,8 @@
 # ALKEVA — Brand
 
 **Register:** product (design serves the task; the user is moving real money).
-**Platform:** web — mobile-first, installed to a phone home screen. Desktop is a courtesy, never the design target.
-**Theme:** dark only. No light mode ships for the demo.
+**Platform:** **desktop-first responsive web application.** The primary composition is a 1440px workspace (sidebar + top bar + panel grid); every screen also ships a complete 390px mobile variant (bottom tab bar, single column). Neither is a courtesy — but the desktop frame is designed first and the mobile variant derives from it.
+**Theme:** dark only, on warm gold-tinted surfaces. No light mode ships for the demo.
 
 ---
 
@@ -31,9 +31,11 @@ The 13 August demo is for **investors and a partner bank**. They will not test t
 
 ## The central idea
 
-**Gold is the commodity, not the decoration.**
+**Rich gold brand, exact gold data.** *(Position revised by the owner, 9 Aug 2026 — the earlier draft was austere; the owner chose the richer direction of the `previews/goodl coloring…` inspiration.)*
 
-The moment gold becomes a gradient, a glow, a shimmer, or a border treatment, ALKEVA becomes a jewelry boutique — and a jewelry boutique is exactly what a bank will not wire money to. Gold appears in this interface for three reasons only: it *is* the asset being shown, it marks the primary action, or it indicates the current selection. Never for atmosphere.
+ALKEVA should be unmistakably a precious-metals product at a glance: warm gold-tinted dark surfaces, a glossy gradient gold primary action, gold present with confidence. The brand does not apologise for its commodity.
+
+What keeps it a custodian rather than a boutique is not the absence of gold — it is the discipline underneath: every number is exact and legible, every cost is visible before the tap, every refusal names its rule, contrast is measured not eyeballed, and nothing shimmers, glows, or celebrates. Where gold touches *data* — a value, a delta, a chart line — it means the asset, the action, or the selection, never mood.
 
 ## The marks
 
@@ -66,8 +68,8 @@ Script facts that are design constraints, not preferences:
 
 | Not this | Why |
 |---|---|
-| **Binance / Bybit / crypto exchange** | Candlesticks, order books, neon greens, leverage energy. ALKEVA is savings, not a trading floor. A user who feels like a day-trader here is being mis-sold. |
-| **Luxury jewelry-box** | Black + gold gradients, thin serif display, shimmer, "premium" glow. This is the first thing anyone builds for a gold app and it makes the product look like a boutique instead of a custodian. |
+| **Binance / Bybit / crypto exchange** | Candlesticks, order books, neon greens, leverage energy. ALKEVA is savings, not a trading floor. A user who feels like a day-trader here is being mis-sold. (Its *layout bones* — sidebar, panel grid, chart given room — are fine; see the structure inspiration. Its energy is not.) |
+| **Luxury jewelry-box** | Thin serif display, shimmer sweeps, glow, rotating 3D coins, gradient *text*. The warm surfaces and gradient CTA are brand (owner's call); the boutique theatrics on top of them are still out. |
 | **Generic AI-fintech dashboard** | Big hero metric, gradient card, rainbow chart, identical icon-heading-text card grid. Instantly reads as generated. |
 | **Bloomberg / terminal cosplay** | Monospace everything, dense green-on-black grids. Signals "for professionals", excludes the actual user. |
 | **Robinhood gamification** | Confetti, streaks, celebratory animation on trades. Actively irresponsible for a product replacing someone's cash savings. |

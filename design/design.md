@@ -1,32 +1,34 @@
 # ALKEVA — Design System
 
-Dark-only. Mobile-first. **shadcn/ui is the component foundation** — every token below is written in shadcn's CSS-variable vocabulary so the approved design drops straight into `components.json` css-variables mode with no translation step. Tailwind v4 (CSS-first `@theme`, no `tailwind.config.ts`).
+Dark-only. Desktop-first responsive web. **shadcn/ui is the component foundation** — every token below is written in shadcn's CSS-variable vocabulary so the approved design drops straight into `components.json` css-variables mode with no translation step. Tailwind v4 (CSS-first `@theme`, no `tailwind.config.ts`).
 
 Colour is authored in **OKLCH**.
+
+> **Position revision (owner decision, 9 Aug 2026):** the earlier draft of this system was austere — achromatic surfaces, flat gold, gradients banned. The owner reviewed it against the category and chose a **richer branded direction**: warm gold-tinted dark surfaces and a glossy gradient primary CTA, per the `previews/goodl coloring…` inspiration. This document reflects the revised position. What did *not* change: dark ink on gold, measured contrast, no shimmer/glow/celebration, money legibility rules.
 
 ---
 
 ## 1. Colour strategy
 
-**Restrained, executed with conviction.** The interface is achromatic ink; the only saturated things in it are the two metals. That is not timidity — it is the system: if something is coloured, it is either an asset, an action, or a state. Nothing is coloured for atmosphere.
+**Rich where it brands, exact where it informs.** The surfaces themselves carry the brand: a warm, unmistakably gold-tinted dark — a screenshot of any screen should read "precious metals" before a single component is legible. On top of that ground, saturated colour still means exactly one of three things: an asset, an action, or a state. Data surfaces never borrow decorative colour — a number's colour is information (gold value, platinum value, gain, loss), never mood.
 
-Consequence to hold onto: **there is no decorative colour anywhere.** No coloured section headers, no tinted card backgrounds "for warmth", no gradient anything.
+The sanctioned gradients are exactly three: the **primary CTA fill**, the **sidebar's active-item pill**, and the **chart's area fade**. Nowhere else — no gradient text, no gradient card backgrounds, no gradient borders.
 
-### Neutrals — the ink
+### Neutrals — the warm ground
 
-Imperceptibly warm (chroma ≤ 0.006) so gold sits in the same world without the background itself reading as brown. Not pure black: `#000` plus gold is the jewelry-box cliché, and pure black raises smear on cheap OLED panels during scroll.
+Perceptibly warm (chroma 0.008–0.010 at the gold hue ≈85) so the whole canvas sits in gold's world — the Gauld-style warm dark, not neutral slate and not pure black (`#000` raises smear on cheap OLED panels during scroll).
 
 | Token | OKLCH | ≈ hex | Use |
 |---|---|---|---|
-| `--background` | `oklch(0.145 0.004 95)` | `#0b0a08` | App canvas |
-| `--card` | `oklch(0.196 0.004 95)` | `#161513` | Cards, list surfaces |
-| `--popover` / surface-2 | `oklch(0.238 0.005 95)` | `#1f1f1c` | Sheets, dialogs, menus |
-| `--muted` | `oklch(0.238 0.005 95)` | `#1f1f1c` | Inert fills, skeleton base |
-| `--border` | `oklch(0.30 0.005 95)` | `#2e2e2b` | Hairlines, dividers |
-| `--input` | `oklch(0.34 0.005 95)` | `#393835` | Field borders (stronger than dividers) |
-| `--foreground` | `oklch(0.968 0.003 95)` | `#f5f4f2` | Primary text, numbers |
-| `--muted-foreground` | `oklch(0.735 0.008 95)` | `#aba9a4` | Labels, secondary text — **7.8:1 on `--card`** |
-| subtle-foreground | `oklch(0.62 0.008 95)` | `#878681` | Timestamps only, ≥14px — **5.4:1 on `--background`** |
+| `--background` | `oklch(0.145 0.008 85)` | `#0c0a07` | App canvas |
+| `--card` | `oklch(0.196 0.010 85)` | `#171510` | Cards, panels, list surfaces |
+| `--popover` / surface-2 | `oklch(0.238 0.010 85)` | `#211e19` | Sheets, dialogs, menus |
+| `--muted` | `oklch(0.238 0.010 85)` | `#211e19` | Inert fills, skeleton base |
+| `--border` | `oklch(0.30 0.010 85)` | `#302d28` | Hairlines, dividers |
+| `--input` | `oklch(0.34 0.010 85)` | `#3a3832` | Field borders (stronger than dividers) |
+| `--foreground` | `oklch(0.968 0.004 90)` | `#f5f4f1` | Primary text, numbers — **16.6:1 on `--card`** |
+| `--muted-foreground` | `oklch(0.735 0.010 90)` | `#aca9a2` | Labels, secondary text — **7.8:1 on `--card`** |
+| subtle-foreground | `oklch(0.62 0.010 90)` | `#88867f` | Timestamps only, ≥14px — **5.4:1 on `--background`, 5.0:1 on `--card`** |
 
 There is no lighter grey than `subtle-foreground` in this system. If text needs to be quieter than that, it should be smaller or removed, not greyer. Low-contrast text on a sunlit phone is unreadable, and this app is used outdoors.
 
@@ -48,9 +50,24 @@ Anchored on the client's brand gold `#d4a017`, extended into a working ramp.
 --ring:               var(--gold-400)
 ```
 
-**Never put white text on gold.** `#fff` on `--gold-500` is 2.4:1 and fails outright. Gold fills always carry the dark ink foreground.
+### The gradient CTA — the brand's one glossy surface
 
-Use gold as **text** only via `--gold-400`. Use it as a **fill** only via `--gold-500`. Mixing these up is the single most likely contrast bug in this system.
+The primary action is a **vertical gold gradient**, light at the top, deepening to the client's `#b8860b` at the bottom — the Gauld-style "Invest now" treatment:
+
+```
+--gold-gradient: linear-gradient(
+  180deg,
+  oklch(0.85 0.16 90) 0%,       /* ≈ #f6c835 — luminous glossy top */
+  oklch(0.735 0.146 84.3) 55%,  /* #d4a017 — the exact brand anchor */
+  oklch(0.652 0.132 81.6) 100%  /* #b8860b — the exact brand deep */
+)
+```
+
+It always carries `--primary-foreground` dark ink, verified at every stop: **12.2:1 on the top stop, 8.2:1 at the anchor, 6.0:1 on the bottom stop** — the worst point of the gradient still clears the 4.5 floor with margin. It appears in exactly two places: the **primary CTA** (confirm, buy) and the **sidebar's active-item pill**. Secondary and ghost buttons never get it. Hover lifts the whole gradient one step lighter; pressed shifts it one step deeper; disabled collapses to flat `--gold-700` at reduced opacity. Gloss comes from the gradient plus a 1px *inner* top highlight (`inset 0 1px 0` at ~50% of a light gold) — never an outer glow; gold does not emit light.
+
+**Never put white text on gold.** `#fff` on `--gold-500` is 2.4:1, and on the gradient's top stop it is 1.8:1 — fails outright everywhere. Gold fills always carry the dark ink foreground.
+
+Use gold as **text** only via `--gold-400`. Use it as a **fill** via `--gold-500` or the gradient. Mixing text-gold and fill-gold up is the single most likely contrast bug in this system.
 
 ### Platinum — XPT, and the silver half of the identity
 
@@ -94,7 +111,9 @@ The price chart shows **one series at a time** (one metal, one range). It does n
 --chart-5: oklch(0.50 0.006 95)   /* reference / average line, achromatic */
 ```
 
-Grid: horizontal rules only, `--border` at 40% opacity, 3–4 lines maximum. No vertical gridlines. No axis borders. The area under the line is a single-colour fade from the line colour at 18% to transparent — this is the one place a gradient is allowed, because it encodes magnitude rather than decorating.
+Grid: horizontal rules only, `--border` at 40% opacity, 3–4 lines maximum. No vertical gridlines. No axis borders. The area under the line is a single-colour fade from the line colour at 18% to transparent — the third sanctioned gradient, because it encodes magnitude.
+
+On desktop the chart is a first-class panel, not a widget: it gets the largest cell of the dashboard grid and real vertical room (≥ 320px tall at 1440px width). The y-axis never exaggerates — the axis always spans at least ±0.5% of the price, so a quiet day looks flat instead of rendering as a cliff.
 
 ---
 
@@ -198,7 +217,9 @@ Minimum touch target 44×44px, including icon-only buttons and the locale switch
 | `TierCard` | Gemstone tier + progress to next | See the tier note below. |
 | `OrderRow` | One transaction in history | Side, asset, grams, total, status, time. Divided list row — not a card. |
 | `ReceiptDocument` | Serial-numbered receipt | Reads as a document, not an app screen: tighter type, ruled rows, serial prominent, price provenance (source + tick timestamp) at the foot. |
-| `BottomTabBar` | Home · Trade · Portfolio · History · Account | Fixed, safe-area inset, 5 items, icon + Amharic label. |
+| `Sidebar` | Desktop nav (≥1024px) | ~240px fixed left; wordmark, 5 items, gradient-gold active pill with dark ink. |
+| `TopBar` | Desktop account bar | Balance chip (tabular), locale toggle, account. 1px bottom hairline. |
+| `BottomTabBar` | Home · Trade · Portfolio · History · Account | **Mobile only** (<1024px). Fixed, safe-area inset, 5 items, icon + Amharic label. |
 | `SystemBanner` | Stale price, halt, frozen, review pending | caution or critical treatment per §1. Never dismissible when it reflects a live restriction. |
 | `AmountField` | Grams or birr entry | `inputMode="decimal"`, tabular, unit suffix inside the field, quick-amount chips beneath. |
 
@@ -210,11 +231,32 @@ Resolution: **tier identity is a gemstone facet mark, never a colour fill.** Tie
 
 ---
 
-## 6. Layout
+## 6. Layout — a responsive system, not a centred phone
 
-- Single column, 16px gutters, content max-width 480px centred (desktop shows the phone layout centred on the canvas — this is a mobile product and pretending otherwise costs time we do not have).
-- Fixed bottom tab bar; every screen scrolls under it with bottom padding equal to the bar height + safe-area inset.
-- Trade is a **bottom sheet**, not a route — it opens over the context the user was reading (a price, a holding) so the number that prompted the trade stays visible.
+This is a **desktop-first responsive web application**. The desktop composition is designed first at 1440px; the mobile variant is derived from it at 390px. A phone column centred on a desktop canvas is a failed layout, full stop.
+
+### Desktop shell (≥ 1024px)
+
+- **Fixed left sidebar, ~240px**: wordmark at top, vertical nav (Dashboard · Trade · Portfolio · History · Account), each item icon + label, ≥44px tall. The active item is a **gradient gold pill** with dark ink — the one place besides the primary CTA the gradient appears. Inactive items are `--muted-foreground`, hover `--foreground`.
+- **Top bar**: current-page context left; right side carries the balance chip (tabular ETB), the locale toggle (አማ · EN), and the account affordance. Sits on `--background` with a 1px `--border` bottom hairline.
+- **Content area**: max-width ~1400px, 24px gutters, a 12-column grid. Panels are `--card` surfaces with 1px hairlines. The grid is *used* — the chart takes a wide cell, related panels sit side by side. A single centred column of stacked cards at this width is banned.
+- Per-screen compositions:
+  - **Home / dashboard** — balance summary and price cards in one row; the chart dominant (~2/3 width, ≥320px tall); trust/vault panel in the right column.
+  - **Trade** — a dedicated route with **three panels side by side** (Gauld composition): selection + balance · order form → quote with fee breakdown, countdown ring, gradient CTA · live chart of the selected metal.
+  - **Portfolio** — two columns: total value + per-metal holdings left (wider), tier card + cash right.
+  - **History** — a real table: date, side/asset, grams, total, status, receipt link. Row height ≥48px.
+  - **Receipt** — stays a centred narrow document (~640px) even on desktop. It is a document, not a dashboard.
+- Hover states exist on desktop (rows, cards, nav) but nothing is hover-*only* — everything hover reveals is reachable on touch.
+
+### Mobile shell (< 1024px)
+
+- Single column, 16px gutters, content max-width 480px.
+- Fixed bottom tab bar (5 items, safe-area inset); every screen scrolls under it.
+- Trade is a **bottom sheet** over the current screen — the price or holding that prompted the trade stays visible behind it. On desktop the same flow lives in the Trade page's centre panel; the sheet does not appear at desktop widths.
+- The mobile variant is the same screen with the same content priorities, recomposed — never a shrunken desktop and never a different product.
+
+### Both shells
+
 - z-index scale, semantic only: `dropdown 10 · sticky 20 · sheet-scrim 30 · sheet 40 · dialog 50 · toast 60 · tooltip 70`. Never `999`.
 - Skeletons for loading, never centred spinners. Empty states teach the next action ("You hold no gold yet — buy from 1 gram"), never "No data".
 

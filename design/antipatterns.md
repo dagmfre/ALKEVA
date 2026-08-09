@@ -8,20 +8,20 @@ A match-and-refuse list. If a proposed design contains any of these, rewrite the
 
 Anyone — human or model — asked to design a gold-trading app produces one of two things. Both are wrong here, and the second is the harder trap.
 
-**First-order reflex: the luxury vault.** Black background, gold gradients, thin serif display type, shimmer on the balance, a rotating 3D coin. It is what the category trains you to make. It makes ALKEVA look like a jewelry boutique, and no partner bank wires money to a boutique.
+**First-order reflex: the boutique theatrics.** Thin serif display type, shimmer sweeping across the balance, glow radiating off gold, a rotating 3D coin, gradient *text*. It is what the category trains you to make, and it turns a custodian into a jewelry boutique. *(Note the boundary precisely: warm gold-tinted surfaces and the glossy gradient CTA are **sanctioned brand**, chosen by the owner on 9 Aug 2026 — see `design.md` §1. The theatrics layered on top of them are what stays banned.)*
 
-**Second-order reflex: the anti-luxury terminal.** Having rejected gold-and-black, the next instinct is monospace, green-on-black, dense grids, candlestick charts, Bloomberg cosplay. It signals "for professionals" and excludes the shop owner who is the actual user.
+**Second-order reflex: the anti-luxury terminal.** Monospace, green-on-black, dense grids, candlestick charts, Bloomberg cosplay. It signals "for professionals" and excludes the shop owner who is the actual user.
 
-The way out of both: ALKEVA is **a custody instrument**, not a luxury good and not a trading terminal. Gold is the commodity on the shelf, not the paint on the walls. The interface is a quiet achromatic instrument in which the only coloured things are the two metals, the primary action, and the current state.
+The way out of both: ALKEVA is **a richly-branded custody instrument** — gold with confidence on the brand layer, exactness without exception on the data layer. Every number legible, every cost visible, every refusal named.
 
-Test before committing: *if someone could guess this design from the words "gold trading app" alone, restart.*
+Test before committing: *would a partner bank recognise this as a financial system, and would a screenshot make anyone say "AI made that"? Fix structurally if either answer is wrong.*
 
 ---
 
 ## 2. Absolute bans — structural
 
 - **Gradient text.** `background-clip: text` over a gradient. Gold shimmer on the balance is the single most likely slop move in this project.
-- **Decorative gradients generally.** The only gradient permitted anywhere is the area fill under the price chart line, where it encodes magnitude.
+- **Gradients beyond the three sanctioned ones.** Permitted: the primary CTA fill, the sidebar active pill, and the chart's area fade (`design.md` §1). Everything else — gradient card backgrounds, gradient borders, gradient section headers, gradient page washes — is out.
 - **Glassmorphism.** Blurred translucent cards, `backdrop-filter` as decoration. Also costs frames on the target hardware.
 - **Side-stripe borders.** `border-left: 4px solid gold` on cards, alerts, or list rows. Never intentional.
 - **Glow / outer shadow on gold elements.** Gold does not emit light. A glowing balance is a casino.

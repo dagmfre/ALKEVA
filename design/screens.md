@@ -1,6 +1,6 @@
 # ALKEVA — Screens
 
-Seven screens plus system states. Every number below is **real output shape from the live API** (Phase 2 is built and verified), and every Amharic string is the one already shipping in `apps/web/messages/am.json`. Design against these, not against placeholder text — Amharic runs longer than English and the layouts have to survive it.
+Seven screens plus system states. **Each screen = one full 1440px desktop frame + one 390px mobile variant** (the artifact contract in `README.md`). Every number below is **real output shape from the live API** (Phase 2 + the Phase 3 backend are built and verified), and every Amharic string is the one already shipping in `apps/web/messages/am.json`. Design against these, not against placeholder text — Amharic runs longer than English and the layouts have to survive it.
 
 Reference numbers used throughout (plausible live values):
 `XAU 22,525.85 ETB/g` · `XPT 9,091.66 ETB/g` · commission 2% · FX ≈ 161.31 ETB/USD
@@ -9,23 +9,31 @@ Reference numbers used throughout (plausible live values):
 
 ## Global chrome
 
-**Bottom tab bar**, 5 items, fixed, safe-area inset:
+### Desktop (≥1024px) — sidebar + top bar
+
+**Left sidebar** (~240px, fixed): ALKEVA wordmark at top, then five nav items, icon + label. Active item = gradient gold pill, dark ink:
 
 | Icon | Amharic | English |
 |---|---|---|
-| home | መነሻ | Home |
+| home | መነሻ | Dashboard |
 | trade | ግብይት | Trade |
 | portfolio | ንብረቴ | Portfolio |
 | history | ታሪክ | History |
 | account | መለያ | Account |
 
-The **Trade** tab opens the trade bottom sheet over the current screen rather than navigating — the price or holding that prompted the trade stays visible behind it.
+**Top bar**: page context left; right side: ETB balance chip (tabular), locale toggle (አማ · EN), account. On desktop, **Trade navigates to the trading workspace page** — it does not open a sheet.
 
-Header: ALKEVA wordmark left, no back button on tab roots. Sub-screens (receipt) get a back affordance.
+### Mobile (<1024px) — bottom tab bar
+
+Same five items, fixed bottom, safe-area inset, icon + label. The **Trade** tab opens the trade bottom sheet over the current screen rather than navigating — the price or holding that prompted the trade stays visible behind it.
+
+Header: ALKEVA wordmark left, locale toggle right, no back button on tab roots. Sub-screens (receipt) get a back affordance.
 
 ---
 
 ## 1. Auth — register / login
+
+**Desktop (1440):** split layout — left panel carries the brand (mark, wordmark, tagline `ዲጂታል የከበሩ ማዕድናት ለኢትዮጵያ` on the warm dark ground); right panel carries the form. **Mobile (390):** single centred column, brand above the form.
 
 Two fields on login (`ኢሜይል`, `የይለፍ ቃል`), three on register (plus `ሙሉ ስም`). Titles: `መለያዎን ይፍጠሩ` / `እንኳን ደህና መጡ`.
 
@@ -35,9 +43,13 @@ Errors are field-level and specific: `ኢሜይል ወይም የይለፍ ቃል
 
 ---
 
-## 2. Home — market
+## 2. Home — the dashboard
 
-The screen the shop owner opens ten times a day. It answers "what is gold worth right now" above the fold, in Amharic, without scrolling.
+The screen the shop owner opens ten times a day, and the first screen the investor sees. It answers "what is gold worth right now" above the fold, in Amharic, without scrolling.
+
+**Desktop (1440):** a real dashboard grid, not a column. Balance strip and the two metal price cards across the top row; below, the **price chart takes ~2/3 of the width at ≥320px tall** with the trust panel and the primary buy action in the right column beside it. Everything above the fold at 1440×900.
+
+**Mobile (390):** the same content, single column, in the order below.
 
 **Order of content:**
 
@@ -51,9 +63,17 @@ Stale feed → caution banner above the cards: `የዋጋ ምንጭ ዘግይቷ
 
 ---
 
-## 3. Trade — bottom sheet
+## 3. Trade — the trading workspace
 
-The most important surface in the product. Two stages in one sheet; the user must never lose the amount they typed.
+The most important surface in the product. Two stages; the user must never lose the amount they typed.
+
+**Desktop (1440):** a dedicated page with **three panels side by side** — the Gauld composition (`previews/goodl coloring…jpg` shows exactly this for a gold product):
+
+1. **Left — selection & context (~280px):** asset toggle (ወርቅ / ፕላቲነም), side toggle (ግዛ / ሽጥ), available balance, current spot price for the selection.
+2. **Centre — the order (~520px):** the amount stage, then the quote stage in place — amount field with unit and quick chips, live estimate, then the binding quote: full fee breakdown, the 30-second countdown ring, and the **gradient gold confirm CTA** full-width at the panel's foot. The two stages swap inside this panel; the left and right panels stay put.
+3. **Right — the live chart (~flexible):** the selected metal's price chart with range tabs, so the trader watches the market while the quote counts down.
+
+**Mobile (390):** the existing **bottom sheet** over whatever screen prompted the trade — same two stages stacked, chart omitted (it is visible behind the sheet).
 
 ### Stage A — amount
 
@@ -117,6 +137,8 @@ These are not edge cases; they are how the platform explains its own safety rule
 
 ## 4. Portfolio
 
+**Desktop (1440):** two columns — total value and the per-metal holding panels in the wider left column; tier card and cash balance in the right column. **Mobile (390):** single column in the order below.
+
 1. **Total value** — display size, `130,812.57 ETB`, with gain/loss beneath: `−2,252.58 · −1.96%` (sign + arrow + colour).
 2. **Per-metal holdings** — grams, current value, cost basis, gain/loss. Gold row uses gold-400 for its value; platinum uses platinum-400.
 3. **TierCard** — gemstone tier with progress to the next band.
@@ -139,9 +161,9 @@ The card shows current tier, progress to the next band, and what the next band u
 
 ## 5. History
 
-A **divided list, not a stack of cards.** Newest first, grouped by day.
+**Desktop (1440):** a **real table** — columns: date/time, side + asset (`ግዛ ወርቅ`), grams, total ETB, status, receipt link. Row height ≥48px, day-group headers as full-width subhead rows, rejected rows carry their reason in the status column.
 
-Each row: side + asset (`ግዛ ወርቅ`), grams, total ETB, status, time. Tapping opens the receipt.
+**Mobile (390):** a **divided list, not a stack of cards.** Newest first, grouped by day. Each row: side + asset, grams, total ETB, status, time. Tapping opens the receipt.
 
 Statuses that must be visually distinct: settled · review · rejected. Rejected rows show their reason inline — a user should be able to scroll their history and understand every refusal without tapping.
 
@@ -152,6 +174,8 @@ Empty state teaches: "You have no transactions yet — buy from 1 gram" with the
 ## 6. Receipt
 
 **This should not look like the rest of the app.** It is a document — the artefact a user screenshots and sends to their family, and the one an investor will ask to see. Tighter type, ruled rows, generous margins, mark at the top.
+
+**Desktop (1440):** the document stays a **centred ~640px column** on the canvas — it is a document, not a dashboard; stretching it wide would destroy it. **Mobile (390):** the same document at full column width.
 
 Contents:
 - **Serial number**, prominent — format `ALK-2026-000148`
@@ -167,7 +191,7 @@ Contents:
 
 Locale switcher (`ቋንቋ` — አማ / EN, the most-used control here), tier chip, KYC status, email, log out (`ውጣ`).
 
-Quiet by design. Nothing to explore, everything easy to find.
+Quiet by design. Nothing to explore, everything easy to find. **Desktop:** a single settings column (~640px) in the content area — this screen earns no grid.
 
 ---
 
