@@ -14,21 +14,24 @@ Colour is authored in **OKLCH**.
 
 The sanctioned gradients are exactly three: the **primary CTA fill**, the **sidebar's active-item pill**, and the **chart's area fade**. Nowhere else — no gradient text, no gradient card backgrounds, no gradient borders.
 
-### Neutrals — the warm ground
+### Neutrals — the warm four-level ground
 
-Perceptibly warm (chroma 0.008–0.010 at the gold hue ≈85) so the whole canvas sits in gold's world — the Gauld-style warm dark, not neutral slate and not pure black (`#000` raises smear on cheap OLED panels during scroll).
+**Unmistakably warm** (chroma 0.012–0.020 at hue ≈78–80 — visibly brown-gold, never neutral slate) and a real **four-level elevation ladder**: page ground, panel, raised, and a *darker* inset well. The well being darker than the panel is what makes Gauld's summary boxes read as sunk objects — a lighter "well" reads as a raised chip, which was the v1 mistake. Sanity test: convert any surface to HSL — if saturation reads 0, it is wrong.
 
 | Token | OKLCH | ≈ hex | Use |
 |---|---|---|---|
-| `--background` | `oklch(0.145 0.008 85)` | `#0c0a07` | App canvas |
-| `--card` | `oklch(0.196 0.010 85)` | `#171510` | Cards, panels, list surfaces |
-| `--popover` / surface-2 | `oklch(0.238 0.010 85)` | `#211e19` | Sheets, dialogs, menus |
-| `--muted` | `oklch(0.238 0.010 85)` | `#211e19` | Inert fills, skeleton base |
-| `--border` | `oklch(0.30 0.010 85)` | `#302d28` | Hairlines, dividers |
-| `--input` | `oklch(0.34 0.010 85)` | `#3a3832` | Field borders (stronger than dividers) |
-| `--foreground` | `oklch(0.968 0.004 90)` | `#f5f4f1` | Primary text, numbers — **16.6:1 on `--card`** |
-| `--muted-foreground` | `oklch(0.735 0.010 90)` | `#aca9a2` | Labels, secondary text — **7.8:1 on `--card`** |
-| subtle-foreground | `oklch(0.62 0.010 90)` | `#88867f` | Timestamps only, ≥14px — **5.4:1 on `--background`, 5.0:1 on `--card`** |
+| `--background` (ground) | `oklch(0.143 0.012 80)` | `#0c0905` | Page canvas behind everything |
+| `--card` (panel) | `oklch(0.185 0.018 78)` | `#171209` | Standard panel |
+| `--popover` (raised) | `oklch(0.225 0.020 78)` | `#211b11` | Selected/active cards, sheets, menus |
+| `--muted` | `oklch(0.225 0.020 78)` | `#211b11` | Inert fills, skeleton base |
+| `--well` | `oklch(0.110 0.009 78)` | `#060402` | **Inset containers, darker than ground**: amount field, fee breakdown, trust figures |
+| `--border` | `oklch(0.285 0.024 80)` | `#30291d` | Every panel edge — must be traceable at 40% screen brightness |
+| `--input` / border-raised | `oklch(0.360 0.030 82)` | `#453c2b` | Field borders, selected/focused panel edges |
+| `--foreground` | `oklch(0.968 0.004 90)` | `#f5f4f1` | Primary text — **17.0:1 on `--card`** |
+| `--muted-foreground` | `oklch(0.735 0.010 90)` | `#aca9a2` | Labels — **8.0:1 on `--card`, 8.7:1 on `--well`** |
+| subtle-foreground | `oklch(0.62 0.010 90)` | `#88867f` | Timestamps only, ≥14px — **5.5:1 on `--background`, 5.1:1 on `--card`** |
+
+**Level assignment is explicit, not vibes:** page = ground · sidebar, top bar, and every standard card = panel · the selected metal card, the Trade spot card, and popovers = raised (with the raised border) · the amount input, the fee breakdown block, and the trust-panel figure boxes = **well**. The fee breakdown must read as an inset artifact, not as text sitting on the panel.
 
 There is no lighter grey than `subtle-foreground` in this system. If text needs to be quieter than that, it should be smaller or removed, not greyer. Low-contrast text on a sunlit phone is unreadable, and this app is used outdoors.
 
@@ -57,15 +60,24 @@ The primary action is a **vertical gold gradient**, light at the top, deepening 
 ```
 --gold-gradient: linear-gradient(
   180deg,
-  oklch(0.85 0.16 90) 0%,       /* ≈ #f6c835 — luminous glossy top */
-  oklch(0.735 0.146 84.3) 55%,  /* #d4a017 — the exact brand anchor */
+  oklch(0.895 0.098 93) 0%,     /* ≈ #f3db90 — near-cream luminous top (the Gauld falloff) */
+  oklch(0.81 0.134 87) 40%,     /* ≈ #e6bb4e */
+  oklch(0.735 0.146 84.3) 72%,  /* #d4a017 — the exact brand anchor */
   oklch(0.652 0.132 81.6) 100%  /* #b8860b — the exact brand deep */
 )
+--gloss: inset 0 1px 0 oklch(0.95 0.08 95 / 0.55),   /* specular top edge */
+         inset 0 -1px 0 oklch(0 0 0 / 0.30);          /* grounded bottom edge */
 ```
 
-It always carries `--primary-foreground` dark ink, verified at every stop: **12.2:1 on the top stop, 8.2:1 at the anchor, 6.0:1 on the bottom stop** — the worst point of the gradient still clears the 4.5 floor with margin. It appears in exactly two places: the **primary CTA** (confirm, buy) and the **sidebar's active-item pill**. Secondary and ghost buttons never get it. Hover lifts the whole gradient one step lighter; pressed shifts it one step deeper; disabled collapses to flat `--gold-700` at reduced opacity. Gloss comes from the gradient plus a 1px *inner* top highlight (`inset 0 1px 0` at ~50% of a light gold) — never an outer glow; gold does not emit light.
+The top stop is deliberately near-cream: the light-to-dark falloff must be **visible at a glance**, not theoretically present — that falloff is what separates the Gauld CTA from a flat gold button. The client's exact brand hexes stay anchored in the lower half. Dark ink at every stop, verified: **14.2:1 top, 10.7:1 at 40%, 8.2:1 at the brand anchor, 6.0:1 at the deep stop.**
 
-**Never put white text on gold.** `#fff` on `--gold-500` is 2.4:1, and on the gradient's top stop it is 1.8:1 — fails outright everywhere. Gold fills always carry the dark ink foreground.
+It appears in exactly two places: the **primary CTA** (confirm, buy) and the **sidebar's active-item pill**. Secondary and ghost buttons never get it. **The CTA ships four states**: *hover* lifts every stop one step lighter; *pressed* deepens every stop; *pending* desaturates the gradient slightly and pins a static gold bar to the bottom edge — the confirm is deliberately never disabled in flight, so pending must read as "already working", not as a dead control (static under `prefers-reduced-motion` too); *disabled* collapses to flat `--gold-700` at reduced opacity. Gloss comes from the gradient plus the inner highlights above — never an outer glow; gold does not emit light.
+
+### Gold touchpoints — presence, counted
+
+Gauld reads gold-rich because gold lands on ~10 distinct touchpoints per screen, not because any one element shouts. Per screen, gold belongs on: the primary CTA · the active nav pill · section/field labels (`--gold-400`) · the MAX chip and the selected quick chip · the selected metal card's dot and raised border · the current-price value and the chart's price tag · the **total row** (`የሚከፍሉት` — the brightest number in the fee well) · focus rings · the tier/coverage figures. Gain/loss, platinum values, and body text keep their own colours — gold never overwrites information colour.
+
+**Never put white text on gold.** `#fff` on `--gold-500` is 2.4:1, and on the gradient's top stop it is 1.4:1 — fails outright everywhere. Gold fills always carry the dark ink foreground.
 
 Use gold as **text** only via `--gold-400`. Use it as a **fill** via `--gold-500` or the gradient. Mixing text-gold and fill-gold up is the single most likely contrast bug in this system.
 
@@ -165,7 +177,7 @@ No ALL-CAPS anywhere, in either language — Ethiopic has no uppercase, so a cap
 
 Spacing is a 4px base scale. Page gutter 16px. Card padding 16px, 20px for the primary card on a screen. Section rhythm 24px between related blocks, 32px between unrelated ones — vary it; even spacing everywhere reads as a wireframe.
 
-**Elevation is surface + hairline, not shadow.** On a dark canvas, drop shadows are nearly invisible and cost paint time. Depth comes from stepping `--background` → `--card` → `--popover` with a 1px `--border`. The only shadow in the system is on the bottom sheet, and it exists to separate the sheet from the scrim, not to look raised.
+**Elevation is surface + hairline, not shadow.** On a dark canvas, drop shadows are nearly invisible and cost paint time. Depth comes from the **four-level ladder in §1** — `--well` (sunk) → `--background` → `--card` → `--popover` — with a 1px `--border` on every panel edge and `--input`/border-raised on selected or focused panels. Inset wells may additionally carry a faint inner top shade (`inset 0 1px 2px oklch(0 0 0 / 0.4)`) so they read as sunk, not merely darker. The only drop shadow in the system is on the bottom sheet, and it exists to separate the sheet from the scrim, not to look raised.
 
 Bottom sheets: `--popover` surface, `--radius-xl` on top corners only, scrim `oklch(0 0 0 / 0.6)` — no backdrop blur (it costs frames on the target hardware and glassmorphism is banned).
 

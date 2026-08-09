@@ -9,11 +9,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+Ethiopic:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --background: oklch(0.145 0.008 85);
-    --card: oklch(0.196 0.010 85);
-    --popover: oklch(0.238 0.010 85);
-    --border: oklch(0.30 0.010 85);
-    --input: oklch(0.34 0.010 85);
+    --background: oklch(0.143 0.012 80);
+    --card: oklch(0.185 0.018 78);
+    --popover: oklch(0.225 0.020 78);
+    --border: oklch(0.285 0.024 80);
+    --input: oklch(0.360 0.030 82);
     --foreground: oklch(0.968 0.004 90);
     --muted-foreground: oklch(0.735 0.010 90);
     --subtle-foreground: oklch(0.62 0.010 90);
@@ -24,15 +24,16 @@
     --gain: oklch(0.76 0.115 152);
     --loss: oklch(0.70 0.160 25);
     --primary-foreground: oklch(0.16 0.010 84);
-    --gold-gradient: linear-gradient(180deg, oklch(0.85 0.16 90) 0%, oklch(0.735 0.146 84.3) 55%, oklch(0.652 0.132 81.6) 100%);
-    --gloss: inset 0 1px 0 oklch(0.92 0.12 95 / 0.5);
+    --gold-gradient: linear-gradient(180deg, oklch(0.895 0.098 93) 0%, oklch(0.81 0.134 87) 40%, oklch(0.735 0.146 84.3) 72%, oklch(0.652 0.132 81.6) 100%);
+    --gloss: inset 0 1px 0 oklch(0.95 0.08 95 / 0.55), inset 0 -1px 0 oklch(0 0 0 / 0.30);
+    --well: oklch(0.110 0.009 78);
     --radius: 0.875rem;
     --font-latin: "Inter", system-ui, sans-serif;
     --font-ethiopic: "Noto Sans Ethiopic", "Nyala", "Kefa", "Abyssinica SIL", sans-serif;
   }
   * { box-sizing: border-box; }
   body {
-    margin: 0; background: oklch(0.11 0.006 85);
+    margin: 0; background: oklch(0.10 0.008 78);
     font-family: var(--font-ethiopic), var(--font-latin);
     -webkit-font-smoothing: antialiased; color: var(--foreground);
   }
@@ -83,7 +84,7 @@
   .panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
 
   /* left — selection, field-styled */
-  .field-label { font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.7; margin: 0 0 6px; }
+  .field-label { font-size: 0.9375rem; color: var(--gold-400); line-height: 1.7; margin: 0 0 6px; }
   .select {
     display: flex; align-items: center; justify-content: space-between;
     min-height: 48px; padding: 0 14px; margin-bottom: 14px;
@@ -114,7 +115,7 @@
   .amount {
     display: flex; align-items: center; gap: 10px;
     min-height: 52px; padding: 0 8px 0 14px; margin-bottom: 10px;
-    background: var(--popover); border: 1px solid var(--input); border-radius: 0.75rem;
+    background: var(--well); border: 1px solid var(--input); box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.4); border-radius: 0.75rem;
   }
   .amount .num { flex: 1; font-family: var(--font-latin); font-variant-numeric: tabular-nums; font-size: 1.25rem; font-weight: 600; }
   .amount .unit { font-size: 0.9375rem; color: var(--muted-foreground); }
@@ -134,13 +135,13 @@
   .ringrow { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
   .ring { position: relative; width: 56px; height: 56px; flex: none; }
   .ring .sec { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 600; font-size: 1.0625rem; }
-  .summary { background: var(--popover); border-radius: 0.75rem; padding: 6px 16px 12px; margin-bottom: 14px; }
+  .summary { background: var(--well); border: 1px solid var(--border); box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.4); border-radius: 0.75rem; padding: 6px 16px 12px; margin-bottom: 14px; }
   .brow { display: flex; align-items: baseline; justify-content: space-between; padding: 9px 0; }
   .brow .k { font-size: 0.9375rem; color: var(--muted-foreground); line-height: 1.7; }
   .brow .v { font-weight: 500; font-size: 1rem; }
   .btotal { display: flex; align-items: baseline; justify-content: space-between; border-top: 1px solid var(--input); margin-top: 4px; padding-top: 12px; }
   .btotal .k { font-size: 1rem; font-weight: 600; }
-  .btotal .v { font-size: 1.375rem; font-weight: 600; }
+  .btotal .v { font-size: 1.375rem; font-weight: 600; color: var(--gold-400); }
   .btotal .cur { font-size: 0.9375rem; font-weight: 500; color: var(--muted-foreground); margin-inline-start: 5px; }
   .cta {
     display: block; width: 100%; min-height: 52px; border: 0; border-radius: 0.75rem; cursor: pointer;
@@ -237,6 +238,12 @@
           <div class="v tnum">22,525.85</div>
           <div class="s">ተዘምኗል 14:32 · gold-api.com</div>
         </div>
+        <div style="margin-top:14px">
+          <div class="kv"><span class="k">ደረጃ</span><span class="v">ወርቅ</span></div>
+          <div class="kv"><span class="k">የግብይት ገደብ</span><span class="v" style="font-size:0.9375rem;color:var(--muted-foreground)">ያለገደብ</span></div>
+        </div>
+        <p style="margin:14px 0 0;font-size:0.875rem;line-height:1.65;color:var(--muted-foreground)">የካዝና ሽፋን <span class="tnum" style="color:var(--gold-400);font-weight:600">38.9×</span> — አልኬቫ በካዝና ውስጥ የሌለውን ግራም አይሸጥም።</p>
+        <button style="display:block;width:100%;min-height:44px;margin-top:14px;background:transparent;border:1px dashed var(--input);border-radius:0.75rem;color:var(--muted-foreground);font-family:inherit;font-size:0.9375rem;cursor:pointer">የሙከራ ብር ያግኙ</button>
       </div>
 
       <!-- centre: amount + the binding quote -->
