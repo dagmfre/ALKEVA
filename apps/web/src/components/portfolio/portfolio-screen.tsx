@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 export function PortfolioScreen() {
   const t = useTranslations("portfolio");
   const tc = useTranslations("common");
+  const th = useTranslations("home");
   const { open, revision } = useTradeSheet();
   const { data, loading } = useResource<PortfolioResponse>("/portfolio", { revision });
 
@@ -41,7 +42,7 @@ export function PortfolioScreen() {
           <CardTitle className="mb-1">{t("emptyTitle")}</CardTitle>
           <p className="mb-3.5 text-[0.9375rem] text-muted-foreground">{t("emptyBody")}</p>
           <Button size="cta" onClick={() => open("XAU", "buy")}>
-            {tc("gold")}
+            {th("buyGoldCta")}
           </Button>
         </Card>
       </>

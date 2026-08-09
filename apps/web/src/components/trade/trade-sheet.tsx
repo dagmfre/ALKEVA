@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type {
   BalancesResponse,
@@ -53,6 +53,7 @@ export function TradeSheet() {
   const t = useTranslations("trade");
   const tc = useTranslations("common");
   const locale = useLocale();
+  const router = useRouter();
   const { isOpen, close, asset: initialAsset, side: initialSide, revision, settled } = useTradeSheet();
 
   const [asset, setAsset] = useState<MetalAsset>(initialAsset);
@@ -429,10 +430,22 @@ export function TradeSheet() {
             )}
 
             {order.status === "settled" && (
-              <Button asChild variant="gold" size="cta" className="mb-2">
-                <Link href={`/receipt/${order.id}`} onClick={close}>
-                  {t("viewReceipt")}
-                </Link>
+              /*
+               * Navigate first, then close. As an <a> inside the sheet, Radix
+               * unmounts the anchor during its close animation before Next's
+               * client-side navigation commits — the sheet shuts and the user
+               * never reaches the receipt.
+               */
+              <Button
+                variant="gold"
+                size="cta"
+                className="mb-2"
+                onClick={() => {
+                  router.push(`/receipt/${order.id}`);
+                  close();
+                }}
+              >
+                {t("viewReceipt")}
               </Button>
             )}
             <Button variant="ghost" size="cta" onClick={close}>

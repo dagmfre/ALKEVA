@@ -38,6 +38,7 @@ export function HistoryScreen() {
   const t = useTranslations("history");
   const tc = useTranslations("common");
   const tt = useTranslations("trade");
+  const th = useTranslations("home");
   const locale = useLocale();
   const { open, revision } = useTradeSheet();
   const { data, loading } = useResource<OrderListResponse>("/orders?limit=50", { revision });
@@ -74,7 +75,7 @@ export function HistoryScreen() {
           <CardTitle className="mb-1">{t("emptyTitle")}</CardTitle>
           <p className="mb-3.5 text-[0.9375rem] text-muted-foreground">{t("emptyBody")}</p>
           <Button size="cta" onClick={() => open("XAU", "buy")}>
-            {tt("buy")}
+            {th("buyGoldCta")}
           </Button>
         </Card>
       </>

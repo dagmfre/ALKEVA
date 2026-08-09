@@ -37,17 +37,33 @@ export function PriceChart({ asset }: { asset: MetalAsset }) {
     const values = points.map((p) => Number(BigInt(p.etbCentsPerGram)));
     const min = Math.min(...values);
     const max = Math.max(...values);
-    // A flat series would divide by zero; give it a centred band instead.
-    const span = max - min || Math.max(1, max * 0.001);
+    const mid = (min + max) / 2;
+
+    /**
+     * The axis always spans at least ±0.5% of the price.
+     *
+     * Without this floor the axis fits itself to whatever the data did, so a
+     * quiet day — gold moved 0.07% — renders as a dramatic cliff from the
+     * bottom of the frame to the top. On a savings product that is a lie told
+     * with geometry: the shape says "something happened" when nothing did.
+     * With the floor, a flat day looks flat and a real 5% move still fills the
+     * frame, which is what an honest chart owes the reader.
+     */
+    const MIN_SPAN_RATIO = 0.01;
+    const minSpan = Math.max(1, mid * MIN_SPAN_RATIO);
+    const lo = max - min < minSpan ? mid - minSpan / 2 : min;
+    const hi = max - min < minSpan ? mid + minSpan / 2 : max;
+    const span = hi - lo;
+
     const x = (i: number) => (i / (points.length - 1)) * W;
-    const y = (v: number) => H - 12 - ((v - min) / span) * (H - 28);
+    const y = (v: number) => H - 12 - ((v - lo) / span) * (H - 28);
 
     const line = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" L");
     return {
       line: `M${line}`,
       area: `M${line} L${W},${H} L0,${H} Z`,
       lastX: x(values.length - 1),
-      lastY: y(values[values.length - 1] ?? min),
+      lastY: y(values[values.length - 1] ?? mid),
       latest: points[points.length - 1]?.etbCentsPerGram ?? "0",
     };
   }, [points]);
