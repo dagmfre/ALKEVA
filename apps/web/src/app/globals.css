@@ -26,21 +26,23 @@
   --popover-foreground: var(--foreground);
   --muted: oklch(0.238 0.005 95);
   --muted-foreground: oklch(0.735 0.008 95);
-  /* Timestamps only, ≥14px — 4.9:1 on --background. Nothing is quieter than
+  /* Timestamps only, ≥14px — 5.4:1 on --background. Nothing is quieter than
      this; low-contrast text is unreadable in the Ethiopian sun this app is
      used in. Quieter means smaller or removed, never greyer. */
   --subtle: oklch(0.62 0.008 95);
   --border: oklch(0.30 0.005 95);
   --input: oklch(0.34 0.005 95);
 
-  /* Gold — XAU, primary action, current selection. Anchored on the client's
-     brand gold #d4a017 (gold-500). Gold as TEXT uses 400 (7.2:1 on --card);
-     gold as a FILL uses 500 with dark ink on top (9.1:1). White on gold is
-     2.3:1 and never ships. */
+  /* Gold — XAU, primary action, current selection.
+     gold-500 and gold-600 are the client's brand colours EXACTLY: #d4a017 and
+     #b8860b converted to OKLCH and verified to round-trip. Do not eyeball
+     these two — they are the identity, not a palette choice.
+     Gold as TEXT uses 400 (9.4:1 on --card); gold as a FILL uses 500 with the
+     dark ink on top (8.2:1). White on gold is 2.4:1 and never ships. */
   --gold-300: oklch(0.86 0.105 88);
   --gold-400: oklch(0.79 0.142 85);
-  --gold-500: oklch(0.723 0.146 84);
-  --gold-600: oklch(0.64 0.132 82);
+  --gold-500: oklch(0.735 0.146 84.3);
+  --gold-600: oklch(0.652 0.132 81.6);
   --gold-700: oklch(0.52 0.108 80);
 
   /* Platinum — XPT, and the silver half of the identity. Cool and low-chroma:

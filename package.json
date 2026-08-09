@@ -14,6 +14,7 @@
     "db:generate": "pnpm --filter @alkeva/db generate",
     "db:migrate": "pnpm --filter @alkeva/db migrate",
     "db:seed": "pnpm --filter @alkeva/db seed",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "verify:contrast": "node scripts/verify-contrast.mjs"
   }
 }

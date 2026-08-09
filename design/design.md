@@ -18,15 +18,15 @@ Imperceptibly warm (chroma ≤ 0.006) so gold sits in the same world without the
 
 | Token | OKLCH | ≈ hex | Use |
 |---|---|---|---|
-| `--background` | `oklch(0.145 0.004 95)` | `#191816` | App canvas |
-| `--card` | `oklch(0.196 0.004 95)` | `#232220` | Cards, list surfaces |
-| `--popover` / surface-2 | `oklch(0.238 0.005 95)` | `#2c2a27` | Sheets, dialogs, menus |
-| `--muted` | `oklch(0.238 0.005 95)` | `#2c2a27` | Inert fills, skeleton base |
-| `--border` | `oklch(0.30 0.005 95)` | `#3b3936` | Hairlines, dividers |
-| `--input` | `oklch(0.34 0.005 95)` | `#454340` | Field borders (stronger than dividers) |
-| `--foreground` | `oklch(0.968 0.003 95)` | `#f7f5f2` | Primary text, numbers |
-| `--muted-foreground` | `oklch(0.735 0.008 95)` | `#b5b0a7` | Labels, secondary text — **6.0:1 on `--card`** |
-| subtle-foreground | `oklch(0.62 0.008 95)` | `#918d86` | Timestamps only, ≥14px — **4.9:1 on `--background`** |
+| `--background` | `oklch(0.145 0.004 95)` | `#0b0a08` | App canvas |
+| `--card` | `oklch(0.196 0.004 95)` | `#161513` | Cards, list surfaces |
+| `--popover` / surface-2 | `oklch(0.238 0.005 95)` | `#1f1f1c` | Sheets, dialogs, menus |
+| `--muted` | `oklch(0.238 0.005 95)` | `#1f1f1c` | Inert fills, skeleton base |
+| `--border` | `oklch(0.30 0.005 95)` | `#2e2e2b` | Hairlines, dividers |
+| `--input` | `oklch(0.34 0.005 95)` | `#393835` | Field borders (stronger than dividers) |
+| `--foreground` | `oklch(0.968 0.003 95)` | `#f5f4f2` | Primary text, numbers |
+| `--muted-foreground` | `oklch(0.735 0.008 95)` | `#aba9a4` | Labels, secondary text — **7.8:1 on `--card`** |
+| subtle-foreground | `oklch(0.62 0.008 95)` | `#878681` | Timestamps only, ≥14px — **5.4:1 on `--background`** |
 
 There is no lighter grey than `subtle-foreground` in this system. If text needs to be quieter than that, it should be smaller or removed, not greyer. Low-contrast text on a sunlit phone is unreadable, and this app is used outdoors.
 
@@ -36,19 +36,19 @@ Anchored on the client's brand gold `#d4a017`, extended into a working ramp.
 
 | Token | OKLCH | ≈ hex | Use |
 |---|---|---|---|
-| `--gold-300` | `oklch(0.86 0.105 88)` | `#f3cd6a` | Hover on gold text, chart hover |
-| `--gold-400` | `oklch(0.79 0.142 85)` | `#eeb52c` | **Gold as text/icon on dark — 7.2:1 on `--card`** |
-| `--gold-500` | `oklch(0.723 0.146 84)` | `#d4a017` | **Brand anchor.** Primary fills |
-| `--gold-600` | `oklch(0.64 0.132 82)` | `#b8860b` | Pressed state on gold fills |
-| `--gold-700` | `oklch(0.52 0.108 80)` | `#8f6a09` | Chart fill floor, disabled gold |
+| `--gold-300` | `oklch(0.86 0.105 88)` | `#eecd7e` | Hover on gold text, chart hover |
+| `--gold-400` | `oklch(0.79 0.142 85)` | `#e4b23c` | **Gold as text/icon on dark — 9.4:1 on `--card`** |
+| `--gold-500` | `oklch(0.735 0.146 84.3)` | `#d4a017` | **Brand anchor.** Primary fills |
+| `--gold-600` | `oklch(0.652 0.132 81.6)` | `#b8860b` | Pressed state on gold fills |
+| `--gold-700` | `oklch(0.52 0.108 80)` | `#896100` | Chart fill floor, disabled gold |
 
 ```
 --primary:            var(--gold-500)
---primary-foreground: oklch(0.16 0.010 84)   /* near-black warm ink — 9.1:1 on gold-500 */
+--primary-foreground: oklch(0.16 0.010 84)   /* near-black warm ink — 8.2:1 on gold-500 */
 --ring:               var(--gold-400)
 ```
 
-**Never put white text on gold.** `#fff` on `--gold-500` is 2.3:1 and fails outright. Gold fills always carry the dark ink foreground.
+**Never put white text on gold.** `#fff` on `--gold-500` is 2.4:1 and fails outright. Gold fills always carry the dark ink foreground.
 
 Use gold as **text** only via `--gold-400`. Use it as a **fill** only via `--gold-500`. Mixing these up is the single most likely contrast bug in this system.
 
@@ -58,9 +58,9 @@ Cool, low-chroma, unmistakably a different metal from gold — and deliberately 
 
 | Token | OKLCH | ≈ hex | Use |
 |---|---|---|---|
-| `--platinum-400` | `oklch(0.86 0.018 240)` | `#cdd4de` | XPT values, XPT chart line |
-| `--platinum-500` | `oklch(0.79 0.020 242)` | `#b6bdc8` | XPT fills, secondary mark |
-| `--platinum-600` | `oklch(0.68 0.022 244)` | `#98a0ac` | Pressed / muted XPT |
+| `--platinum-400` | `oklch(0.86 0.018 240)` | `#c7d3dc` | XPT values, XPT chart line |
+| `--platinum-500` | `oklch(0.79 0.020 242)` | `#b0bcc7` | XPT fills, secondary mark |
+| `--platinum-600` | `oklch(0.68 0.022 244)` | `#8d9aa5` | Pressed / muted XPT |
 
 ```
 --secondary:            var(--platinum-500)
@@ -71,8 +71,8 @@ Cool, low-chroma, unmistakably a different metal from gold — and deliberately 
 
 | Role | OKLCH | ≈ hex | Notes |
 |---|---|---|---|
-| gain / success | `oklch(0.76 0.115 152)` | `#6cc48b` | 6.5:1 on `--card` |
-| loss / destructive | `oklch(0.70 0.160 25)` | `#ee7b62` | 5.5:1 on `--card` |
+| gain / success | `oklch(0.76 0.115 152)` | `#76c68d` | 8.9:1 on `--card` |
+| loss / destructive | `oklch(0.70 0.160 25)` | `#f2716a` | 6.4:1 on `--card` |
 | `--destructive-foreground` | `oklch(0.16 0.010 25)` | — | Dark ink on red fills |
 
 **There is no yellow or amber in this system.** Amber warnings would collide with the brand gold and dilute the one signal that means "this is the asset / this is the action". Caution states are built instead from:
@@ -222,7 +222,7 @@ Resolution: **tier identity is a gemstone facet mark, never a colour fill.** Tie
 
 ## 7. Accessibility floor
 
-- Body text ≥ 4.5:1, large text ≥ 3:1, verified against the actual surface it sits on (`--card`, not `--background`) — every value in §1 is stated with its measured ratio.
+- Body text ≥ 4.5:1, large text ≥ 3:1, verified against the actual surface it sits on (`--card`, not `--background`) — every value in §1 carries its ratio computed from the shipped OKLCH token (OKLCH → OKLab → linear sRGB → WCAG relative luminance), not estimated by eye. `--gold-500` and `--gold-600` are the client's brand hexes converted exactly and verified to round-trip.
 - Never colour-only: gain/loss carry sign + arrow; status carries a label, not just a dot.
 - Focus-visible always present, 2px `--ring`, 2px offset.
 - Targets ≥ 44×44px.
