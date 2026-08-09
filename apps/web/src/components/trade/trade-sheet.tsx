@@ -1,54 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import type {
-  BalancesResponse,
-  MetalAsset,
-  OrderResponse,
-  OrderSide,
-  PriceLatestResponse,
-  QuoteResponse,
-} from "@alkeva/shared";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { CountdownRing } from "@/components/trade/countdown-ring";
 import { useTradeSheet } from "@/components/trade/trade-sheet-context";
+import { useTradeForm } from "@/components/trade/use-trade-form";
 import { SystemBanner } from "@/components/system/banner";
-import { api, ApiError } from "@/lib/api";
-import { grams, gramsToMg, money, timeOfDay } from "@/lib/format";
-import { useResource } from "@/lib/use-resource";
+import { grams, money, timeOfDay } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-/** Every machine-readable refusal the API can return (Phase 2, all verified). */
-const KNOWN_ERRORS = new Set([
-  "stale_price",
-  "no_price_data",
-  "quote_not_found",
-  "quote_expired",
-  "quote_consumed",
-  "account_frozen",
-  "insufficient_balance",
-  "insufficient_metal",
-  "reserve_halt",
-  "float_halt",
-  "sellback_ceiling",
-  "tier_txn_cap",
-  "tier_daily_cap",
-  "faucet_limit",
-  "amount_too_small",
-  "validation_failed",
-  "conflict",
-]);
-
-/** Refusals that describe a platform-wide state, not this user's mistake. */
-const PLATFORM_HALTS = new Set(["reserve_halt", "float_halt", "account_frozen"]);
-
-type Stage = "amount" | "quote" | "done";
-
+/**
+ * The mobile trade surface: a bottom sheet over whatever screen prompted the
+ * trade. All quoting/ordering behaviour lives in useTradeForm — this file is
+ * presentation only, and the desktop trading workspace mounts the same hook.
+ */
 export function TradeSheet() {
   const t = useTranslations("trade");
   const tc = useTranslations("common");
@@ -56,144 +25,43 @@ export function TradeSheet() {
   const router = useRouter();
   const { isOpen, close, asset: initialAsset, side: initialSide, revision, settled } = useTradeSheet();
 
-  const [asset, setAsset] = useState<MetalAsset>(initialAsset);
-  const [side, setSide] = useState<OrderSide>(initialSide);
-  const [stage, setStage] = useState<Stage>("amount");
-  const [gramsInput, setGramsInput] = useState("1");
-  const [quote, setQuote] = useState<QuoteResponse | null>(null);
-  const [order, setOrder] = useState<OrderResponse | null>(null);
-  const [secondsLeft, setSecondsLeft] = useState(0);
-  /** The quote's full lifetime as the server issued it — the ring's denominator. */
-  const [quoteTtl, setQuoteTtl] = useState(1);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const form = useTradeForm({
+    active: isOpen,
+    initialAsset,
+    initialSide,
+    revision,
+    settled,
+    onFaucetSuccess: () => toast.success(t("faucetOk")),
+  });
+  const {
+    asset,
+    setAsset,
+    side,
+    setSide,
+    stage,
+    gramsInput,
+    setGramsInput,
+    quote,
+    order,
+    secondsLeft,
+    quoteTtl,
+    busy,
+    errorCode,
+    isPlatformHalt,
+    expired,
+    balances,
+    tick,
+    estimateCents,
+    heldMg,
+    requestQuote,
+    confirm: confirmOrder,
+    faucet,
+    setMax,
+    backToAmount,
+  } = form;
 
-  /** One key per displayed quote — mashing Confirm must replay, not re-buy. */
-  const idemKey = useRef<string | null>(null);
-
-  const balances = useResource<BalancesResponse>(isOpen ? "/ledger/balances" : null, { revision });
-  const prices = useResource<PriceLatestResponse>(
-    isOpen ? `/prices/latest?asset=${asset}` : null,
-    { revision },
-  );
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setAsset(initialAsset);
-    setSide(initialSide);
-    setStage("amount");
-    setQuote(null);
-    setOrder(null);
-    setError(null);
-  }, [isOpen, initialAsset, initialSide]);
-
-  useEffect(() => {
-    if (!quote) return;
-    const tick = () => {
-      const left = Math.max(
-        0,
-        Math.floor((new Date(quote.expiresAt).getTime() - Date.now()) / 1000),
-      );
-      setSecondsLeft(left);
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [quote]);
-
-  const tick = prices.data;
-  const unitCents = tick ? BigInt(tick.etbCentsPerGram) : null;
   const metalLabel = asset === "XAU" ? tc("gold") : tc("platinum");
-
-  const mg = gramsToMg(gramsInput);
-  const estimateCents = useMemo(() => {
-    if (!unitCents || mg === null) return null;
-    return ((unitCents * mg) / 1000n).toString();
-  }, [unitCents, mg]);
-
-  const heldMg = balances.data
-    ? asset === "XAU"
-      ? balances.data.xauMg
-      : balances.data.xptMg
-    : "0";
-
-  function messageFor(err: unknown): string {
-    if (err instanceof ApiError && KNOWN_ERRORS.has(err.code)) {
-      return t(`errors.${err.code}` as never);
-    }
-    return t("errors.generic");
-  }
-
-  async function requestQuote() {
-    setError(null);
-    if (mg === null) {
-      setError(t("errors.amount_too_small"));
-      return;
-    }
-    setBusy(true);
-    try {
-      const q = await api<QuoteResponse>("/quotes", {
-        method: "POST",
-        body: JSON.stringify({ side, asset, gramsMg: mg.toString() }),
-      });
-      idemKey.current = crypto.randomUUID();
-      setQuoteTtl(
-        Math.max(1, Math.round((new Date(q.expiresAt).getTime() - Date.now()) / 1000)),
-      );
-      setQuote(q);
-      setStage("quote");
-    } catch (err) {
-      setError(messageFor(err));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  /**
-   * Deliberately NOT disabled while in flight. The API is idempotent per
-   * quote, and a user who double-taps must get one order — proving that is
-   * part of the demo. The label changes so a second tap feels harmless.
-   */
-  async function confirm() {
-    if (!quote || !idemKey.current) return;
-    setError(null);
-    setBusy(true);
-    try {
-      const placed = await api<OrderResponse>("/orders", {
-        method: "POST",
-        body: JSON.stringify({ quoteId: quote.id, idempotencyKey: idemKey.current }),
-      });
-      setOrder(placed);
-      setStage("done");
-      settled();
-    } catch (err) {
-      setError(messageFor(err));
-      settled();
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function faucet() {
-    setError(null);
-    setBusy(true);
-    try {
-      await api("/faucet", {
-        method: "POST",
-        body: JSON.stringify({ amountCents: "20000000" }),
-      });
-      toast.success(t("faucetOk"));
-      balances.reload();
-      settled();
-    } catch (err) {
-      setError(messageFor(err));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const expired = quote !== null && secondsLeft <= 0;
-  const isPlatformHalt = error !== null && [...PLATFORM_HALTS].some((c) => error === t(`errors.${c}` as never));
+  const error = errorCode ? t(`errors.${errorCode}` as never) : null;
 
   return (
     <Sheet open={isOpen} onOpenChange={(o) => !o && close()}>
@@ -282,19 +150,7 @@ export function TradeSheet() {
                   {g} {tc("g")}
                 </Button>
               ))}
-              <Button
-                variant="outline"
-                size="pill"
-                className="flex-1 font-medium"
-                onClick={() => {
-                  if (side === "sell") {
-                    setGramsInput((Number(BigInt(heldMg)) / 1000).toString());
-                  } else if (unitCents && balances.data) {
-                    const affordable = (BigInt(balances.data.etbCents) * 1000n) / unitCents;
-                    setGramsInput((Number(affordable) / 1000).toFixed(3));
-                  }
-                }}
-              >
+              <Button variant="outline" size="pill" className="flex-1 font-medium" onClick={setMax}>
                 {t("max")}
               </Button>
             </div>
@@ -340,9 +196,9 @@ export function TradeSheet() {
             )}
             {isPlatformHalt && (
               <p className="mb-3.5 text-[0.9375rem] text-muted-foreground">
-                {error === t("errors.reserve_halt")
+                {errorCode === "reserve_halt"
                   ? t("reserveHaltExplain")
-                  : error === t("errors.float_halt")
+                  : errorCode === "float_halt"
                     ? t("floatHaltExplain")
                     : null}
               </p>
@@ -396,11 +252,11 @@ export function TradeSheet() {
                 {t("newQuote")}
               </Button>
             ) : (
-              <Button size="cta" className="mb-2" onClick={() => void confirm()}>
+              <Button size="cta" className="mb-2" onClick={() => void confirmOrder()}>
                 {busy ? t("pending") : t("confirm")}
               </Button>
             )}
-            <Button variant="ghost" size="cta" onClick={() => setStage("amount")}>
+            <Button variant="ghost" size="cta" onClick={backToAmount}>
               {t("cancel")}
             </Button>
           </>
