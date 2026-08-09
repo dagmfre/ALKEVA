@@ -4,9 +4,19 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api, ApiError } from "@/lib/api";
-import { LocaleSwitcher } from "./locale-switcher";
 
+import { Button } from "@/components/ui/button";
+import { Wordmark } from "@/components/brand/mark";
+import { LocaleToggle } from "@/components/shell/locale-toggle";
+import { SystemBanner } from "@/components/system/banner";
+import { api, ApiError } from "@/lib/api";
+
+/**
+ * First impression, and the one screen an investor sees before anything else.
+ *
+ * The locale toggle sits above the fold on purpose: a user who cannot read the
+ * current language must be able to switch it *before* authenticating.
+ */
 export function AuthForm({ mode }: { mode: "register" | "login" }) {
   const t = useTranslations("auth");
   const tc = useTranslations("common");
@@ -40,7 +50,7 @@ export function AuthForm({ mode }: { mode: "register" | "login" }) {
           }),
         });
       }
-      router.push("/");
+      router.replace("/");
       router.refresh();
     } catch (err) {
       if (err instanceof ApiError) {
@@ -57,71 +67,63 @@ export function AuthForm({ mode }: { mode: "register" | "login" }) {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-6 px-6 py-10">
+    <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col justify-center gap-7 px-4 py-10">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gold-500">{tc("appName")}</h1>
-        <LocaleSwitcher />
+        <Wordmark size={30} />
+        <LocaleToggle />
       </div>
+
       <div>
-        <h2 className="text-xl font-semibold">
+        <h1 className="text-2xl font-semibold">
           {mode === "register" ? t("registerTitle") : t("loginTitle")}
-        </h2>
-        <p className="mt-1 text-sm text-neutral-400">{tc("tagline")}</p>
+        </h1>
+        <p className="mt-1 text-[0.9375rem] text-muted-foreground">{tc("tagline")}</p>
       </div>
 
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         {mode === "register" && (
-          <label className="flex flex-col gap-1 text-sm">
-            {t("fullName")}
-            <input
-              name="fullName"
-              required
-              minLength={2}
-              className="rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2.5 outline-none focus:border-gold-500"
-            />
-          </label>
+          <Field label={t("fullName")} name="fullName" required minLength={2} autoComplete="name" />
         )}
-        <label className="flex flex-col gap-1 text-sm">
-          {t("email")}
-          <input
-            name="email"
-            type="email"
-            required
-            className="rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2.5 outline-none focus:border-gold-500"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          {t("password")}
-          <input
-            name="password"
-            type="password"
-            required
-            minLength={8}
-            className="rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2.5 outline-none focus:border-gold-500"
-          />
-        </label>
+        <Field label={t("email")} name="email" type="email" required autoComplete="email" />
+        <Field
+          label={t("password")}
+          name="password"
+          type="password"
+          required
+          minLength={8}
+          autoComplete={mode === "register" ? "new-password" : "current-password"}
+        />
 
-        {error && (
-          <p role="alert" className="rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">
-            {error}
-          </p>
-        )}
+        {error && <SystemBanner tone="critical">{error}</SystemBanner>}
 
-        <button
-          type="submit"
-          disabled={busy}
-          className="rounded-lg bg-gold-500 py-2.5 font-semibold text-neutral-950 transition-opacity disabled:opacity-50"
-        >
+        <Button type="submit" size="cta" disabled={busy}>
           {busy ? tc("loading") : mode === "register" ? t("registerButton") : t("loginButton")}
-        </button>
+        </Button>
       </form>
 
       <Link
         href={mode === "register" ? "/login" : "/register"}
-        className="text-center text-sm text-neutral-400 underline-offset-4 hover:underline"
+        className="text-center text-[0.9375rem] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
       >
         {mode === "register" ? t("haveAccount") : t("needAccount")}
       </Link>
     </main>
+  );
+}
+
+function Field({
+  label,
+  name,
+  ...props
+}: { label: string; name: string } & React.ComponentProps<"input">) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-[0.9375rem] font-medium">{label}</span>
+      <input
+        name={name}
+        {...props}
+        className="min-h-12 rounded-md border border-input bg-background px-3.5 text-base outline-none transition-colors focus:border-gold-400"
+      />
+    </label>
   );
 }

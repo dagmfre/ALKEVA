@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Noto_Sans_Ethiopic } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -18,7 +19,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0a0a0a",
+  viewportFit: "cover",
+  themeColor: "#191816",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -27,8 +29,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang={locale}>
-      <body className={`${inter.variable} ${ethiopic.variable} font-sans min-h-dvh`}>
-        <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
+      <body className={`${inter.variable} ${ethiopic.variable} min-h-dvh`}>
+        <NextIntlClientProvider messages={messages}>
+          {children}
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              style: {
+                background: "var(--popover)",
+                border: "1px solid var(--border)",
+                color: "var(--foreground)",
+                fontFamily: "var(--font-sans)",
+              },
+            }}
+          />
+        </NextIntlClientProvider>
       </body>
     </html>
   );
