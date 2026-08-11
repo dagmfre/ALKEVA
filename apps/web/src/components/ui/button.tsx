@@ -12,7 +12,10 @@ import { cn } from "@/lib/utils";
  *    stock 36px height fails a thumb on a phone held one-handed outdoors.
  *  - `destructive` carries dark ink, not white. White on our loss red is
  *    2.9:1 and fails; the dark ink is 5.5:1.
- *  - No shadows. Depth in this system is surface + hairline (§3).
+ *  - `default` is the one glossy surface in the product (`.cta-gold`): a
+ *    four-stop gradient anchored on the client's brand hexes, with an inner
+ *    specular edge. Everything else in the system is flat — depth elsewhere is
+ *    surface + hairline (§3).
  *  - `gold` text variant uses gold-400, never gold-500 — gold-as-text needs
  *    the lighter step to clear 4.5:1 on --card.
  */
@@ -21,8 +24,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground hover:bg-gold-400 active:bg-gold-600 disabled:bg-gold-700",
+        default: "cta-gold",
+        /** Flat gold fill — chips and tags where a gradient would be noise. */
+        flat: "bg-primary text-primary-foreground hover:bg-gold-400 active:bg-gold-600 disabled:bg-gold-700",
+        /** Raised + gold rim: the selected state, and secondary calls to action. */
+        soft: "pill-active hover:brightness-110",
         outline:
           "border border-input bg-transparent text-foreground hover:border-foreground",
         gold: "border border-input bg-transparent text-gold-400 hover:border-gold-400",

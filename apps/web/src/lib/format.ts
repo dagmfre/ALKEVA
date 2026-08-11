@@ -117,6 +117,62 @@ export function dayKey(iso: string): string {
   return new Date(iso).toISOString().slice(0, 10);
 }
 
+const EAT = "Africa/Addis_Ababa";
+
+const EAT_STAMP = new Intl.DateTimeFormat("en-GB", {
+  timeZone: EAT,
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+/**
+ * "13 Aug 2026 · 14:32 EAT" — the top bar's clock and the receipt's timestamp.
+ *
+ * Pinned to Addis Ababa in both locales rather than the viewer's zone: this is
+ * an Ethiopian product, the ledger is read in Ethiopian time, and a receipt
+ * whose hour changes with the reader's laptop is not a record. Latin figures
+ * because Amharic uses Western numerals (`design/design.md` §2).
+ */
+export function eatStamp(value: Date | string): string {
+  const d = typeof value === "string" ? new Date(value) : value;
+  const parts = EAT_STAMP.formatToParts(d);
+  const at = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((p) => p.type === type)?.value ?? "";
+  return `${at("day")} ${at("month")} ${at("year")} · ${at("hour")}:${at("minute")} EAT`;
+}
+
+const EAT_TIME = new Intl.DateTimeFormat("en-GB", {
+  timeZone: EAT,
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+const EAT_DAY = new Intl.DateTimeFormat("en-GB", {
+  timeZone: EAT,
+  day: "numeric",
+  month: "short",
+});
+const EAT_MONTH = new Intl.DateTimeFormat("en-GB", { timeZone: EAT, month: "short" });
+
+/** Chart x-axis label: clock time inside a day, calendar date beyond one. */
+export function axisLabel(iso: string, range: string): string {
+  const d = new Date(iso);
+  if (range === "24h") return EAT_TIME.format(d);
+  if (range === "1y") return EAT_MONTH.format(d);
+  return EAT_DAY.format(d);
+}
+
+/** Signed percentage as "+2.41" / "−0.83", or null when it cannot be computed. */
+export function signedPct(value: number | null): string | null {
+  if (value === null || !Number.isFinite(value)) return null;
+  const sign = value > 0 ? "+" : value < 0 ? "−" : "";
+  return `${sign}${Math.abs(value).toFixed(2)}`;
+}
+
 /** USD cents → "810.93" for the tier band reference. */
 export function usd(cents: string): string {
   return GROUPED.format(Number(BigInt(cents || "0")) / 100);

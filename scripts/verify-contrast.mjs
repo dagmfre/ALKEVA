@@ -36,19 +36,30 @@ const hex = (rgb) =>
     .join("");
 
 const T = {
-  background:        oklchToSrgb(0.145, 0.004, 95),
-  card:              oklchToSrgb(0.196, 0.004, 95),
-  popover:           oklchToSrgb(0.238, 0.005, 95),
-  foreground:        oklchToSrgb(0.968, 0.003, 95),
-  "muted-foreground":oklchToSrgb(0.735, 0.008, 95),
-  subtle:            oklchToSrgb(0.62,  0.008, 95),
+  // Surface ladder v2 (warm, four levels, well sunk below the page).
+  well:              oklchToSrgb(0.110, 0.009, 78),
+  background:        oklchToSrgb(0.143, 0.012, 80),
+  card:              oklchToSrgb(0.185, 0.018, 78),
+  popover:           oklchToSrgb(0.225, 0.020, 78),
+  border:            oklchToSrgb(0.285, 0.024, 80),
+  input:             oklchToSrgb(0.360, 0.030, 82),
+  foreground:        oklchToSrgb(0.968, 0.004, 90),
+  "muted-foreground":oklchToSrgb(0.735, 0.010, 90),
+  subtle:            oklchToSrgb(0.62,  0.010, 90),
   "gold-400":        oklchToSrgb(0.79,  0.142, 85),
   "gold-500":        oklchToSrgb(0.735, 0.146, 84.3),
   "primary-fg":      oklchToSrgb(0.16,  0.010, 84),
   "platinum-400":    oklchToSrgb(0.86,  0.018, 240),
+  "platinum-500":    oklchToSrgb(0.79,  0.020, 242),
   gain:              oklchToSrgb(0.76,  0.115, 152),
   loss:              oklchToSrgb(0.70,  0.160, 25),
   "destructive-fg":  oklchToSrgb(0.16,  0.010, 25),
+  // The four stops of the primary CTA gradient — dark ink must clear 4.5:1
+  // at every one of them, not just the middle.
+  "cta-top":         oklchToSrgb(0.895, 0.098, 93),
+  "cta-upper":       oklchToSrgb(0.810, 0.134, 87),
+  "cta-brand":       oklchToSrgb(0.735, 0.146, 84.3),
+  "cta-deep":        oklchToSrgb(0.652, 0.132, 81.6),
   white:             [1, 1, 1],
 };
 
@@ -56,18 +67,38 @@ const T = {
 const CHECKS = [
   ["foreground",        "card",        null, 4.5, "body text on card"],
   ["foreground",        "background",  null, 4.5, "body text on canvas"],
-  ["muted-foreground",  "card",        7.8,  4.5, "labels on card  (design.md §1)"],
+  ["foreground",        "popover",     null, 4.5, "body text on raised surface"],
+  ["foreground",        "well",        null, 4.5, "body text in a well"],
+  ["muted-foreground",  "card",        null, 4.5, "labels on card"],
   ["muted-foreground",  "background",  null, 4.5, "labels on canvas"],
-  ["subtle",            "background",  5.4,  4.5, "timestamps on canvas (design.md §1)"],
+  ["muted-foreground",  "popover",     null, 4.5, "labels on raised surface"],
+  ["muted-foreground",  "well",        null, 4.5, "labels in a well"],
+  ["subtle",            "background",  null, 4.5, "timestamps on canvas"],
   ["subtle",            "card",        null, 4.5, "timestamps on card"],
-  ["gold-400",          "card",        9.4,  4.5, "GOLD AS TEXT on card (design.md §1)"],
+  ["gold-400",          "card",        null, 4.5, "GOLD AS TEXT on card"],
   ["gold-400",          "background",  null, 4.5, "gold as text on canvas"],
-  ["primary-fg",        "gold-500",    8.2,  4.5, "dark ink on GOLD FILL (design.md §1)"],
+  ["gold-400",          "well",        null, 4.5, "gold total inside the fee well"],
+  ["gold-400",          "popover",     null, 4.5, "gold on the active nav pill"],
+  ["primary-fg",        "gold-500",    null, 4.5, "dark ink on GOLD FILL"],
+  ["primary-fg",        "cta-top",     null, 4.5, "dark ink on CTA gradient · top stop"],
+  ["primary-fg",        "cta-upper",   null, 4.5, "dark ink on CTA gradient · 40%"],
+  ["primary-fg",        "cta-brand",   null, 4.5, "dark ink on CTA gradient · brand anchor"],
+  ["primary-fg",        "cta-deep",    null, 4.5, "dark ink on CTA gradient · deep stop"],
   ["platinum-400",      "card",        null, 4.5, "platinum value / caution text"],
   ["platinum-400",      "popover",     null, 4.5, "caution banner text on popover"],
-  ["gain",              "card",        8.9,  4.5, "gain on card (design.md §1)"],
-  ["loss",              "card",        6.4,  4.5, "loss on card (design.md §1)"],
+  ["gain",              "card",        null, 4.5, "gain on card"],
+  ["loss",              "card",        null, 4.5, "loss on card"],
   ["destructive-fg",    "loss",        null, 4.5, "dark ink on destructive fill"],
+];
+
+// Non-text pairs: a hairline has no WCAG text minimum, but it has to be
+// visible. Reported, never asserted.
+const REPORT_ONLY = [
+  ["border", "card", "hairline on card"],
+  ["border", "background", "hairline on canvas"],
+  ["input", "card", "raised border on card"],
+  ["well", "card", "well against its panel"],
+  ["popover", "card", "raised against panel"],
 ];
 
 console.log("token                sRGB");
@@ -85,6 +116,11 @@ for (const [fg, bg, claimed, min, label] of CHECKS) {
   console.log(
     `  ${label.padEnd(42)} ${r.toFixed(2).padStart(5)}:1  ${claimStr}  ${min}   ${ok ? "PASS" : "FAIL"}${drift}`,
   );
+}
+
+console.log("\nnon-text (reported, not asserted)");
+for (const [a, b, label] of REPORT_ONLY) {
+  console.log(`  ${label.padEnd(42)} ${ratio(T[a], T[b]).toFixed(2).padStart(5)}:1`);
 }
 
 // The rule the docs state explicitly: white on gold must NOT be used.

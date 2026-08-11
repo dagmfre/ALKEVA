@@ -33,9 +33,7 @@ export function AccountScreen() {
     tierName && tt.has(`names.${tierName}` as never) ? tt(`names.${tierName}` as never) : tierName;
 
   return (
-    <>
-      <h1 className="mb-3.5 mt-1 text-2xl font-semibold">{t("title")}</h1>
-
+    <div className="mx-auto max-w-[36rem]">
       <Card className="mb-3.5 overflow-hidden">
         <Line label={t("language")}>
           <LocaleToggle />
@@ -87,7 +85,7 @@ export function AccountScreen() {
       <Button variant="outline" size="cta" className="text-loss" onClick={() => void logout()}>
         {t("logout")}
       </Button>
-    </>
+    </div>
   );
 }
 

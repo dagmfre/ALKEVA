@@ -67,46 +67,54 @@ export function AuthForm({ mode }: { mode: "register" | "login" }) {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col justify-center gap-7 px-4 py-10">
-      <div className="flex items-center justify-between">
-        <Wordmark size={30} />
-        <LocaleToggle />
+    /*
+     * Signing in is a focused task, so it stays one column at every width —
+     * but on a desk the column sits in a panel on the ground rather than
+     * floating bare, which is what made the old shell read as a phone
+     * screenshot pasted into a browser.
+     */
+    <main className="flex min-h-dvh w-full items-center justify-center px-4 py-10">
+      <div className="flex w-full max-w-[27rem] flex-col gap-7 lg:gap-6 lg:rounded-lg lg:border lg:border-border lg:bg-card lg:px-8 lg:py-9">
+        <div className="flex items-center justify-between">
+          <Wordmark size={30} />
+          <LocaleToggle />
+        </div>
+
+        <div>
+          <h1 className="text-2xl font-semibold">
+            {mode === "register" ? t("registerTitle") : t("loginTitle")}
+          </h1>
+          <p className="mt-1 text-[0.9375rem] text-muted-foreground">{tc("tagline")}</p>
+        </div>
+
+        <form onSubmit={onSubmit} className="flex flex-col gap-4">
+          {mode === "register" && (
+            <Field label={t("fullName")} name="fullName" required minLength={2} autoComplete="name" />
+          )}
+          <Field label={t("email")} name="email" type="email" required autoComplete="email" />
+          <Field
+            label={t("password")}
+            name="password"
+            type="password"
+            required
+            minLength={8}
+            autoComplete={mode === "register" ? "new-password" : "current-password"}
+          />
+
+          {error && <SystemBanner tone="critical">{error}</SystemBanner>}
+
+          <Button type="submit" size="cta" disabled={busy}>
+            {busy ? tc("loading") : mode === "register" ? t("registerButton") : t("loginButton")}
+          </Button>
+        </form>
+
+        <Link
+          href={mode === "register" ? "/login" : "/register"}
+          className="text-center text-[0.9375rem] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+        >
+          {mode === "register" ? t("haveAccount") : t("needAccount")}
+        </Link>
       </div>
-
-      <div>
-        <h1 className="text-2xl font-semibold">
-          {mode === "register" ? t("registerTitle") : t("loginTitle")}
-        </h1>
-        <p className="mt-1 text-[0.9375rem] text-muted-foreground">{tc("tagline")}</p>
-      </div>
-
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        {mode === "register" && (
-          <Field label={t("fullName")} name="fullName" required minLength={2} autoComplete="name" />
-        )}
-        <Field label={t("email")} name="email" type="email" required autoComplete="email" />
-        <Field
-          label={t("password")}
-          name="password"
-          type="password"
-          required
-          minLength={8}
-          autoComplete={mode === "register" ? "new-password" : "current-password"}
-        />
-
-        {error && <SystemBanner tone="critical">{error}</SystemBanner>}
-
-        <Button type="submit" size="cta" disabled={busy}>
-          {busy ? tc("loading") : mode === "register" ? t("registerButton") : t("loginButton")}
-        </Button>
-      </form>
-
-      <Link
-        href={mode === "register" ? "/login" : "/register"}
-        className="text-center text-[0.9375rem] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-      >
-        {mode === "register" ? t("haveAccount") : t("needAccount")}
-      </Link>
     </main>
   );
 }
@@ -122,7 +130,7 @@ function Field({
       <input
         name={name}
         {...props}
-        className="min-h-12 rounded-md border border-input bg-background px-3.5 text-base outline-none transition-colors focus:border-gold-400"
+        className="well min-h-12 rounded-md border-input px-3.5 text-base outline-none transition-colors focus:border-gold-400"
       />
     </label>
   );

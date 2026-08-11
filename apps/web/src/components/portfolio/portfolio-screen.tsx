@@ -1,15 +1,23 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import type { HoldingDto, PortfolioResponse, TierDto } from "@alkeva/shared";
+import type {
+  HoldingDto,
+  MetalAsset,
+  PortfolioResponse,
+  TierDto,
+  TreasurySummaryResponse,
+} from "@alkeva/shared";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TierMark } from "@/components/shell/nav-items";
 import { useTradeSheet } from "@/components/trade/trade-sheet-context";
 import {
   ARROW,
   SIGN,
+  coverage,
   deltaClass,
   direction,
   grams,
@@ -18,15 +26,29 @@ import {
   signedMoney,
   usd,
 } from "@/lib/format";
+import { useIsDesktop } from "@/lib/use-is-desktop";
 import { useResource } from "@/lib/use-resource";
 import { cn } from "@/lib/utils";
 
+/**
+ * What you own, what it cost, and what backs it.
+ *
+ * The composition answers those three in that order on both screen sizes: the
+ * mark-to-market total (with the first-loss sentence beneath it), the holdings
+ * with their real cost basis replayed from settled orders, and the vault
+ * figures that make the holding more than a database row.
+ */
 export function PortfolioScreen() {
   const t = useTranslations("portfolio");
   const tc = useTranslations("common");
   const th = useTranslations("home");
   const { open, revision } = useTradeSheet();
+  const isDesktop = useIsDesktop();
+  const router = useRouter();
   const { data, loading } = useResource<PortfolioResponse>("/portfolio", { revision });
+
+  const trade = (asset: MetalAsset, side: "buy" | "sell") =>
+    isDesktop ? router.push(`/trade?asset=${asset}&side=${side}`) : open(asset, side);
 
   if (loading || !data) return <PortfolioSkeleton />;
 
@@ -36,103 +58,191 @@ export function PortfolioScreen() {
 
   if (held.length === 0) {
     return (
-      <>
-        <h1 className="mb-3.5 mt-1 text-2xl font-semibold">{t("title")}</h1>
-        <Card className="p-5">
-          <CardTitle className="mb-1">{t("emptyTitle")}</CardTitle>
-          <p className="mb-3.5 text-[0.9375rem] text-muted-foreground">{t("emptyBody")}</p>
-          <Button size="cta" onClick={() => open("XAU", "buy")}>
-            {th("buyGoldCta")}
-          </Button>
-        </Card>
-      </>
+      <div className="mx-auto max-w-[36rem] rounded-lg border border-border bg-card p-5">
+        <h2 className="text-[1.125rem] font-semibold">{t("emptyTitle")}</h2>
+        <p className="mb-3.5 mt-1 text-[0.9375rem] text-muted-foreground">{t("emptyBody")}</p>
+        <Button size="cta" onClick={() => trade("XAU", "buy")}>
+          {th("buyGoldCta")}
+        </Button>
+      </div>
     );
   }
 
-  return (
-    <>
-      <h1 className="mb-3.5 mt-1 text-2xl font-semibold">{t("title")}</h1>
+  const totalMetal = BigInt(data.totalMetalValueCents);
+  const share = (h: HoldingDto) =>
+    totalMetal > 0n ? (Number(BigInt(h.valueCents)) / Number(totalMetal)) * 100 : 0;
+  const largest = held.reduce((a, b) => (BigInt(a.valueCents) >= BigInt(b.valueCents) ? a : b));
 
-      <Card className="mb-3.5 p-5">
-        <div className="text-[0.9375rem] text-muted-foreground">{t("totalValue")}</div>
-        <div className="tnum my-0.5 text-[2.25rem] font-semibold leading-[1.1] tracking-[-0.01em]">
-          {money(data.totalValueCents)}
-          <span className="ms-1.5 font-sans text-base font-medium tracking-normal text-muted-foreground">
-            {tc("birr")}
+  return (
+    <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-12 lg:gap-5">
+      <section className="flex flex-col rounded-lg border border-border bg-card p-4 lg:col-span-8 lg:p-5">
+        <span className="text-[0.9375rem] leading-relaxed text-muted-foreground">
+          {t("totalMetalValue")}
+        </span>
+        <div className="mt-1.5 flex flex-wrap items-end justify-between gap-3">
+          <span className="flex items-baseline gap-2">
+            <span className="tnum text-[2.125rem] font-semibold leading-none tracking-[-0.01em] lg:text-[2.5rem]">
+              {money(data.totalMetalValueCents)}
+            </span>
+            <span className="text-[1.0625rem] text-muted-foreground">{tc("birr")}</span>
+          </span>
+          {/*
+            A user who buys and opens this immediately is down by exactly the
+            commission they paid. That is correct and honest, and it is the
+            first thing a new user sees — so it is stated calmly, one step down
+            in weight from the holding itself, with the reason directly beneath.
+          */}
+          <span className={cn("flex flex-col items-end gap-0.5", deltaClass(dir))}>
+            <span className="tnum text-[1.0625rem] font-semibold">
+              {ARROW[dir]} {SIGN[dir]}
+              {signedMoney(data.totalGainLossCents)}
+            </span>
+            {pct && (
+              <span className="tnum text-[0.9375rem]">
+                {SIGN[dir]}
+                {pct}%
+              </span>
+            )}
           </span>
         </div>
-        {/*
-          A user who buys and opens this immediately is down by exactly the
-          commission they paid. That is correct and honest, and it is the first
-          thing a new user sees — so it is stated calmly, one step down in
-          weight from the holding itself, with the reason directly beneath.
-        */}
-        <div className={cn("tnum text-[0.9375rem] font-medium", deltaClass(dir))}>
-          {ARROW[dir]} {SIGN[dir]}
-          {signedMoney(data.totalGainLossCents)}
-          {pct && ` · ${SIGN[dir]}${pct}%`}
+
+        <div className="mt-4 flex h-2 overflow-hidden rounded-full bg-well" aria-hidden="true">
+          {held.map((h) => (
+            <span
+              key={h.asset}
+              className={h.asset === "XAU" ? "bg-gold-500" : "bg-platinum-400"}
+              style={{ width: `${share(h)}%` }}
+            />
+          ))}
         </div>
+        <div className="mt-2.5 flex flex-wrap gap-x-6 gap-y-1.5">
+          {held.map((h) => (
+            <span
+              key={h.asset}
+              className="flex items-center gap-2 text-[0.9375rem] text-muted-foreground"
+            >
+              <span
+                className={cn(
+                  "size-2 rounded-full",
+                  h.asset === "XAU" ? "bg-gold-500" : "bg-platinum-400",
+                )}
+              />
+              {h.asset === "XAU" ? tc("gold") : tc("platinum")}{" "}
+              <span className="tnum font-semibold text-foreground">{share(h).toFixed(1)}%</span>
+            </span>
+          ))}
+        </div>
+
         {dir === "down" && (
-          <p className="mt-2.5 text-[0.9375rem] text-muted-foreground">{t("firstLoss")}</p>
+          <p className="mt-4 border-t border-border pt-3.5 text-[0.9375rem] leading-relaxed text-muted-foreground">
+            {t("firstLoss")}
+          </p>
         )}
-      </Card>
+      </section>
 
-      {held.map((h) => (
-        <HoldingCard key={h.asset} holding={h} />
-      ))}
+      <TierCard tier={data.tier} className="lg:col-span-4" />
 
-      {BigInt(data.etbCents) > 0n && (
-        <Card className="mb-3.5 flex items-baseline justify-between p-4">
-          <span className="text-base font-medium">{t("cashLabel")}</span>
-          <span className="tnum text-[1.0625rem] font-semibold">{money(data.etbCents)}</span>
-        </Card>
-      )}
+      <section className="rounded-lg border border-border bg-card px-4 pb-3 lg:col-span-8 lg:px-5">
+        <div className="flex items-center justify-between py-3.5">
+          <h2 className="text-[1.125rem] font-semibold">{t("holdingsTitle")}</h2>
+          <span className="text-[0.9375rem] text-subtle">{t("costFromLedger")}</span>
+        </div>
+        {held.map((h) => (
+          <HoldingRow key={h.asset} holding={h} />
+        ))}
+      </section>
 
-      <TierCard tier={data.tier} />
-    </>
+      <div className="flex flex-col gap-3.5 lg:col-span-4 lg:gap-4">
+        <div className="rounded-lg border border-border bg-card p-4 lg:p-5">
+          <span className="text-[0.9375rem] leading-relaxed text-muted-foreground">
+            {t("cashLabel")}
+          </span>
+          <div className="mt-1 flex items-baseline gap-2">
+            <span className="tnum text-[1.625rem] font-semibold">{money(data.etbCents)}</span>
+            <span className="text-[0.9375rem] text-muted-foreground">{tc("birr")}</span>
+          </div>
+        </div>
+        <Button size="cta" onClick={() => trade(largest.asset, "buy")}>
+          {t("buyMore", {
+            metal: largest.asset === "XAU" ? tc("gold") : tc("platinum"),
+          })}
+        </Button>
+        <Button variant="outline" size="cta" onClick={() => trade(largest.asset, "sell")}>
+          {t("sellCta")}
+        </Button>
+      </div>
+
+      <VaultStrip asset={largest.asset} className="lg:col-span-12" />
+    </div>
   );
 }
 
-function HoldingCard({ holding }: { holding: HoldingDto }) {
+function HoldingRow({ holding }: { holding: HoldingDto }) {
   const t = useTranslations("portfolio");
   const tc = useTranslations("common");
   const isGold = holding.asset === "XAU";
   const dir = direction(holding.gainLossCents);
+  const pct = pctMilli(holding.gainLossPctMilli);
 
   return (
-    <Card className="mb-2.5 p-4">
-      <div className="flex items-baseline justify-between border-b border-border pb-2.5">
-        <span className="flex items-center gap-2 text-base font-medium">
-          <span className={cn("size-2 rounded-full", isGold ? "bg-gold-500" : "bg-platinum-400")} />
-          {isGold ? tc("gold") : tc("platinum")}
-        </span>
-        <span className="tnum text-[1.0625rem] font-semibold">
-          {grams(holding.gramsMg)}
-          <span className="ms-1 font-sans text-sm font-normal text-muted-foreground">{tc("g")}</span>
-        </span>
-      </div>
-      <Line label={t("currentValue")}>
-        <span className={cn("font-semibold", isGold ? "text-gold-400" : "text-platinum-400")}>
-          {money(holding.valueCents)}
-        </span>
-      </Line>
-      <Line label={t("costBasis")}>{money(holding.costBasisCents)}</Line>
-      <Line label={t("gainLoss")}>
-        <span className={cn("font-semibold", deltaClass(dir))}>
-          {ARROW[dir]} {SIGN[dir]}
-          {signedMoney(holding.gainLossCents)}
-        </span>
-      </Line>
-    </Card>
+    <div className="grid grid-cols-2 items-center gap-4 border-t border-border py-4 lg:grid-cols-[1fr_0.8fr_1.15fr_1.15fr_1.6fr]">
+      <span className="flex items-center gap-2.5 text-[1.0625rem] font-semibold">
+        <span
+          className={cn("size-2.5 rounded-full", isGold ? "bg-gold-500" : "bg-platinum-400")}
+        />
+        {isGold ? tc("gold") : tc("platinum")}
+      </span>
+      <Cell label={t("gramsLabel")}>{grams(holding.gramsMg)}</Cell>
+      <Cell label={t("currentValue")} accent={isGold ? "gold" : "platinum"}>
+        {money(holding.valueCents)}
+      </Cell>
+      <Cell label={t("costBasis")} muted>
+        {money(holding.costBasisCents)}
+      </Cell>
+      <Cell label={t("gainLoss")} align="end" className={deltaClass(dir)}>
+        {ARROW[dir]} {SIGN[dir]}
+        {signedMoney(holding.gainLossCents)}
+        {pct && (
+          <span className="ms-1.5 text-[0.9375rem] font-medium">
+            {SIGN[dir]}
+            {pct}%
+          </span>
+        )}
+      </Cell>
+    </div>
   );
 }
 
-function Line({ label, children }: { label: string; children: React.ReactNode }) {
+function Cell({
+  label,
+  children,
+  accent,
+  muted,
+  align,
+  className,
+}: {
+  label: string;
+  children: React.ReactNode;
+  accent?: "gold" | "platinum";
+  muted?: boolean;
+  align?: "end";
+  className?: string;
+}) {
   return (
-    <div className="flex items-baseline justify-between gap-3 pt-2">
-      <span className="text-[0.9375rem] text-muted-foreground">{label}</span>
-      <span className="tnum text-[0.9375rem]">{children}</span>
-    </div>
+    <span className={cn("flex flex-col gap-0.5", align === "end" && "items-end text-end")}>
+      <span className="text-[0.9375rem] leading-snug text-muted-foreground">{label}</span>
+      <span
+        className={cn(
+          "tnum whitespace-nowrap text-[1.0625rem] font-semibold",
+          muted && "font-medium",
+          accent === "gold" && "text-gold-400",
+          accent === "platinum" && "text-platinum-400",
+          className,
+        )}
+      >
+        {children}
+      </span>
+    </span>
   );
 }
 
@@ -143,7 +253,7 @@ function Line({ label, children }: { label: string; children: React.ReactNode })
  * colour — so tier identity is carried by a faceted mark and a label, never by
  * a colour fill that would compete with the metals (`design/design.md` §5).
  */
-function TierCard({ tier }: { tier: TierDto }) {
+function TierCard({ tier, className }: { tier: TierDto; className?: string }) {
   const t = useTranslations("tier");
   if (!tier.name) return null;
 
@@ -151,75 +261,139 @@ function TierCard({ tier }: { tier: TierDto }) {
   const localizedName = t.has(`names.${tier.name}` as never)
     ? t(`names.${tier.name}` as never)
     : tier.name;
+  const localizedNext =
+    tier.nextName && t.has(`names.${tier.nextName}` as never)
+      ? t(`names.${tier.nextName}` as never)
+      : tier.nextName;
 
   return (
-    <Card className="p-4">
-      <div className="mb-3.5 flex items-center gap-3">
-        <svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden="true" className="flex-none">
-          <path
-            d="M17 3 L28 12 L23.5 27 H10.5 L6 12 Z"
-            stroke="var(--platinum-400)"
-            strokeWidth="1.6"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M6 12 H28 M17 3 V27 M10.5 27 L17 12 L23.5 27"
-            stroke="var(--platinum-400)"
-            strokeWidth="1"
-            opacity="0.55"
-          />
-        </svg>
-        <div>
-          <div className="text-base font-semibold">{localizedName}</div>
-          <div className="text-[0.9375rem] text-muted-foreground">
-            {tier.bandMaxUsd === null ? t("topBand") : t("band", { max: tier.bandMaxUsd })}
-          </div>
-        </div>
+    <section
+      className={cn("flex flex-col rounded-lg border border-border bg-card p-4 lg:p-5", className)}
+    >
+      <div className="flex items-center gap-3">
+        <TierMark size={34} />
+        <span className="flex flex-col">
+          <span className="text-[1.125rem] font-semibold leading-snug">{localizedName}</span>
+          <span className="text-[0.9375rem] leading-snug text-muted-foreground">
+            {t("currentLevel")}
+          </span>
+        </span>
       </div>
 
-      {progress !== null && (
+      {progress !== null && localizedNext && (
         <>
-          <div className="h-1.5 overflow-hidden rounded-full bg-popover">
-            <div
-              className="h-full rounded-full bg-platinum-500 transition-[width] duration-200"
+          <div className="mt-4 flex items-baseline justify-between">
+            <span className="text-[0.9375rem] text-muted-foreground">
+              {t("towards", { name: localizedNext })}
+            </span>
+            <span className="tnum text-[0.9375rem] font-semibold">{progress.toFixed(0)}%</span>
+          </div>
+          <div className="well mt-2 h-2 overflow-hidden rounded-full">
+            <span
+              className="block h-full rounded-full bg-platinum-500 transition-[width] duration-200"
               style={{ width: `${Math.min(100, progress)}%` }}
             />
           </div>
-          <div className="mt-2 flex justify-between gap-3">
-            <span className="tnum text-[0.8125rem] text-muted-foreground">
-              ${usd(tier.holdingUsdCents)}
-            </span>
-            {tier.nextName && tier.nextThresholdUsd !== null && (
-              <span className="text-[0.9375rem] text-muted-foreground">
-                {t("toNext", { name: tier.nextName, amount: tier.nextThresholdUsd })}
-              </span>
+          <div className="mt-2 flex justify-between text-[0.9375rem] text-subtle">
+            <span className="tnum">${usd(tier.holdingUsdCents)}</span>
+            {tier.nextThresholdUsd !== null && (
+              <span className="tnum">${tier.nextThresholdUsd.toLocaleString("en-US")}</span>
             )}
           </div>
         </>
       )}
 
-      <p className="mt-3 border-t border-border pt-3 text-[0.9375rem] text-muted-foreground">
+      <p className="mt-3.5 text-[0.9375rem] leading-relaxed text-muted-foreground">
         {tier.bandMaxUsd === null ? t("topUnlock") : t("unlock")}
       </p>
-    </Card>
+
+      {localizedNext && tier.nextThresholdUsd !== null && (
+        <div className="mt-auto flex items-center justify-between border-t border-border pt-3.5">
+          <span className="text-[0.9375rem] text-muted-foreground">{t("nextLevel")}</span>
+          <span className="flex items-center gap-2.5 text-base font-semibold">
+            <span className="size-2 rounded-full bg-platinum-400" />
+            {localizedNext}
+            <span className="tnum text-[0.9375rem] font-normal text-muted-foreground">
+              ${tier.nextThresholdUsd.toLocaleString("en-US")}+
+            </span>
+          </span>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** The same vault proof as the dashboard, laid out as a wide strip. */
+function VaultStrip({ asset, className }: { asset: MetalAsset; className?: string }) {
+  const t = useTranslations("home");
+  const { data } = useResource<TreasurySummaryResponse>("/treasury/summary", {
+    intervalMs: 60_000,
+  });
+  const reserve = data?.reserves.find((r) => r.asset === asset) ?? null;
+
+  return (
+    <section
+      className={cn(
+        "flex flex-col gap-4 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:gap-6 lg:p-5",
+        className,
+      )}
+    >
+      <span className="flex max-w-[27rem] flex-col gap-1">
+        <span className="text-[1.125rem] font-semibold leading-normal">{t("vaultTitle")}</span>
+        <span className="text-[0.9375rem] leading-relaxed text-muted-foreground">
+          {t("vaultBody")}
+        </span>
+      </span>
+      <span className="flex flex-wrap gap-2.5 lg:ms-auto">
+        <Figure label={t("inVault")} value={reserve ? grams(reserve.physicalMg) : null} unit={t("gramUnit")} />
+        <Figure label={t("issued")} value={reserve ? grams(reserve.issuedMg) : null} unit={t("gramUnit")} />
+        <Figure
+          label={t("coverage")}
+          value={reserve ? (coverage(reserve.reserveRatioPctMilli) ?? "∞") : null}
+          gold
+        />
+      </span>
+    </section>
+  );
+}
+
+function Figure({
+  label,
+  value,
+  unit,
+  gold,
+}: {
+  label: string;
+  value: string | null;
+  unit?: string;
+  gold?: boolean;
+}) {
+  return (
+    <span className="well flex min-w-[10rem] flex-1 flex-col gap-0.5 rounded-md px-4 py-3">
+      <span className="text-[0.9375rem] leading-snug text-muted-foreground">{label}</span>
+      {value === null ? (
+        <Skeleton className="mt-1 h-5 w-20" />
+      ) : (
+        <span className={cn("tnum text-[1.125rem] font-semibold", gold && "text-gold-400")}>
+          {value}
+          {unit && (
+            <span className="ms-1 font-sans text-[0.9375rem] font-normal text-muted-foreground">
+              {unit}
+            </span>
+          )}
+        </span>
+      )}
+    </span>
   );
 }
 
 function PortfolioSkeleton() {
   return (
-    <>
-      <Skeleton className="mb-3.5 mt-1 h-8 w-36" />
-      <Card className="mb-3.5 p-5">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="my-2 h-9 w-52" />
-        <Skeleton className="h-4 w-40" />
-      </Card>
-      <Card className="mb-2.5 p-4">
-        <Skeleton className="h-5 w-full" />
-      </Card>
-      <Card className="p-4">
-        <Skeleton className="h-5 w-full" />
-      </Card>
-    </>
+    <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-12 lg:gap-5">
+      <Skeleton className="h-44 rounded-lg lg:col-span-8" />
+      <Skeleton className="h-44 rounded-lg lg:col-span-4" />
+      <Skeleton className="h-40 rounded-lg lg:col-span-8" />
+      <Skeleton className="h-40 rounded-lg lg:col-span-4" />
+    </div>
   );
 }

@@ -36,7 +36,10 @@
     "trade": "ግብይት",
     "portfolio": "ንብረቴ",
     "history": "ታሪክ",
-    "account": "መለያ"
+    "receipts": "ደረሰኞች",
+    "account": "መለያ",
+    "sectionMarket": "ገበያ",
+    "sectionAccount": "ሂሳብ"
   },
   "home": {
     "totalLabel": "ጠቅላላ ንብረት",
@@ -54,7 +57,18 @@
     "stale": "የዋጋ ምንጭ ዘግይቷል — የመጨረሻውን የታወቀ ዋጋ በማሳየት ላይ",
     "emptyTitle": "እስካሁን ወርቅ የለዎትም",
     "emptyBody": "ከ1 ግራም ጀምሮ መግዛት ይችላሉ።",
-    "noChartData": "ለዚህ ጊዜ የዋጋ መረጃ የለም።"
+    "noChartData": "ለዚህ ጊዜ የዋጋ መረጃ የለም።",
+    "backed": "የተረጋገጠ",
+    "gramUnit": "ግ",
+    "vaultShort": "አልኬቫ በካዝና ውስጥ የሌለውን ግራም አይሸጥም።",
+    "open": "መክፈቻ",
+    "high": "ከፍተኛ",
+    "low": "ዝቅተኛ",
+    "current": "የአሁኑ",
+    "last24h": "24 ሰዓት",
+    "recentActivity": "የቅርብ ጊዜ እንቅስቃሴ",
+    "viewAll": "ሁሉንም ይመልከቱ",
+    "receipt": "ደረሰኝ"
   },
   "trade": {
     "title": "ግብይት",
@@ -94,6 +108,15 @@
     "reviewBody": "ትላልቅ ግብይቶች በቁጥጥር ቡድናችን ይመረመራሉ። ምንም ገንዘብ አልተንቀሳቀሰም።",
     "reserveHaltExplain": "ይህ ጥበቃ ነው፦ አልኬቫ በካዝና ውስጥ የሌለውን ግራም አይሸጥም።",
     "floatHaltExplain": "ይህ ጥበቃ ነው፦ አልኬቫ ሁልጊዜ መክፈል መቻሉን ያረጋግጣል።",
+    "selectMetal": "ማዕድን ይምረጡ",
+    "sideLabel": "አይነት",
+    "heldMetal": "የያዙት {metal}",
+    "currentPrice": "የአሁኑ ዋጋ",
+    "lockedPrice": "የተያዘ ዋጋ",
+    "lockedExplain": "ይህ የተያዘ ዋጋ ነው — እስከሚያበቃ ድረስ አይለወጥም።",
+    "buyTitleShort": "{metal} ግዛ",
+    "sellTitleShort": "{metal} ሽጥ",
+    "tradeAgain": "ሌላ ግብይት",
     "errors": {
       "stale_price": "የዋጋ መረጃ ዘግይቷል — እባክዎ ትንሽ ቆይተው ይሞክሩ።",
       "no_price_data": "እስካሁን የዋጋ መረጃ የለም።",
@@ -118,6 +141,12 @@
   "portfolio": {
     "title": "ንብረቴ",
     "totalValue": "ጠቅላላ ዋጋ",
+    "totalMetalValue": "ጠቅላላ የማዕድን ዋጋ",
+    "holdingsTitle": "የያዙት ማዕድን",
+    "costFromLedger": "የግዢ ዋጋ ከመዝገቡ",
+    "gramsLabel": "ግራም",
+    "buyMore": "ተጨማሪ {metal} ግዛ",
+    "sellCta": "ሽጥ",
     "currentValue": "የአሁኑ ዋጋ",
     "costBasis": "የገዙበት ዋጋ",
     "gainLoss": "ትርፍ / ኪሳራ",
@@ -130,6 +159,9 @@
     "label": "የመለያ ደረጃ",
     "band": "ከ${max} በታች",
     "topBand": "ከፍተኛው ደረጃ",
+    "currentLevel": "የአሁኑ የመያዣ ደረጃ",
+    "towards": "ወደ {name}",
+    "nextLevel": "ቀጣይ ደረጃ",
     "toNext": "ወደ {name} ${amount}",
     "unlock": "የሚቀጥለው ደረጃ ከፍ ያለ የግብይት ጣሪያ ይሰጣል።",
     "topUnlock": "ከፍተኛው ደረጃ ላይ ደርሰዋል። አካላዊ ማድረስ ይፈቀዳል።",
@@ -153,7 +185,8 @@
     "sellLabel": "ሽጥ {metal}",
     "emptyTitle": "እስካሁን ግብይት የለም",
     "emptyBody": "የመጀመሪያ ግዢዎ እዚህ ይታያል።",
-    "loadMore": "ተጨማሪ አሳይ"
+    "loadMore": "ተጨማሪ አሳይ",
+    "receiptLink": "ደረሰኝ"
   },
   "receipt": {
     "title": "ደረሰኝ",
@@ -166,7 +199,21 @@
     "priceSource": "የዋጋ ምንጭ",
     "orderId": "የትእዛዝ መለያ",
     "ledgerId": "የመዝገብ መለያ",
-    "notAvailable": "ለዚህ ትእዛዝ ደረሰኝ የለም።"
+    "notAvailable": "ለዚህ ትእዛዝ ደረሰኝ የለም።",
+    "documentTitle": "የግብይት ደረሰኝ",
+    "serialLabel": "መለያ ቁጥር",
+    "dateTime": "ቀን እና ሰዓት",
+    "status": "ሁኔታ",
+    "transaction": "ግብይት",
+    "source": "ምንጭ",
+    "priceTime": "የዋጋው ሰዓት",
+    "fxRate": "የምንዛሪ ተመን",
+    "custodyNote": "እነዚህ {grams} ግራም {metal} በአልኬቫ ካዝና ውስጥ በአካል ተይዘዋል። አልኬቫ በካዝና ውስጥ የሌለውን ግራም አይሸጥም።",
+    "print": "አትም",
+    "share": "አጋራ",
+    "linkCopied": "አገናኙ ተቀድቷል",
+    "emptyTitle": "እስካሁን ደረሰኝ የለም",
+    "emptyBody": "የተፈጸመ ግብይት ሲኖርዎት ደረሰኙ እዚህ ይታያል።"
   },
   "account": {
     "title": "መለያ",

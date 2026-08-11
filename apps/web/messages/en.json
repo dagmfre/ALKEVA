@@ -36,7 +36,10 @@
     "trade": "Trade",
     "portfolio": "Portfolio",
     "history": "History",
-    "account": "Account"
+    "receipts": "Receipts",
+    "account": "Account",
+    "sectionMarket": "Market",
+    "sectionAccount": "Account"
   },
   "home": {
     "totalLabel": "Total holdings",
@@ -54,7 +57,18 @@
     "stale": "Price feed is delayed — showing the last known price",
     "emptyTitle": "You hold no gold yet",
     "emptyBody": "You can buy from 1 gram.",
-    "noChartData": "No price data for this range."
+    "noChartData": "No price data for this range.",
+    "backed": "Backed",
+    "gramUnit": "g",
+    "vaultShort": "ALKEVA does not sell a gram it does not hold.",
+    "open": "Open",
+    "high": "High",
+    "low": "Low",
+    "current": "Current",
+    "last24h": "24h",
+    "recentActivity": "Recent activity",
+    "viewAll": "View all",
+    "receipt": "Receipt"
   },
   "trade": {
     "title": "Trade",
@@ -94,6 +108,15 @@
     "reviewBody": "Large transactions are checked by our compliance team. No money has moved.",
     "reserveHaltExplain": "This is a protection: ALKEVA does not sell a gram it does not hold.",
     "floatHaltExplain": "This is a protection: ALKEVA keeps enough cash to always pay out.",
+    "selectMetal": "Choose metal",
+    "sideLabel": "Side",
+    "heldMetal": "{metal} held",
+    "currentPrice": "Current price",
+    "lockedPrice": "Locked price",
+    "lockedExplain": "This price is held for you — it does not move until it expires.",
+    "buyTitleShort": "Buy {metal}",
+    "sellTitleShort": "Sell {metal}",
+    "tradeAgain": "New trade",
     "errors": {
       "stale_price": "Price feed is delayed — please try again shortly.",
       "no_price_data": "No price data available yet.",
@@ -118,6 +141,12 @@
   "portfolio": {
     "title": "Portfolio",
     "totalValue": "Total value",
+    "totalMetalValue": "Total metal value",
+    "holdingsTitle": "Your holdings",
+    "costFromLedger": "Cost basis from the ledger",
+    "gramsLabel": "Grams",
+    "buyMore": "Buy more {metal}",
+    "sellCta": "Sell",
     "currentValue": "Current value",
     "costBasis": "Cost basis",
     "gainLoss": "Gain / loss",
@@ -130,6 +159,9 @@
     "label": "Tier",
     "band": "under ${max}",
     "topBand": "Top tier",
+    "currentLevel": "Current holding level",
+    "towards": "Towards {name}",
+    "nextLevel": "Next tier",
     "toNext": "to {name} ${amount}",
     "unlock": "The next band raises your transaction caps.",
     "topUnlock": "You are at the top tier. Physical delivery is available.",
@@ -153,7 +185,8 @@
     "sellLabel": "Sell {metal}",
     "emptyTitle": "No transactions yet",
     "emptyBody": "Your first purchase will appear here.",
-    "loadMore": "Show more"
+    "loadMore": "Show more",
+    "receiptLink": "Receipt"
   },
   "receipt": {
     "title": "Receipt",
@@ -166,7 +199,21 @@
     "priceSource": "Price source",
     "orderId": "Order ID",
     "ledgerId": "Ledger transaction",
-    "notAvailable": "There is no receipt for this order."
+    "notAvailable": "There is no receipt for this order.",
+    "documentTitle": "Transaction receipt",
+    "serialLabel": "Serial number",
+    "dateTime": "Date and time",
+    "status": "Status",
+    "transaction": "Transaction",
+    "source": "Source",
+    "priceTime": "Price taken at",
+    "fxRate": "Exchange rate",
+    "custodyNote": "These {grams} grams of {metal} are held physically in the ALKEVA vault. ALKEVA does not sell a gram it does not hold.",
+    "print": "Print",
+    "share": "Share",
+    "linkCopied": "Link copied",
+    "emptyTitle": "No receipts yet",
+    "emptyBody": "A receipt appears here once a trade settles."
   },
   "account": {
     "title": "Account",

@@ -5,7 +5,9 @@ What the user sees. Every step says what you should see — anything else is a b
 **Setup:** `docker compose up -d`, then `pnpm db:migrate && pnpm db:seed`, then three terminals — `pnpm dev:api`, `pnpm dev:worker`, `pnpm dev:web`. Open **http://localhost:3000**.
 psql shell: `docker exec -it alkeva-postgres psql -U alkeva -d alkeva`.
 
-> **Test on a phone if you can.** This is a mobile-web product; the desktop view is the same 480px column centred on the page. In Chrome DevTools, device toolbar → **iPhone 14 Pro (393px)** is the design target. Section J needs a real phone.
+> **Test both compositions.** This is a responsive website, not a phone app in a browser. The primary composition is the **1440px workspace** (rail + top bar + panel grid) — record the demo there. Below 1024px the same screens become the phone layout (compact header + bottom tab bar); check it in Chrome DevTools → device toolbar → **iPhone 14 Pro (393px)**. Section J needs a real phone.
+>
+> If you only have time for one pass before recording, run **section M** — it is the demo itself.
 
 ---
 
@@ -107,5 +109,33 @@ Each of these shows a clear message **in the current language** and leaves balan
 
 45. Repeat steps 5–18 and 32–36 against `https://alkeva-web.onrender.com`, on your phone, in Amharic.
 
+## M. Desktop workspace (the 1440 composition)
+
+46. At **1440px wide**, signed in: a fixed rail on the left (ALKEVA · XAU · XPT, two sections — ገበያ / ሂሳብ — six destinations, tier chip pinned at the bottom) and a top bar carrying the page name, the clock in EAT, **both metals with their 24-hour change**, your birr balance and your name. The current destination is the only gold thing in the rail.
+47. Home fills the width as a grid: holdings · gold · platinum on the first row, the chart (8 columns) beside the vault panel and the gold Buy button, recent activity across the bottom. **Nothing is a centred phone column.**
+48. The chart has a **labelled price axis** with the current price in a gold tag on it, a time axis, and መክፈቻ / ከፍተኛ / ዝቅተኛ / የአሁኑ above it. Switch 24h → 7d → 30d → 1y: axis labels change with the range and stay round numbers.
+49. Click **ግብይት** in the rail → the trading workspace: position on the left, the ticket in the middle, the live chart on the right. Get a quote → the countdown ring, the sunk fee breakdown and the glossy gold **አረጋግጥ** are all in the middle panel while the chart keeps ticking beside them.
+50. Confirm → the middle panel becomes the settled panel with **ደረሰኝ ይመልከቱ**. Open it: the receipt is a 640px document centred on the canvas, with **አትም** and **አጋራ** in the header. Press **አትም** → the print preview is black-on-white with no navigation. Cancel it.
+51. Open **ደረሰኞች** in the rail → every settled order by serial. Only settled orders appear.
+52. **ንብረቴ** at 1440: total metal value with the gain/loss to its right, the gold/platinum allocation bar, the tier card, the holdings table, cash + the two actions, and the vault strip across the foot.
+53. Resize the window to ~390px without reloading → the rail and top bar disappear, the tab bar appears, every grid becomes one column, and no screen scrolls sideways.
+
+## N. Demo run sheet (video recording)
+
+Record at **1440×900**, browser zoom 100%, Amharic. Have psql open in a second window for step 6. Total ≈ 6 minutes.
+
+1. **Cold open — the price is real.** Home. Point at the ticker: gold and platinum per gram, the 24-hour change, and the feed name + timestamp on each price card. Say the price comes from a named feed every 30 seconds and is stored with its FX rate.
+2. **The vault claim.** Hover the vault panel: in vault, issued to users, coverage `38.9×`. Say the sentence out loud — *ALKEVA does not sell a gram it does not hold* — and that it is enforced inside the buy transaction, not by a policy document.
+3. **The trade.** Rail → ግብይት. Choose ወርቅ, ግዛ, **5 ግ**. Get a quote. Let the ring run a few seconds. Read the breakdown line by line: price per gram × grams = subtotal, commission at its exact percentage, total. Point at the provenance line under the button.
+4. **Button-mashing (the idempotency proof).** Tap **አረጋግጥ** four or five times fast. One settled order. Say: the button is deliberately never disabled, and the server is idempotent per quote.
+5. **The receipt.** ደረሰኝ ይመልከቱ → serial `ALK-2026-NNNNNN`, the full breakdown, and the price source with the exact tick timestamp and the USD/ETB rate. This is the artefact a bank asks for.
+6. **The ledger.** Switch to psql: `SELECT asset, sum(amount) FROM ledger_entry GROUP BY asset;` → every row **0**. Then `UPDATE ledger_entry SET amount = 1;` → **rejected, append-only**. Say: balances are never edited, they are a projection of immutable pairs.
+7. **A refusal, deliberately.** Back in the app, try to sell more grams than you hold → the refusal is legible, in Amharic, and the balance is untouched. (For the reserve halt, use step 23's psql lines before recording so the halt is armed.)
+8. **The portfolio, including the honest loss.** ንብረቴ → you are down by exactly the commission you just paid, with the sentence explaining it. Say that hiding this would be the easy choice and the wrong one.
+9. **Language.** Toggle አማ · EN in the top bar → the whole workspace switches. Toggle back to Amharic.
+10. **The phone.** Resize to 390px (or hold up a phone on the same network) → the same product, one column, tab bar, trade as a bottom sheet. Close on the phone view.
+
+> Two things to avoid on camera: do **not** press the dashed የሙከራ ብር ያግኙ button (it is visibly demo scaffolding — top the account up before recording), and do not resize mid-quote, since the countdown keeps running while the layout reflows.
+
 ---
-**Result:** note each failed step number and report back. Phase 3 closes when A–K pass locally; L closes the deploy carry-over.
+**Result:** note each failed step number and report back. Phase 3 closes when A–M pass locally; L closes the deploy carry-over.

@@ -2,45 +2,33 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import type { OrderListItem, OrderListResponse } from "@alkeva/shared";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTradeSheet } from "@/components/trade/trade-sheet-context";
+import { KNOWN_ERRORS } from "@/components/trade/use-trade-form";
 import { dayKey, grams, longDate, money, timeOfDay } from "@/lib/format";
+import { useIsDesktop } from "@/lib/use-is-desktop";
 import { useResource } from "@/lib/use-resource";
 import { cn } from "@/lib/utils";
 
-const KNOWN_ERRORS = new Set([
-  "quote_expired",
-  "quote_consumed",
-  "account_frozen",
-  "insufficient_balance",
-  "insufficient_metal",
-  "reserve_halt",
-  "float_halt",
-  "sellback_ceiling",
-  "tier_txn_cap",
-  "tier_daily_cap",
-  "amount_too_small",
-]);
-
 /**
- * A divided list, not a stack of cards, grouped by day.
+ * Every order, grouped by day, newest first.
  *
  * Rejected rows carry their reason inline: a user should be able to scroll
  * their history and understand every refusal without tapping into it. That is
- * how the platform teaches its own safety rules.
+ * how the platform teaches its own safety rules — and on the demo it is the
+ * screen that proves the gates fired rather than the app swallowing them.
  */
 export function HistoryScreen() {
   const t = useTranslations("history");
-  const tc = useTranslations("common");
-  const tt = useTranslations("trade");
   const th = useTranslations("home");
-  const locale = useLocale();
   const { open, revision } = useTradeSheet();
+  const isDesktop = useIsDesktop();
+  const router = useRouter();
   const { data, loading } = useResource<OrderListResponse>("/orders?limit=50", { revision });
 
   const groups = useMemo(() => {
@@ -56,29 +44,25 @@ export function HistoryScreen() {
 
   if (loading) {
     return (
-      <>
-        <Skeleton className="mb-3.5 mt-1 h-8 w-28" />
-        <Card className="p-4">
-          <Skeleton className="mb-3 h-6 w-full" />
-          <Skeleton className="mb-3 h-6 w-full" />
-          <Skeleton className="h-6 w-full" />
-        </Card>
-      </>
+      <div className="flex flex-col gap-3.5">
+        <Skeleton className="h-24 rounded-lg" />
+        <Skeleton className="h-24 rounded-lg" />
+      </div>
     );
   }
 
   if (groups.length === 0) {
     return (
-      <>
-        <h1 className="mb-3.5 mt-1 text-2xl font-semibold">{t("title")}</h1>
-        <Card className="p-5">
-          <CardTitle className="mb-1">{t("emptyTitle")}</CardTitle>
-          <p className="mb-3.5 text-[0.9375rem] text-muted-foreground">{t("emptyBody")}</p>
-          <Button size="cta" onClick={() => open("XAU", "buy")}>
-            {th("buyGoldCta")}
-          </Button>
-        </Card>
-      </>
+      <div className="mx-auto max-w-[36rem] rounded-lg border border-border bg-card p-5">
+        <h2 className="text-[1.125rem] font-semibold">{t("emptyTitle")}</h2>
+        <p className="mb-3.5 mt-1 text-[0.9375rem] text-muted-foreground">{t("emptyBody")}</p>
+        <Button
+          size="cta"
+          onClick={() => (isDesktop ? router.push("/trade") : open("XAU", "buy"))}
+        >
+          {th("buyGoldCta")}
+        </Button>
+      </div>
     );
   }
 
@@ -86,74 +70,102 @@ export function HistoryScreen() {
   const yesterdayKey = dayKey(new Date(Date.now() - 86_400_000).toISOString());
 
   return (
-    <>
-      <h1 className="mb-3.5 mt-1 text-2xl font-semibold">{t("title")}</h1>
-
+    <div className="mx-auto flex max-w-[64rem] flex-col gap-4 lg:mx-0 lg:max-w-none">
       {groups.map(([key, orders]) => (
-        <section key={key} className="mb-4">
+        <section key={key}>
           <h2 className="pb-1.5 text-[0.9375rem] font-normal text-muted-foreground">
             {key === todayKey
               ? t("today")
               : key === yesterdayKey
                 ? t("yesterday")
-                : longDate(orders[0]!.createdAt, locale)}
+                : longDate(orders[0]!.createdAt, "en")}
           </h2>
-          <Card className="overflow-hidden">
-            {orders.map((o, i) => {
-              const metal = o.asset === "XAU" ? tc("gold") : tc("platinum");
-              const label =
-                o.side === "buy" ? t("buyLabel", { metal }) : t("sellLabel", { metal });
-              const reason =
-                o.failureReason && KNOWN_ERRORS.has(o.failureReason)
-                  ? tt(`errors.${o.failureReason}` as never)
-                  : null;
-
-              const body = (
-                <>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className="text-base font-medium">
-                      {label} · <span className="tnum">{grams(o.gramsMg)}</span> {tc("g")}
-                    </span>
-                    <span
-                      className={cn(
-                        "tnum text-base font-semibold",
-                        o.status === "rejected" && "text-subtle",
-                      )}
-                    >
-                      {money(o.totalCents)}
-                    </span>
-                  </div>
-                  <div className="mt-1 flex items-baseline justify-between gap-3">
-                    <StatusLabel status={o.status} />
-                    <span className="tnum text-[0.8125rem] text-subtle">
-                      {timeOfDay(o.createdAt, locale)}
-                    </span>
-                  </div>
-                  {reason && (
-                    <p className="mt-1 text-[0.9375rem] text-muted-foreground">{reason}</p>
-                  )}
-                </>
-              );
-
-              const cls = cn(
-                "block w-full px-4 py-3.5 text-start",
-                i < orders.length - 1 && "border-b border-border",
-              );
-
-              return o.status === "settled" ? (
-                <Link key={o.id} href={`/receipt/${o.id}`} className={cn(cls, "hover:bg-popover/50")}>
-                  {body}
-                </Link>
-              ) : (
-                <div key={o.id} className={cls}>
-                  {body}
-                </div>
-              );
-            })}
-          </Card>
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            {orders.map((o, i) => (
+              <OrderRow key={o.id} order={o} divided={i < orders.length - 1} />
+            ))}
+          </div>
         </section>
       ))}
+    </div>
+  );
+}
+
+/**
+ * One row, two compositions: a table line on a wide screen, a two-line block
+ * on a phone. Same data in both — the phone never gets an abridged truth.
+ */
+export function OrderRow({ order: o, divided }: { order: OrderListItem; divided?: boolean }) {
+  const t = useTranslations("history");
+  const tc = useTranslations("common");
+  const tt = useTranslations("trade");
+  const locale = useLocale();
+
+  const metal = o.asset === "XAU" ? tc("gold") : tc("platinum");
+  const label = o.side === "buy" ? t("buyLabel", { metal }) : t("sellLabel", { metal });
+  const reason =
+    o.failureReason && KNOWN_ERRORS.has(o.failureReason)
+      ? tt(`errors.${o.failureReason}` as never)
+      : null;
+
+  const inner = (
+    <>
+      <span className="flex items-center gap-2.5 text-base font-medium lg:flex-[1.4]">
+        <span
+          className={cn(
+            "size-2 flex-none rounded-full",
+            o.asset === "XAU" ? "bg-gold-500" : "bg-platinum-400",
+          )}
+        />
+        {label}
+      </span>
+
+      <span className="tnum order-3 text-[0.9375rem] text-muted-foreground lg:order-none lg:flex-1">
+        {grams(o.gramsMg)} <span className="font-sans">{tc("g")}</span>
+      </span>
+
+      <span
+        className={cn(
+          "tnum text-end text-base font-semibold lg:flex-1",
+          o.status === "rejected" && "text-subtle",
+        )}
+      >
+        {money(o.totalCents)}
+      </span>
+
+      <span className="order-4 lg:order-none lg:flex-1 lg:text-end">
+        <StatusLabel status={o.status} />
+      </span>
+
+      <span className="font-latin order-5 text-end text-[0.8125rem] text-subtle lg:order-none lg:flex-[0.7]">
+        {timeOfDay(o.createdAt, locale)}
+      </span>
+
+      <span className="hidden lg:block lg:flex-[0.7] lg:text-end">
+        {o.receiptSerial && (
+          <span className="text-[0.9375rem] text-gold-400">{t("receiptLink")}</span>
+        )}
+      </span>
+
+      {reason && (
+        <span className="order-6 w-full text-[0.9375rem] text-muted-foreground lg:order-none">
+          {reason}
+        </span>
+      )}
     </>
+  );
+
+  const cls = cn(
+    "grid grid-cols-2 items-center gap-x-4 gap-y-1 px-4 py-3.5 lg:flex lg:gap-4 lg:px-5",
+    divided && "border-b border-border",
+  );
+
+  return o.status === "settled" ? (
+    <Link href={`/receipt/${o.id}`} className={cn(cls, "transition-colors hover:bg-popover/50")}>
+      {inner}
+    </Link>
+  ) : (
+    <div className={cls}>{inner}</div>
   );
 }
 
@@ -164,6 +176,6 @@ function StatusLabel({ status }: { status: OrderListItem["status"] }) {
   if (status === "review")
     return <span className="text-[0.9375rem] text-platinum-400">◑ {t("review")}</span>;
   if (status === "rejected")
-    return <span className="text-[0.9375rem] text-loss">▲ {t("rejected")}</span>;
+    return <span className="text-[0.9375rem] text-loss">✕ {t("rejected")}</span>;
   return <span className="text-[0.9375rem] text-muted-foreground">{t("created")}</span>;
 }
