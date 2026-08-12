@@ -356,6 +356,9 @@
     "reject": "ውድቅ አድርግ",
     "backToApp": "ወደ መተግበሪያው ተመለስ",
     "actionFailed": "እርምጃው ተከልክሏል፦ {code}",
+    "notStaffTitle": "የሠራተኞች ኮንሶል",
+    "notStaffBody": "የገቡት እንደ {email} ({role}) ነው። ይህ ኮንሶል ለአስተዳዳሪ፣ ለተገዢነት እና ለፋይናንስ መለያዎች ብቻ ነው።",
+    "signInAsStaff": "እንደ ሠራተኛ ይግቡ",
     "roles": {
       "administrator": "አስተዳዳሪ",
       "compliance": "ቁጥጥር",

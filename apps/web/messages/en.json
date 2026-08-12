@@ -356,6 +356,9 @@
     "reject": "Reject",
     "backToApp": "Back to the app",
     "actionFailed": "Action refused: {code}",
+    "notStaffTitle": "Staff console",
+    "notStaffBody": "You are signed in as {email} ({role}). This console is for administrator, compliance and finance accounts.",
+    "signInAsStaff": "Sign in as staff",
     "roles": {
       "administrator": "Administrator",
       "compliance": "Compliance",

@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import type { MeResponse } from "@alkeva/shared";
 
 import { Wordmark } from "@/components/brand/mark";
 import { LocaleToggle } from "@/components/shell/locale-toggle";
 import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/lib/api";
 import { useResource } from "@/lib/use-resource";
 import { cn } from "@/lib/utils";
 
@@ -46,9 +46,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const role = me.data?.role;
   const isStaff = role === "administrator" || role === "compliance" || role === "finance";
 
-  useEffect(() => {
-    if (me.data && !isStaff) router.replace("/");
-  }, [me.data, isStaff, router]);
+  async function signOut() {
+    try {
+      await api("/auth/logout", { method: "POST" });
+    } finally {
+      router.replace("/login");
+      router.refresh();
+    }
+  }
 
   if (!me.data) {
     return (
@@ -57,7 +62,40 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  if (!isStaff) return null;
+
+  // A non-staff visitor is told why, and by which identity. This used to be a
+  // silent router.replace("/") — indistinguishable from a broken route, and it
+  // hid the only thing worth knowing: which account the browser is holding.
+  // The API's RolesGuard is the real boundary, so showing this costs nothing.
+  if (!isStaff) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center px-4">
+        <div className="flex max-w-[26rem] flex-col items-center gap-3 rounded-lg border border-border bg-card p-6 text-center">
+          <h1 className="text-lg font-semibold">{t("notStaffTitle")}</h1>
+          <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
+            {t("notStaffBody", {
+              email: me.data.email,
+              role: t(`roles.${role ?? "user"}` as never),
+            })}
+          </p>
+          <div className="flex gap-4 pt-1">
+            <Link href="/" className="text-[0.9375rem] text-gold-500 hover:underline">
+              ← {t("backToApp")}
+            </Link>
+            {/* Sign out rather than a /login link: middleware bounces a
+                signed-in visitor away from /login, so the link would loop. */}
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="text-[0.9375rem] text-gold-500 hover:underline"
+            >
+              {t("signInAsStaff")}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const items = NAV.filter((item) => item.roles.includes(role as StaffRole));
 
