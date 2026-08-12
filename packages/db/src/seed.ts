@@ -148,8 +148,8 @@ try {
       .from(users)
       .where(eq(users.email, staff.email))
       .limit(1);
+    const passwordHash = await argon2.hash(staff.password, { type: argon2.argon2id });
     if (existing.length === 0) {
-      const passwordHash = await argon2.hash(staff.password, { type: argon2.argon2id });
       await db.insert(users).values({
         email: staff.email,
         passwordHash,
@@ -160,7 +160,18 @@ try {
       });
       console.log(`✓ ${staff.role} user created`);
     } else {
-      console.log(`✓ ${staff.role} user exists`);
+      // The env pair is the source of truth for a staff account, so re-seeding
+      // RESETS the password and role rather than skipping. Create-only looks
+      // idempotent but is a trap: changing SEED_*_PASSWORD would be silently
+      // ignored forever, and on Render — where seed runs every deploy — a staff
+      // account created once with a forgotten password could never be recovered
+      // without a manual DB write. These accounts have no self-serve password
+      // reset; the environment is the only way in.
+      await db
+        .update(users)
+        .set({ passwordHash, role: staff.role, kycTier: 3 })
+        .where(eq(users.email, staff.email));
+      console.log(`✓ ${staff.role} user exists — password + role reset from env`);
     }
   }
 
