@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { MeResponse, PortfolioResponse } from "@alkeva/shared";
@@ -7,6 +8,7 @@ import type { MeResponse, PortfolioResponse } from "@alkeva/shared";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AlertsList } from "@/components/account/alerts-list";
 import { LocaleToggle } from "@/components/shell/locale-toggle";
 import { api } from "@/lib/api";
 import { useResource } from "@/lib/use-resource";
@@ -59,18 +61,28 @@ export function AccountScreen() {
 
         <Line label={t("kyc")}>
           {me.data ? (
-            <span
-              className={
-                me.data.kycTier > 0
-                  ? "text-[0.9375rem] text-gain"
-                  : "text-[0.9375rem] text-muted-foreground"
-              }
-            >
-              {me.data.kycTier > 0 ? `✓ ${t("verified")}` : t("kycPending")}
-            </span>
+            me.data.kycTier > 0 ? (
+              <span className="text-[0.9375rem] text-gain">✓ {t("verified")}</span>
+            ) : (
+              <Link href="/kyc" className="text-[0.9375rem] text-gold-400 hover:text-gold-300">
+                {t("kycStart")} →
+              </Link>
+            )
           ) : (
             <Skeleton className="h-5 w-20" />
           )}
+        </Line>
+
+        <Line label={t("moneyIn")}>
+          <Link href="/deposit" className="text-[0.9375rem] text-gold-400 hover:text-gold-300">
+            {t("depositLink")} →
+          </Link>
+        </Line>
+
+        <Line label={t("moneyOut")}>
+          <Link href="/withdraw" className="text-[0.9375rem] text-gold-400 hover:text-gold-300">
+            {t("withdrawLink")} →
+          </Link>
         </Line>
 
         <Line label={t("email")} last>
@@ -81,6 +93,8 @@ export function AccountScreen() {
           )}
         </Line>
       </Card>
+
+      <AlertsList />
 
       <Button variant="outline" size="cta" className="text-loss" onClick={() => void logout()}>
         {t("logout")}

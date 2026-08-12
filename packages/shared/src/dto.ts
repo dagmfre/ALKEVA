@@ -248,6 +248,246 @@ export interface ReceiptResponse {
   };
 }
 
+// ── Money in/out (Phase 4) ────────────────────────────────────────
+
+export const createPaymentDto = z.object({
+  amountCents: bigintString.refine((v) => v > 0n),
+});
+export type CreatePaymentDto = z.infer<typeof createPaymentDto>;
+
+export type PaymentStatus =
+  | "initiated"
+  | "webhook_received"
+  | "verified"
+  | "credited"
+  | "failed";
+
+export interface PaymentResponse {
+  id: string;
+  txRef: string;
+  amountCents: string;
+  status: PaymentStatus;
+  /** Present only on the creating response — where to send the browser. */
+  checkoutUrl?: string;
+  createdAt: string;
+  creditedAt: string | null;
+}
+
+export interface DepositChannelsResponse {
+  channels: {
+    key: string;
+    minInCents: string | null;
+    maxInCents: string | null;
+    maxOutCents: string | null;
+  }[];
+  minDepositCents: string;
+}
+
+export const createPayoutDto = z.object({
+  amountCents: bigintString.refine((v) => v > 0n),
+  bankCode: z.number().int().positive(),
+  accountNumber: z.string().min(4).max(34),
+  accountName: z.string().min(2).max(120),
+  /** Client part only — the server namespaces it `${userId}:${key}`. */
+  idempotencyKey: z.string().min(8).max(64),
+});
+export type CreatePayoutDto = z.infer<typeof createPayoutDto>;
+
+export type PayoutStatus = "requested" | "approved" | "processing" | "settled" | "rejected";
+
+export interface PayoutResponse {
+  id: string;
+  amountCents: string;
+  status: PayoutStatus;
+  bankCode: number;
+  accountNumber: string;
+  accountName: string;
+  failureReason: string | null;
+  createdAt: string;
+  settledAt: string | null;
+}
+
+export interface BankDto {
+  id: number;
+  name: string;
+  isMobileMoney: boolean;
+  accountLength: number | null;
+}
+
+// ── Notifications (Phase 5.5, records written from Phase 4 on) ────
+
+export interface NotificationItem {
+  id: string;
+  template: string;
+  payload: Record<string, string> | null;
+  status: "queued" | "sent" | "failed";
+  createdAt: string;
+}
+
+export interface NotificationsResponse {
+  notifications: NotificationItem[];
+}
+
+// ── KYC (Phase 4.3) ───────────────────────────────────────────────
+
+export const KYC_DOC_TYPES = ["fayda", "passport", "driving_licence", "kebele_id"] as const;
+export type KycDocType = (typeof KYC_DOC_TYPES)[number];
+export type KycStatus = "pending" | "approved" | "rejected";
+
+export interface KycMeResponse {
+  kycTier: number;
+  /** Latest submission, if any. */
+  submission: {
+    id: string;
+    docType: KycDocType;
+    status: KycStatus;
+    reviewNote: string | null;
+    createdAt: string;
+    reviewedAt: string | null;
+  } | null;
+}
+
+// ── Price alerts (F24) ────────────────────────────────────────────
+
+export const createAlertDto = z.object({
+  asset: z.enum(METAL_ASSETS),
+  direction: z.enum(["above", "below"]),
+  thresholdCentsPerGram: bigintString.refine((v) => v > 0n),
+});
+export type CreateAlertDto = z.infer<typeof createAlertDto>;
+
+export interface AlertItem {
+  id: string;
+  asset: MetalAsset;
+  direction: "above" | "below";
+  thresholdCentsPerGram: string;
+  active: boolean;
+  triggeredAt: string | null;
+  createdAt: string;
+}
+
+export interface AlertsResponse {
+  alerts: AlertItem[];
+}
+
+// ── AI assistant (Phase 5.4) ──────────────────────────────────────
+
+export const aiChatDto = z.object({
+  message: z.string().min(1).max(2000),
+  conversationId: z.string().uuid().optional(),
+});
+export type AiChatDto = z.infer<typeof aiChatDto>;
+
+export interface AiChatResponse {
+  conversationId: string;
+  reply: string;
+}
+
+export interface AiConversationResponse {
+  conversationId: string | null;
+  messages: {
+    id: string;
+    role: "user" | "assistant";
+    content: string;
+    createdAt: string;
+  }[];
+}
+
+// ── Admin console (Phase 5) ───────────────────────────────────────
+
+export interface AdminOverviewResponse {
+  pendingKyc: number;
+  pendingPayouts: number;
+  openReviews: number;
+  frozenUsers: number;
+}
+
+export const adminSearchDto = z.object({
+  q: z.string().max(200).optional(),
+  status: z.string().max(30).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+});
+export type AdminSearchDto = z.infer<typeof adminSearchDto>;
+
+export const freezeDto = z.object({
+  reason: z.string().min(3).max(500),
+});
+export type FreezeDto = z.infer<typeof freezeDto>;
+
+export const decisionNoteDto = z.object({
+  note: z.string().max(500).optional(),
+});
+export type DecisionNoteDto = z.infer<typeof decisionNoteDto>;
+
+export interface AdminUserItem {
+  id: string;
+  email: string;
+  fullName: string;
+  role: Role;
+  status: "active" | "frozen";
+  kycTier: number;
+  holdingTier: string | null;
+  createdAt: string;
+}
+
+export interface AdminUserDetailResponse extends AdminUserItem {
+  balances: BalancesResponse;
+  activeFreeze: {
+    id: string;
+    reason: string;
+    createdBy: string;
+    createdAt: string;
+  } | null;
+  recentOrders: OrderListItem[];
+  complianceEvents: {
+    id: string;
+    ruleKey: string;
+    action: string;
+    createdAt: string;
+    resolvedAt: string | null;
+  }[];
+}
+
+export interface AdminKycItem {
+  id: string;
+  userEmail: string;
+  docType: KycDocType;
+  status: KycStatus;
+  fileName: string;
+  createdAt: string;
+}
+
+export interface AdminReviewItem {
+  orderId: string;
+  userEmail: string;
+  side: OrderSide;
+  asset: MetalAsset;
+  gramsMg: string;
+  totalCents: string;
+  ruleKey: string | null;
+  createdAt: string;
+}
+
+export interface AdminOrderSearchItem extends OrderListItem {
+  userEmail: string;
+}
+
+export interface AdminAuditItem {
+  id: string;
+  actorLabel: string;
+  action: string;
+  targetType: string | null;
+  targetId: string | null;
+  after: unknown;
+  createdAt: string;
+}
+
+export interface AdminTreasuryResponse {
+  summary: TreasurySummaryResponse;
+  /** Chapa merchant balances; null when Chapa is unconfigured/unreachable. */
+  chapa: { currency: string; availableBalance: number; ledgerBalance: number }[] | null;
+}
+
 export interface TreasurySummaryResponse {
   reserves: TreasuryReserveDto[];
   float: {

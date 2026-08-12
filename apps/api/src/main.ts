@@ -7,7 +7,9 @@ import { AppModule } from "./app.module.js";
 loadDotenvUpwards();
 const env = loadEnv();
 
-const app = await NestFactory.create(AppModule);
+// rawBody: Chapa signs webhook payloads with HMAC-SHA256 over the exact bytes
+// it sent — verification must run on req.rawBody, never on re-serialized JSON.
+const app = await NestFactory.create(AppModule, { rawBody: true });
 app.use(cookieParser());
 // The browser normally reaches this API through the Next.js rewrite proxy
 // (first-party cookies); CORS is for direct dev access and tooling.

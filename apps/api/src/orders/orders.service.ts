@@ -8,9 +8,9 @@ import {
 } from "@nestjs/common";
 import { and, desc, eq, lt, sql } from "drizzle-orm";
 import {
+  auditLogs,
   complianceEvents,
   feeConfig,
-  freezes,
   holdingTierConfig,
   orders,
   priceTicks,
@@ -35,6 +35,7 @@ import type {
 } from "@alkeva/shared";
 import { DB, ENV } from "../core/core.module.js";
 import { LedgerService, type EntrySpec, type Tx } from "../ledger/ledger.service.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
 
 type OrderRow = typeof orders.$inferSelect;
 type QuoteRow = typeof quotes.$inferSelect;
@@ -60,6 +61,7 @@ export class OrdersService {
     @Inject(DB) private readonly db: Db,
     @Inject(ENV) private readonly env: Env,
     private readonly ledger: LedgerService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async execute(userId: string, dto: CreateOrderDto): Promise<OrderResponse> {
@@ -143,8 +145,14 @@ export class OrdersService {
         }
 
         // 4. Frozen check — authoritative, inside the tx.
-        if (await this.isFrozen(tx, userId)) {
+        if (await this.ledger.isFrozen(tx, userId)) {
           return this.reject(tx, order, quote, "account_frozen");
+        }
+
+        // 4b. KYC gate (Phase 4.3): trading requires a verified identity.
+        // Existing accounts were grandfathered to tier 1 by migration 0004.
+        if (await this.kycTierBelow(tx, userId, 1)) {
+          return this.reject(tx, order, quote, "kyc_required");
         }
 
         // 5. Compliance pre-check (Q57): large orders route to review —
@@ -274,7 +282,226 @@ export class OrdersService {
         orderId: result.order.id,
       });
     }
+    if (result.outcome === "settled") this.emitReceipt(result.order, result.quote);
     return this.serialize(result.order, result.quote);
+  }
+
+  /** Fire-and-forget receipt notification for a freshly settled order. */
+  private emitReceipt(order: OrderRow, quote: QuoteRow): void {
+    if (order.receiptSerial === null) return;
+    const settledAt = order.settledAt ?? order.createdAt;
+    void this.notifications.emit(order.userId, "order_receipt", {
+      side: order.side,
+      asset: order.asset,
+      gramsMg: quote.gramsMg.toString(),
+      totalCents: quote.totalCents.toString(),
+      serial: `ALK-${settledAt.getUTCFullYear()}-${order.receiptSerial.toString().padStart(6, "0")}`,
+    });
+  }
+
+  /**
+   * The Phase 5 exit from the review queue (compliance role, via the admin
+   * module). Approval settles AT THE ORIGINAL QUOTE'S FIGURES — the user
+   * confirmed that price; review is a compliance decision, not a repricing —
+   * but every money gate runs again inside the settle transaction, because
+   * the world moved while the order sat in review. The reserve gate holding
+   * at settle time is non-negotiable #5; a gate failure turns the approval
+   * into a recorded rejection, exactly like a live order.
+   */
+  async resolveReview(
+    orderId: string,
+    actorId: string,
+    decision: "approve" | "reject",
+    note?: string,
+  ): Promise<OrderResponse> {
+    const rows = await this.db
+      .select({ order: orders, quote: quotes })
+      .from(orders)
+      .innerJoin(quotes, eq(orders.quoteId, quotes.id))
+      .where(eq(orders.id, orderId))
+      .limit(1);
+    const found = rows[0];
+    if (!found) throw new NotFoundException("order_not_found");
+    const { quote: peeked } = found;
+
+    if (decision === "reject") {
+      const claimed = await this.db
+        .update(orders)
+        .set({ status: "rejected", failureReason: "compliance_rejected" })
+        .where(and(eq(orders.id, orderId), eq(orders.status, "review")))
+        .returning();
+      const rejected = claimed[0];
+      if (!rejected) throw new ConflictException("order_not_in_review");
+      await this.resolveComplianceEvents(orderId, actorId);
+      await this.auditReview(actorId, "review_rejected", orderId, note);
+      return this.serialize(rejected, peeked);
+    }
+
+    // Approve: same account set and lock order as a live execution.
+    const userId = found.order.userId;
+    const userEtbId = await this.ledger.ensureUserAccount(userId, "ETB");
+    const userMetalId = await this.ledger.ensureUserAccount(userId, peeked.asset);
+    const cashId = await this.ledger.systemAccountId("system:cash");
+    const vaultId = await this.ledger.systemAccountId(
+      `system:vault:${peeked.asset}` as SystemAccountName,
+    );
+    const feesId = await this.ledger.systemAccountId("system:fees");
+    const taxId = await this.ledger.systemAccountId("system:tax");
+    const reforestId = await this.ledger.systemAccountId("system:reforestation");
+    const lockIds = [userEtbId, userMetalId, cashId, vaultId];
+    if (peeked.feeCents > 0n) lockIds.push(feesId);
+    if (peeked.taxCents > 0n) lockIds.push(taxId);
+    if (peeked.reforestCents > 0n) lockIds.push(reforestId);
+
+    let result: ExecOutcome;
+    try {
+      result = await this.db.transaction(async (tx): Promise<ExecOutcome> => {
+        // The order row lock is the approve/approve mutex.
+        const orderRows = await tx
+          .select()
+          .from(orders)
+          .where(eq(orders.id, orderId))
+          .limit(1)
+          .for("update");
+        const order = orderRows[0];
+        if (!order || order.status !== "review") {
+          throw new ConflictException("order_not_in_review");
+        }
+
+        const balances = await this.ledger.lockAndReadBalances(tx, lockIds);
+        const quoteRows = await tx
+          .select()
+          .from(quotes)
+          .where(eq(quotes.id, order.quoteId))
+          .limit(1)
+          .for("update");
+        const quote = quoteRows[0];
+        if (!quote) return this.reject(tx, order, peeked, "quote_not_found");
+
+        // Re-run every gate the review routing skipped or that time can break.
+        if (await this.ledger.isFrozen(tx, userId)) {
+          return this.reject(tx, order, quote, "account_frozen");
+        }
+        const tierCode = await this.checkTierCaps(tx, userId, quote.totalCents);
+        if (tierCode) return this.reject(tx, order, quote, tierCode);
+
+        const balance = (id: string) => balances.get(id) ?? 0n;
+        if (quote.side === "buy") {
+          if (balance(userEtbId) < quote.totalCents) {
+            return this.reject(tx, order, quote, "insufficient_balance");
+          }
+          const physicalMg = await this.physicalVaultMg(tx, quote.asset as MetalAsset);
+          if (physicalMg + balance(vaultId) < quote.gramsMg) {
+            return this.reject(tx, order, quote, "reserve_halt");
+          }
+        } else {
+          if (balance(userMetalId) < quote.gramsMg) {
+            return this.reject(tx, order, quote, "insufficient_metal");
+          }
+          const treasury = await this.treasuryConfig(tx);
+          if (balance(cashId) - quote.subtotalCents < treasury.haltThresholdCents) {
+            return this.reject(tx, order, quote, "float_halt");
+          }
+          const usedToday = await this.dailySellbackUsed(tx);
+          if (usedToday + quote.totalCents > treasury.dailySellbackCeilingCents) {
+            return this.reject(tx, order, quote, "sellback_ceiling");
+          }
+        }
+
+        const entries: EntrySpec[] =
+          quote.side === "buy"
+            ? [
+                { accountId: userEtbId, asset: "ETB", amount: -quote.totalCents },
+                { accountId: cashId, asset: "ETB", amount: quote.subtotalCents },
+                { accountId: feesId, asset: "ETB", amount: quote.feeCents },
+                { accountId: taxId, asset: "ETB", amount: quote.taxCents },
+                { accountId: reforestId, asset: "ETB", amount: quote.reforestCents },
+                { accountId: userMetalId, asset: quote.asset, amount: quote.gramsMg },
+                { accountId: vaultId, asset: quote.asset, amount: -quote.gramsMg },
+              ]
+            : [
+                { accountId: cashId, asset: "ETB", amount: -quote.subtotalCents },
+                { accountId: userEtbId, asset: "ETB", amount: quote.totalCents },
+                { accountId: feesId, asset: "ETB", amount: quote.feeCents },
+                { accountId: taxId, asset: "ETB", amount: quote.taxCents },
+                { accountId: reforestId, asset: "ETB", amount: quote.reforestCents },
+                { accountId: userMetalId, asset: quote.asset, amount: -quote.gramsMg },
+                { accountId: vaultId, asset: quote.asset, amount: quote.gramsMg },
+              ];
+        const txnId = await this.ledger.postTransaction(tx, {
+          kind: quote.side,
+          orderId: order.id,
+          initiatedBy: actorId,
+          note: "review_approved",
+          entries,
+        });
+        const settled = await tx
+          .update(orders)
+          .set({
+            status: "settled",
+            ledgerTransactionId: txnId,
+            settledAt: sql`now()`,
+            receiptSerial: sql`nextval('receipt_serial_seq')`,
+          })
+          .where(eq(orders.id, order.id))
+          .returning();
+        return { outcome: "settled", order: settled[0] ?? order, quote };
+      });
+    } catch (err) {
+      if (this.isPgError(err, "P0001")) {
+        throw new InternalServerErrorException("ledger_unbalanced");
+      }
+      throw err;
+    }
+
+    await this.resolveComplianceEvents(orderId, actorId);
+    await this.auditReview(
+      actorId,
+      result.outcome === "settled" ? "review_approved" : "review_approve_refused",
+      orderId,
+      note,
+      result.outcome === "rejected" ? result.code : undefined,
+    );
+
+    if (result.outcome === "rejected") {
+      // The approval itself was refused by a money gate — surfaced to the
+      // compliance officer as the same machine code a live order would show.
+      throw new UnprocessableEntityException({
+        message: result.code,
+        orderId: result.order.id,
+      });
+    }
+    if (result.outcome === "settled") this.emitReceipt(result.order, result.quote);
+    return this.serialize(result.order, result.quote);
+  }
+
+  private async resolveComplianceEvents(orderId: string, actorId: string): Promise<void> {
+    await this.db
+      .update(complianceEvents)
+      .set({ resolvedBy: actorId, resolvedAt: sql`now()` })
+      .where(
+        and(
+          sql`${complianceEvents.evidence} ->> 'orderId' = ${orderId}`,
+          sql`${complianceEvents.resolvedAt} is null`,
+        ),
+      );
+  }
+
+  private async auditReview(
+    actorId: string,
+    action: string,
+    orderId: string,
+    note?: string,
+    refusalCode?: string,
+  ): Promise<void> {
+    await this.db.insert(auditLogs).values({
+      actorId,
+      actorLabel: `staff:${actorId}`,
+      action,
+      targetType: "order",
+      targetId: orderId,
+      after: { note: note ?? null, ...(refusalCode ? { refusalCode } : {}) },
+    });
   }
 
   async getOwn(userId: string, orderId: string): Promise<OrderResponse> {
@@ -326,18 +553,13 @@ export class OrdersService {
     return { outcome: "rejected", order: updated[0] ?? order, quote, code };
   }
 
-  private async isFrozen(tx: Tx, userId: string): Promise<boolean> {
+  private async kycTierBelow(tx: Tx, userId: string, minTier: number): Promise<boolean> {
     const rows = await tx
-      .select({
-        status: users.status,
-        activeFreeze: sql<boolean>`${freezes.id} is not null`,
-      })
+      .select({ kycTier: users.kycTier })
       .from(users)
-      .leftJoin(freezes, and(eq(freezes.userId, users.id), sql`${freezes.liftedAt} is null`))
       .where(eq(users.id, userId))
       .limit(1);
-    const row = rows[0];
-    return !row || row.status === "frozen" || row.activeFreeze;
+    return (rows[0]?.kycTier ?? 0) < minTier;
   }
 
   /** Returns a rejection code when a tier cap is exceeded, else null. */

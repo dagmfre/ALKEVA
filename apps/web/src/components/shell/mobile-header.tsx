@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 
 import { Wordmark } from "@/components/brand/mark";
+import { AssistantLink, NotificationsBell } from "@/components/shell/header-actions";
 import { LocaleToggle } from "@/components/shell/locale-toggle";
 import { usePageTitle } from "@/components/shell/page-title";
 
@@ -21,7 +22,11 @@ export function MobileHeader() {
       data-print="hide"
     >
       {pathname === "/" ? <Wordmark /> : <h1 className="text-[1.125rem] font-semibold">{title}</h1>}
-      <LocaleToggle />
+      <span className="flex items-center gap-2">
+        <AssistantLink />
+        <NotificationsBell />
+        <LocaleToggle />
+      </span>
     </header>
   );
 }

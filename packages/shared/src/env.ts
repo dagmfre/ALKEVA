@@ -88,11 +88,39 @@ export const envSchema = z.object({
 
   SEED_ADMIN_EMAIL: z.string().email().default("admin@alkeva.local"),
   SEED_ADMIN_PASSWORD: z.string().min(8).default("change-me-on-first-login"),
+  // Staff seeds for the Phase 5 role separation demo — seeded only when both
+  // halves of a pair are set (empty = skipped).
+  SEED_COMPLIANCE_EMAIL: z.string().optional().default(""),
+  SEED_COMPLIANCE_PASSWORD: z.string().optional().default(""),
+  SEED_FINANCE_EMAIL: z.string().optional().default(""),
+  SEED_FINANCE_PASSWORD: z.string().optional().default(""),
 
-  // Phase 4–5, validated only once those phases wire them in.
+  // Phase 4 — Chapa. Secret/hash empty until Dagmfre pastes the test keys;
+  // payment endpoints answer 503 payments_unconfigured until then (the app
+  // still boots — the same degrade-not-crash pattern as the faucet).
   CHAPA_SECRET_KEY: z.string().optional().default(""),
   CHAPA_WEBHOOK_HASH: z.string().optional().default(""),
+  CHAPA_API_BASE: z.string().url().default("https://api.chapa.co"),
+  DEPOSIT_MIN_CENTS: z.coerce.bigint().positive().default(1_000n), // 10 ETB
+  PAYOUT_MIN_CENTS: z.coerce.bigint().positive().default(10_000n), // 100 ETB
+  // Per-channel caps, display-only (Chapa enforces them at checkout) — from
+  // fact-check §6.5. Cents as string bigints, same convention as tier bands.
+  DEPOSIT_CHANNELS_JSON: z.string().default(
+    '[{"key":"telebirr","maxInCents":"7500000"},{"key":"cbebirr","maxInCents":"15000000","maxOutCents":"30000000"},{"key":"bank","maxInCents":"999999900"},{"key":"card","minInCents":"1000","maxInCents":"50000000"}]',
+  ),
+
+  // Phase 5 — Gemini (demo: 3.6 Flash for best Amharic; rehearsal:
+  // gemini-3.5-flash-lite to preserve the free-tier daily cap).
   GEMINI_API_KEY: z.string().optional().default(""),
+  GEMINI_MODEL: z.string().default("gemini-3.6-flash"),
+
+  // Phase 5 — email. Provider-agnostic SMTP (free tiers: Brevo, Gmail app
+  // password). Unset = notifications still recorded, delivery skipped.
+  SMTP_HOST: z.string().optional().default(""),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_USER: z.string().optional().default(""),
+  SMTP_PASS: z.string().optional().default(""),
+  MAIL_FROM: z.string().default("ALKEVA <no-reply@alkeva.local>"),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -122,4 +150,19 @@ export type TierBand = z.infer<typeof tierBandSchema>[number];
 
 export function parseTierBands(json: string): TierBand[] {
   return tierBandSchema.parse(JSON.parse(json));
+}
+
+/** Deposit-channel display caps (DEPOSIT_CHANNELS_JSON). Display-only. */
+export const depositChannelSchema = z.array(
+  z.object({
+    key: z.string(),
+    minInCents: z.string().regex(/^[0-9]+$/).optional(),
+    maxInCents: z.string().regex(/^[0-9]+$/).optional(),
+    maxOutCents: z.string().regex(/^[0-9]+$/).optional(),
+  }),
+);
+export type DepositChannel = z.infer<typeof depositChannelSchema>[number];
+
+export function parseDepositChannels(json: string): DepositChannel[] {
+  return depositChannelSchema.parse(JSON.parse(json));
 }

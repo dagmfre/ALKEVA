@@ -13,6 +13,8 @@ export const SYSTEM_ACCOUNTS = [
   "system:tax",
   "system:reforestation",
   "system:external",
+  /** Withdrawal escrow: user ETB parks here between request and approve/reject. */
+  "system:payout_hold",
 ] as const;
 export type SystemAccountName = (typeof SYSTEM_ACCOUNTS)[number];
 

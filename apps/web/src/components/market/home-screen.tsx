@@ -13,6 +13,7 @@ import type {
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PriceAlertButton } from "@/components/market/price-alert-dialog";
 import { PriceChart } from "@/components/market/price-chart";
 import { TrustPanel } from "@/components/market/trust-panel";
 import { SystemBanner } from "@/components/system/banner";
@@ -105,6 +106,15 @@ export function HomeScreen() {
             value={balances.data ? money(balances.data.etbCents) : null}
           />
         </div>
+        {/* Money in/out — the Phase 4 doors, beside the balance they change. */}
+        <div className="mt-auto grid grid-cols-2 gap-2.5">
+          <Button variant="flat" asChild>
+            <Link href="/deposit">{t("depositCta")}</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/withdraw">{t("withdrawCta")}</Link>
+          </Button>
+        </div>
       </section>
 
       <div className="grid grid-cols-2 gap-3.5 lg:col-span-8 lg:grid-cols-2 lg:gap-5">
@@ -130,6 +140,7 @@ export function HomeScreen() {
 
       <div className="flex flex-col gap-3.5 lg:col-span-4 lg:h-[372px] lg:gap-4">
         <TrustPanel asset={selected} className="lg:flex-1" />
+        <PriceAlertButton asset={selected} />
         <Button size="cta" className="flex-none" onClick={() => trade(selected)}>
           {selected === "XAU" ? t("buyGoldCta") : t("buyPlatCta")}
         </Button>

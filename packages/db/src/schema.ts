@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
+  customType,
   index,
   integer,
   jsonb,
@@ -12,6 +13,13 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+
+/** drizzle has no built-in bytea; KYC documents are stored in-row (≤2 MB). */
+const bytea = customType<{ data: Buffer }>({
+  dataType() {
+    return "bytea";
+  },
+});
 
 /**
  * ALKEVA schema — Design §3 (docs/System_Design_and_Architecture.md).
@@ -77,6 +85,7 @@ export const notificationStatusEnum = pgEnum("notification_status", [
   "failed",
 ]);
 export const aiRoleEnum = pgEnum("ai_role", ["user", "assistant", "tool"]);
+export const alertDirectionEnum = pgEnum("alert_direction", ["above", "below"]);
 
 // ── Identity ──────────────────────────────────────────────────────
 export const users = pgTable(
@@ -108,6 +117,9 @@ export const kycSubmissions = pgTable(
       .references(() => users.id),
     docType: kycDocTypeEnum("doc_type").notNull(),
     fileRef: text("file_ref").notNull(),
+    /** The document itself, in-row (migration 0004); ≤2 MB enforced at the API. */
+    fileData: bytea("file_data"),
+    fileMime: text("file_mime"),
     status: kycStatusEnum("status").notNull().default("pending"),
     reviewerId: uuid("reviewer_id").references(() => users.id),
     reviewNote: text("review_note"),
@@ -318,13 +330,23 @@ export const payouts = pgTable(
       .references(() => users.id),
     amountCents: bigint("amount_cents", { mode: "bigint" }).notNull(),
     status: payoutStatusEnum("status").notNull().default("requested"),
+    /** Chapa transfer destination (migration 0004): code from GET /v1/banks. */
+    bankCode: integer("bank_code").notNull(),
+    accountNumber: text("account_number").notNull(),
+    accountName: text("account_name").notNull(),
+    /** Namespaced `${userId}:${clientKey}` — one hold per double-submit. */
+    idempotencyKey: text("idempotency_key").notNull(),
     approvedBy: uuid("approved_by").references(() => users.id),
     chapaTransferRef: text("chapa_transfer_ref"),
     failureReason: text("failure_reason"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     settledAt: timestamp("settled_at", { withTimezone: true }),
   },
-  (t) => [index("payout_user_idx").on(t.userId), index("payout_status_idx").on(t.status)],
+  (t) => [
+    uniqueIndex("payout_idem_uq").on(t.idempotencyKey),
+    index("payout_user_idx").on(t.userId),
+    index("payout_status_idx").on(t.status),
+  ],
 );
 
 // ── Inventory & treasury ──────────────────────────────────────────
@@ -458,6 +480,32 @@ export const aiMessages = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("ai_msg_conv_idx").on(t.conversationId)],
+);
+
+/**
+ * Price alerts (F24) — deterministic worker threshold checks, one-shot.
+ * `triggered_at` set = fired; users re-arm by creating a new alert.
+ */
+export const priceAlerts = pgTable(
+  "price_alert",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    asset: assetEnum("asset").notNull(),
+    direction: alertDirectionEnum("direction").notNull(),
+    thresholdCentsPerGram: bigint("threshold_cents_per_gram", { mode: "bigint" }).notNull(),
+    active: boolean("active").notNull().default(true),
+    triggeredAt: timestamp("triggered_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("alert_user_idx").on(t.userId),
+    index("alert_pending_idx")
+      .on(t.asset)
+      .where(sql`${t.active} and ${t.triggeredAt} is null`),
+  ],
 );
 
 export const notifications = pgTable(

@@ -1,6 +1,18 @@
-import { Inject, Injectable, InternalServerErrorException } from "@nestjs/common";
-import { asc, eq, inArray, sql } from "drizzle-orm";
-import { accounts, ledgerEntries, ledgerTransactions, type Db } from "@alkeva/db";
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  UnprocessableEntityException,
+} from "@nestjs/common";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+import {
+  accounts,
+  freezes,
+  ledgerEntries,
+  ledgerTransactions,
+  users,
+  type Db,
+} from "@alkeva/db";
 import type { Asset, BalancesResponse, SystemAccountName } from "@alkeva/shared";
 import { DB } from "../core/core.module.js";
 
@@ -18,6 +30,7 @@ export interface PostTxnSpec {
   kind: "deposit" | "buy" | "sell" | "withdrawal" | "treasury";
   orderId?: string;
   paymentId?: string;
+  payoutId?: string;
   initiatedBy?: string;
   note?: string;
   entries: EntrySpec[];
@@ -128,6 +141,7 @@ export class LedgerService {
         kind: spec.kind,
         orderId: spec.orderId,
         paymentId: spec.paymentId,
+        payoutId: spec.payoutId,
         initiatedBy: spec.initiatedBy,
         note: spec.note,
       })
@@ -144,6 +158,33 @@ export class LedgerService {
       })),
     );
     return txn.id;
+  }
+
+  /**
+   * Two independent freeze signals, checked together: user.status and an
+   * unlifted freeze row. Shared by every money path (orders inside their tx,
+   * faucet/payments/payouts before theirs) — pass the handle that matches
+   * the caller's isolation needs.
+   */
+  async isFrozen(handle: Db | Tx, userId: string): Promise<boolean> {
+    const rows = await handle
+      .select({
+        status: users.status,
+        activeFreeze: sql<boolean>`${freezes.id} is not null`,
+      })
+      .from(users)
+      .leftJoin(freezes, and(eq(freezes.userId, users.id), isNull(freezes.liftedAt)))
+      .where(eq(users.id, userId))
+      .limit(1);
+    const row = rows[0];
+    return !row || row.status === "frozen" || row.activeFreeze;
+  }
+
+  /** Throwing form for paths where frozen is a hard stop, not a recorded rejection. */
+  async assertNotFrozen(userId: string): Promise<void> {
+    if (await this.isFrozen(this.db, userId)) {
+      throw new UnprocessableEntityException("account_frozen");
+    }
   }
 
   /** Balance projection across the user's accounts; absent accounts read 0. */

@@ -8,5 +8,6 @@ import { PortfolioService } from "./portfolio.service.js";
   imports: [AuthModule, LedgerModule],
   controllers: [PortfolioController],
   providers: [PortfolioService],
+  exports: [PortfolioService],
 })
 export class PortfolioModule {}

@@ -38,6 +38,10 @@
     "history": "History",
     "receipts": "Receipts",
     "account": "Account",
+    "deposit": "Deposit",
+    "withdraw": "Withdraw",
+    "kyc": "Identity check",
+    "assistant": "Assistant",
     "sectionMarket": "Market",
     "sectionAccount": "Account"
   },
@@ -68,7 +72,9 @@
     "last24h": "24h",
     "recentActivity": "Recent activity",
     "viewAll": "View all",
-    "receipt": "Receipt"
+    "receipt": "Receipt",
+    "depositCta": "Deposit",
+    "withdrawCta": "Withdraw"
   },
   "trade": {
     "title": "Trade",
@@ -132,6 +138,7 @@
       "tier_txn_cap": "This amount exceeds your tier's per-transaction limit.",
       "tier_daily_cap": "You have reached your tier's daily limit.",
       "faucet_limit": "That exceeds the demo money limit per request.",
+      "kyc_required": "Verify your identity first — it takes one document.",
       "amount_too_small": "The amount is too small.",
       "validation_failed": "Please check the amount and try again.",
       "conflict": "This request conflicts with an earlier one. Request a new quote.",
@@ -222,7 +229,271 @@
     "kyc": "Identity check",
     "verified": "Verified",
     "kycPending": "Pending",
+    "kycStart": "Verify now",
+    "moneyIn": "Deposit birr",
+    "moneyOut": "Withdraw birr",
+    "depositLink": "Deposit",
+    "withdrawLink": "Withdraw",
     "email": "Email",
     "logout": "Log out"
+  },
+  "deposit": {
+    "title": "Deposit",
+    "amountLabel": "Amount to deposit",
+    "minimum": "Minimum {amount} ETB",
+    "cta": "Continue to payment",
+    "redirectNote": "You will be taken to Chapa's secure checkout to choose Telebirr, CBEBirr, bank transfer, or card. Your balance is credited only after the payment is verified.",
+    "channelsTitle": "Payment channel limits",
+    "upTo": "up to {amount} ETB",
+    "channelsNote": "Limits are set by each payment provider and applied at checkout.",
+    "channels": {
+      "telebirr": "Telebirr",
+      "cbebirr": "CBEBirr",
+      "bank": "Bank transfer (CBE)",
+      "card": "Card"
+    },
+    "kycGateTitle": "Verify your identity to deposit",
+    "kycGateBody": "Deposits require a one-time identity check. Upload one document; a compliance officer reviews it.",
+    "kycGateCta": "Verify identity",
+    "returnPendingTitle": "Confirming your payment…",
+    "returnPendingBody": "We are verifying the payment with Chapa. Your balance is credited the moment it is confirmed.",
+    "returnPendingLong": "Still waiting — if you completed the payment, it can take a moment to confirm. This page keeps checking.",
+    "returnSettledTitle": "Deposit credited",
+    "returnSettledBody": "The amount has been verified and added to your birr balance.",
+    "returnHome": "Back to Home",
+    "returnFailedTitle": "Payment not completed",
+    "returnFailedBody": "The payment was cancelled or failed. No money left your account with us.",
+    "returnRetry": "Try again",
+    "errors": {
+      "kyc_required": "Verify your identity first.",
+      "amount_too_small": "The amount is below the minimum deposit.",
+      "account_frozen": "Your account is frozen. Please contact support.",
+      "payments_unconfigured": "Deposits are not available right now.",
+      "chapa_error": "The payment provider could not be reached. Please try again.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "withdraw": {
+    "title": "Withdraw",
+    "available": "Available to withdraw",
+    "amountLabel": "Amount to withdraw",
+    "bankLabel": "Destination",
+    "bankPlaceholder": "Choose a bank or wallet",
+    "accountNumberLabel": "Account or wallet number",
+    "accountNameLabel": "Account holder name",
+    "cta": "Request withdrawal",
+    "holdNote": "The amount is held immediately and reviewed by our finance team. If the request is declined, it returns to your balance in full.",
+    "historyTitle": "Your withdrawal requests",
+    "status": {
+      "requested": "Awaiting approval",
+      "approved": "Approved",
+      "processing": "Processing",
+      "settled": "Sent",
+      "rejected": "Returned"
+    },
+    "kycGateTitle": "Verify your identity to withdraw",
+    "kycGateBody": "Withdrawals require a one-time identity check. Upload one document; a compliance officer reviews it.",
+    "kycGateCta": "Verify identity",
+    "errors": {
+      "kyc_required": "Verify your identity first.",
+      "amount_too_small": "The amount is below the minimum withdrawal.",
+      "insufficient_balance": "Not enough birr balance.",
+      "account_frozen": "Your account is frozen. Please contact support.",
+      "payments_unconfigured": "Withdrawals are not available right now.",
+      "banks_unavailable": "The bank list could not be loaded. Please try again.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "assistant": {
+    "emptyTitle": "Ask about your gold",
+    "emptyBody": "I can explain current prices, your holdings, your transaction history, fees, and how the platform's protections work. I explain — I never advise, and I can't perform any action.",
+    "examplePrice": "What is the gold price right now?",
+    "examplePortfolio": "How much is my portfolio worth?",
+    "exampleFees": "What fees do I pay when I buy?",
+    "inputPlaceholder": "Ask a question…",
+    "send": "Send",
+    "thinking": "Checking…",
+    "disclaimer": "The assistant explains — it never gives investment advice and cannot move money.",
+    "errors": {
+      "ai_unconfigured": "The assistant is not available right now.",
+      "ai_unavailable": "The assistant is busy — please try again in a moment.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "notifications": {
+    "title": "Notices",
+    "empty": "Nothing yet. Deposits, withdrawals, and account changes appear here.",
+    "templates": {
+      "deposit_credited": "Deposit credited",
+      "payout_approved": "Withdrawal approved",
+      "payout_settled": "Withdrawal sent",
+      "payout_rejected": "Withdrawal returned",
+      "kyc_approved": "Identity verified",
+      "kyc_rejected": "Identity submission rejected",
+      "account_frozen": "Account frozen",
+      "account_unfrozen": "Account unfrozen",
+      "price_alert": "Price alert fired",
+      "order_receipt": "Trade settled"
+    }
+  },
+  "alerts": {
+    "cta": "Set a {metal} price alert",
+    "title": "Price alert",
+    "above": "Goes above",
+    "below": "Goes below",
+    "current": "Current price: {price} ETB/g",
+    "save": "Set alert",
+    "saved": "Alert set",
+    "error": "Could not save the alert. Please try again.",
+    "listTitle": "Price alerts",
+    "armed": "Armed",
+    "fired": "Fired",
+    "remove": "Remove"
+  },
+  "admin": {
+    "confirmAction": "Confirm?",
+    "approve": "Approve",
+    "reject": "Reject",
+    "backToApp": "Back to the app",
+    "actionFailed": "Action refused: {code}",
+    "roles": {
+      "administrator": "Administrator",
+      "compliance": "Compliance",
+      "finance": "Finance",
+      "user": "User"
+    },
+    "nav": {
+      "overview": "Overview",
+      "users": "Users",
+      "kyc": "KYC queue",
+      "reviews": "Reviews",
+      "payouts": "Payouts",
+      "orders": "Transactions",
+      "treasury": "Treasury",
+      "audit": "Audit log"
+    },
+    "overview": {
+      "pendingKyc": "Pending KYC",
+      "pendingPayouts": "Pending payouts",
+      "openReviews": "Open reviews",
+      "frozenUsers": "Frozen accounts",
+      "note": "Balances are ledger projections and cannot be edited from this console. Every action taken here is written to the append-only audit log."
+    },
+    "users": {
+      "searchPlaceholder": "Search by email or name",
+      "email": "Email",
+      "name": "Name",
+      "role": "Role",
+      "status": "Status",
+      "kycTier": "KYC",
+      "joined": "Joined",
+      "active": "Active",
+      "frozen": "Frozen",
+      "freeze": "Freeze account",
+      "unfreeze": "Unfreeze account",
+      "freezeReason": "Freeze reason (shown to the user)",
+      "freezeReasonPlaceholder": "e.g. unusual transaction pattern under review",
+      "frozenSince": "Frozen — {reason} · {at}",
+      "staffNoFreeze": "Staff accounts cannot be frozen from the console.",
+      "recentOrders": "Recent orders",
+      "complianceEvents": "Compliance events",
+      "rule": "Rule",
+      "action": "Action",
+      "resolved": "Resolved"
+    },
+    "kyc": {
+      "empty": "No pending submissions.",
+      "docType": "Document type",
+      "document": "Document",
+      "viewDocument": "View document",
+      "docTypes": {
+        "fayda": "Fayda national ID",
+        "passport": "Passport",
+        "driving_licence": "Driving licence",
+        "kebele_id": "Kebele ID"
+      }
+    },
+    "reviews": {
+      "explain": "Orders at or above the review threshold wait here. Approving settles at the price the customer confirmed — every vault and balance protection runs again at settlement. No money moved when the order entered review.",
+      "empty": "No orders waiting for review."
+    },
+    "payouts": {
+      "empty": "Nothing in this queue.",
+      "amount": "Amount",
+      "destination": "Destination",
+      "note": "Note",
+      "approveSend": "Approve & send"
+    },
+    "payoutStatus": {
+      "requested": "Requested",
+      "approved": "Approved",
+      "processing": "Processing",
+      "settled": "Settled",
+      "rejected": "Rejected"
+    },
+    "orders": {
+      "searchPlaceholder": "Search by email or receipt number",
+      "side": "Side",
+      "buy": "Buy",
+      "sell": "Sell",
+      "amount": "Amount",
+      "total": "Total",
+      "status": "Status",
+      "serial": "Receipt",
+      "when": "When"
+    },
+    "orderStatus": {
+      "created": "In progress",
+      "review": "Under review",
+      "settled": "Settled",
+      "rejected": "Rejected"
+    },
+    "treasury": {
+      "physical": "Physical in vault",
+      "issued": "Issued to customers",
+      "available": "Available to sell",
+      "coverage": "Coverage",
+      "floatTitle": "Cash float",
+      "cash": "Cash on the books",
+      "haltThreshold": "Sell-back halt threshold",
+      "sellHeadroom": "Sell-back headroom",
+      "sellbackToday": "Sell-backs today",
+      "chapaTitle": "Chapa merchant balance",
+      "chapaAvailable": "Available ({currency})",
+      "chapaUnavailable": "Chapa balance unavailable (keys not configured or provider unreachable)."
+    },
+    "audit": {
+      "actor": "Actor",
+      "action": "Action",
+      "target": "Target",
+      "exportCsv": "Export AML CSV",
+      "loadMore": "Show more"
+    }
+  },
+  "kyc": {
+    "title": "Identity check",
+    "verifiedTitle": "Identity verified",
+    "verifiedBody": "Your identity check is complete. Deposits, withdrawals, and trading are unlocked.",
+    "pendingTitle": "Under review",
+    "pendingBody": "A compliance officer is reviewing your document. You will be notified when it is decided.",
+    "rejectedBanner": "Your previous submission was rejected",
+    "docTypeLabel": "Document type",
+    "docTypes": {
+      "fayda": "Fayda national ID",
+      "passport": "Passport",
+      "driving_licence": "Driving licence",
+      "kebele_id": "Kebele ID"
+    },
+    "fileLabel": "Document photo",
+    "fileHint": "JPEG, PNG, WebP, or PDF — up to 2 MB",
+    "cta": "Submit for review",
+    "privacyNote": "Your document is used only for identity verification and is visible only to compliance staff.",
+    "errors": {
+      "unsupported_file_type": "That file type is not supported. Use JPEG, PNG, WebP, or PDF.",
+      "file_too_large": "The file is larger than 2 MB.",
+      "kyc_pending_exists": "You already have a submission under review.",
+      "file_required": "Choose a document file first.",
+      "generic": "Something went wrong. Please try again."
+    }
   }
 }

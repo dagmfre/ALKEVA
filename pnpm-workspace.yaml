@@ -2,8 +2,10 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
+  '@google/genai': true
   '@nestjs/core': true
   '@swc/core': true
   argon2: true
   esbuild: true
+  protobufjs: true
   sharp: true

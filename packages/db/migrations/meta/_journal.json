@@ -29,6 +29,13 @@
       "when": 1786222668664,
       "tag": "0003_receipt_serial",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786443996383,
+      "tag": "0004_payouts_kyc_alerts",
+      "breakpoints": true
     }
   ]
 }

@@ -38,6 +38,10 @@
     "history": "ታሪክ",
     "receipts": "ደረሰኞች",
     "account": "መለያ",
+    "deposit": "ገቢ ማድረግ",
+    "withdraw": "ወጪ ማድረግ",
+    "kyc": "የማንነት ማረጋገጫ",
+    "assistant": "ረዳት",
     "sectionMarket": "ገበያ",
     "sectionAccount": "ሂሳብ"
   },
@@ -68,7 +72,9 @@
     "last24h": "24 ሰዓት",
     "recentActivity": "የቅርብ ጊዜ እንቅስቃሴ",
     "viewAll": "ሁሉንም ይመልከቱ",
-    "receipt": "ደረሰኝ"
+    "receipt": "ደረሰኝ",
+    "depositCta": "ገቢ ያድርጉ",
+    "withdrawCta": "ወጪ ያድርጉ"
   },
   "trade": {
     "title": "ግብይት",
@@ -132,6 +138,7 @@
       "tier_txn_cap": "ይህ መጠን የደረጃዎን የአንድ ግብይት ገደብ ይበልጣል።",
       "tier_daily_cap": "የደረጃዎ የቀን ገደብ ደርሷል።",
       "faucet_limit": "ከሚፈቀደው የሙከራ ብር መጠን በላይ ጠይቀዋል።",
+      "kyc_required": "መጀመሪያ ማንነትዎን ያረጋግጡ — አንድ ሰነድ ብቻ ይበቃል።",
       "amount_too_small": "መጠኑ በጣም ትንሽ ነው።",
       "validation_failed": "እባክዎ መጠኑን አረጋግጠው እንደገና ይሞክሩ።",
       "conflict": "ይህ ጥያቄ ከቀደመ ጥያቄ ጋር ይጋጫል። አዲስ ዋጋ ይጠይቁ።",
@@ -222,7 +229,271 @@
     "kyc": "የማንነት ማረጋገጫ",
     "verified": "ተረጋግጧል",
     "kycPending": "በመጠባበቅ ላይ",
+    "kycStart": "አሁን ያረጋግጡ",
+    "moneyIn": "ብር ገቢ ማድረግ",
+    "moneyOut": "ብር ወጪ ማድረግ",
+    "depositLink": "ገቢ ያድርጉ",
+    "withdrawLink": "ወጪ ያድርጉ",
     "email": "ኢሜይል",
     "logout": "ውጣ"
+  },
+  "deposit": {
+    "title": "ገቢ ማድረግ",
+    "amountLabel": "የሚያስገቡት መጠን",
+    "minimum": "ዝቅተኛው {amount} ብር",
+    "cta": "ወደ ክፍያ ይቀጥሉ",
+    "redirectNote": "ቴሌብር፣ ሲቢኢብር፣ የባንክ ዝውውር ወይም ካርድ ለመምረጥ ወደ ቻፓ ደህንነቱ የተጠበቀ የክፍያ ገጽ ይወሰዳሉ። ክፍያው ከተረጋገጠ በኋላ ብቻ ሂሳብዎ ይሞላል።",
+    "channelsTitle": "የክፍያ መንገዶች ገደቦች",
+    "upTo": "እስከ {amount} ብር",
+    "channelsNote": "ገደቦቹ በየክፍያ አቅራቢው የተቀመጡ ሲሆኑ በክፍያ ጊዜ ይተገበራሉ።",
+    "channels": {
+      "telebirr": "ቴሌብር",
+      "cbebirr": "ሲቢኢብር",
+      "bank": "የባንክ ዝውውር (ንግድ ባንክ)",
+      "card": "ካርድ"
+    },
+    "kycGateTitle": "ገቢ ለማድረግ ማንነትዎን ያረጋግጡ",
+    "kycGateBody": "ገቢ ማድረግ የአንድ ጊዜ የማንነት ማረጋገጫ ይጠይቃል። አንድ ሰነድ ያስገቡ፤ የቁጥጥር ባለሙያ ይመረምረዋል።",
+    "kycGateCta": "ማንነት ያረጋግጡ",
+    "returnPendingTitle": "ክፍያዎ በመረጋገጥ ላይ ነው…",
+    "returnPendingBody": "ክፍያውን ከቻፓ ጋር በማረጋገጥ ላይ ነን። እንደተረጋገጠ ወዲያውኑ ሂሳብዎ ይሞላል።",
+    "returnPendingLong": "አሁንም በመጠባበቅ ላይ — ክፍያውን ከጨረሱ ማረጋገጡ ጥቂት ጊዜ ሊወስድ ይችላል። ይህ ገጽ መፈተሹን ይቀጥላል።",
+    "returnSettledTitle": "ገቢው ተመዝግቧል",
+    "returnSettledBody": "መጠኑ ተረጋግጦ ወደ ብር ሂሳብዎ ተጨምሯል።",
+    "returnHome": "ወደ መነሻ ተመለስ",
+    "returnFailedTitle": "ክፍያው አልተጠናቀቀም",
+    "returnFailedBody": "ክፍያው ተሰርዟል ወይም አልተሳካም። ከእኛ ካለው ሂሳብዎ ምንም ገንዘብ አልወጣም።",
+    "returnRetry": "እንደገና ይሞክሩ",
+    "errors": {
+      "kyc_required": "መጀመሪያ ማንነትዎን ያረጋግጡ።",
+      "amount_too_small": "መጠኑ ከዝቅተኛው የገቢ መጠን በታች ነው።",
+      "account_frozen": "መለያዎ ታግዷል። እባክዎ ድጋፍን ያግኙ።",
+      "payments_unconfigured": "ገቢ ማድረግ አሁን አይገኝም።",
+      "chapa_error": "የክፍያ አቅራቢው አልተገኘም። እባክዎ እንደገና ይሞክሩ።",
+      "generic": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።"
+    }
+  },
+  "withdraw": {
+    "title": "ወጪ ማድረግ",
+    "available": "ወጪ ሊደረግ የሚችል",
+    "amountLabel": "የሚወጣው መጠን",
+    "bankLabel": "መድረሻ",
+    "bankPlaceholder": "ባንክ ወይም የሞባይል ኪስ ይምረጡ",
+    "accountNumberLabel": "የሂሳብ ወይም የኪስ ቁጥር",
+    "accountNameLabel": "የሂሳቡ ባለቤት ስም",
+    "cta": "የወጪ ጥያቄ ያቅርቡ",
+    "holdNote": "መጠኑ ወዲያውኑ ተይዞ በፋይናንስ ቡድናችን ይመረመራል። ጥያቄው ውድቅ ከተደረገ ሙሉ በሙሉ ወደ ሂሳብዎ ይመለሳል።",
+    "historyTitle": "የወጪ ጥያቄዎችዎ",
+    "status": {
+      "requested": "ፈቃድ በመጠባበቅ ላይ",
+      "approved": "ጸድቋል",
+      "processing": "በሂደት ላይ",
+      "settled": "ተልኳል",
+      "rejected": "ተመልሷል"
+    },
+    "kycGateTitle": "ወጪ ለማድረግ ማንነትዎን ያረጋግጡ",
+    "kycGateBody": "ወጪ ማድረግ የአንድ ጊዜ የማንነት ማረጋገጫ ይጠይቃል። አንድ ሰነድ ያስገቡ፤ የቁጥጥር ባለሙያ ይመረምረዋል።",
+    "kycGateCta": "ማንነት ያረጋግጡ",
+    "errors": {
+      "kyc_required": "መጀመሪያ ማንነትዎን ያረጋግጡ።",
+      "amount_too_small": "መጠኑ ከዝቅተኛው የወጪ መጠን በታች ነው።",
+      "insufficient_balance": "በቂ የብር ቀሪ ሂሳብ የለም።",
+      "account_frozen": "መለያዎ ታግዷል። እባክዎ ድጋፍን ያግኙ።",
+      "payments_unconfigured": "ወጪ ማድረግ አሁን አይገኝም።",
+      "banks_unavailable": "የባንኮች ዝርዝር መጫን አልተቻለም። እባክዎ እንደገና ይሞክሩ።",
+      "generic": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።"
+    }
+  },
+  "assistant": {
+    "emptyTitle": "ስለ ወርቅዎ ይጠይቁ",
+    "emptyBody": "የአሁኑን ዋጋ፣ ንብረትዎን፣ የግብይት ታሪክዎን፣ ክፍያዎችን እና የመድረኩ ጥበቃዎች እንዴት እንደሚሰሩ ማብራራት እችላለሁ። አብራራለሁ — በጭራሽ ምክር አልሰጥም፣ ምንም እርምጃም መውሰድ አልችልም።",
+    "examplePrice": "የወርቅ ዋጋ አሁን ስንት ነው?",
+    "examplePortfolio": "ንብረቴ ስንት ብር ያወጣል?",
+    "exampleFees": "ስገዛ ምን ክፍያ እከፍላለሁ?",
+    "inputPlaceholder": "ጥያቄ ይጠይቁ…",
+    "send": "ላክ",
+    "thinking": "በመፈተሽ ላይ…",
+    "disclaimer": "ረዳቱ ያብራራል — የኢንቨስትመንት ምክር በጭራሽ አይሰጥም፣ ገንዘብም ማንቀሳቀስ አይችልም።",
+    "errors": {
+      "ai_unconfigured": "ረዳቱ አሁን አይገኝም።",
+      "ai_unavailable": "ረዳቱ ተጠምዷል — እባክዎ ከጥቂት ጊዜ በኋላ ይሞክሩ።",
+      "generic": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።"
+    }
+  },
+  "notifications": {
+    "title": "ማሳወቂያዎች",
+    "empty": "እስካሁን ምንም የለም። ገቢዎች፣ ወጪዎች እና የመለያ ለውጦች እዚህ ይታያሉ።",
+    "templates": {
+      "deposit_credited": "ገቢ ተመዝግቧል",
+      "payout_approved": "ወጪ ጸድቋል",
+      "payout_settled": "ወጪ ተልኳል",
+      "payout_rejected": "ወጪ ተመልሷል",
+      "kyc_approved": "ማንነት ተረጋግጧል",
+      "kyc_rejected": "የማንነት ማስረከቢያ ውድቅ ተደርጓል",
+      "account_frozen": "መለያ ታግዷል",
+      "account_unfrozen": "መለያ ተከፍቷል",
+      "price_alert": "የዋጋ ማንቂያ ተነስቷል",
+      "order_receipt": "ግብይት ተፈጽሟል"
+    }
+  },
+  "alerts": {
+    "cta": "የ{metal} ዋጋ ማንቂያ ያዘጋጁ",
+    "title": "የዋጋ ማንቂያ",
+    "above": "ከዚህ በላይ ሲሆን",
+    "below": "ከዚህ በታች ሲሆን",
+    "current": "የአሁኑ ዋጋ፦ {price} ብር/ግ",
+    "save": "ማንቂያ አዘጋጅ",
+    "saved": "ማንቂያው ተዘጋጅቷል",
+    "error": "ማንቂያውን ማስቀመጥ አልተቻለም። እባክዎ እንደገና ይሞክሩ።",
+    "listTitle": "የዋጋ ማንቂያዎች",
+    "armed": "ንቁ",
+    "fired": "ተነስቷል",
+    "remove": "አስወግድ"
+  },
+  "admin": {
+    "confirmAction": "እርግጠኛ ነዎት?",
+    "approve": "አጽድቅ",
+    "reject": "ውድቅ አድርግ",
+    "backToApp": "ወደ መተግበሪያው ተመለስ",
+    "actionFailed": "እርምጃው ተከልክሏል፦ {code}",
+    "roles": {
+      "administrator": "አስተዳዳሪ",
+      "compliance": "ቁጥጥር",
+      "finance": "ፋይናንስ",
+      "user": "ተጠቃሚ"
+    },
+    "nav": {
+      "overview": "አጠቃላይ እይታ",
+      "users": "ተጠቃሚዎች",
+      "kyc": "የመታወቂያ ወረፋ",
+      "reviews": "ምርመራዎች",
+      "payouts": "ወጪዎች",
+      "orders": "ግብይቶች",
+      "treasury": "ግምጃ ቤት",
+      "audit": "የክትትል መዝገብ"
+    },
+    "overview": {
+      "pendingKyc": "በመጠባበቅ ላይ ያሉ መታወቂያዎች",
+      "pendingPayouts": "በመጠባበቅ ላይ ያሉ ወጪዎች",
+      "openReviews": "ክፍት ምርመራዎች",
+      "frozenUsers": "የታገዱ መለያዎች",
+      "note": "ቀሪ ሂሳቦች ከመዝገቡ የሚሰሉ ናቸው፤ ከዚህ ኮንሶል መስተካከል አይችሉም። እዚህ የሚወሰድ እያንዳንዱ እርምጃ በማይሰረዘው የክትትል መዝገብ ውስጥ ይመዘገባል።"
+    },
+    "users": {
+      "searchPlaceholder": "በኢሜይል ወይም በስም ይፈልጉ",
+      "email": "ኢሜይል",
+      "name": "ስም",
+      "role": "ሚና",
+      "status": "ሁኔታ",
+      "kycTier": "መታወቂያ",
+      "joined": "የተቀላቀሉበት",
+      "active": "ንቁ",
+      "frozen": "የታገደ",
+      "freeze": "መለያ አግድ",
+      "unfreeze": "እገዳ አንሳ",
+      "freezeReason": "የእገዳ ምክንያት (ለተጠቃሚው ይታያል)",
+      "freezeReasonPlaceholder": "ለምሳሌ፦ ያልተለመደ የግብይት ሁኔታ በምርመራ ላይ",
+      "frozenSince": "ታግዷል — {reason} · {at}",
+      "staffNoFreeze": "የሠራተኛ መለያዎች ከኮንሶሉ መታገድ አይችሉም።",
+      "recentOrders": "የቅርብ ጊዜ ግብይቶች",
+      "complianceEvents": "የቁጥጥር ክስተቶች",
+      "rule": "ሕግ",
+      "action": "እርምጃ",
+      "resolved": "የተፈታ"
+    },
+    "kyc": {
+      "empty": "በመጠባበቅ ላይ ያለ ማስረከቢያ የለም።",
+      "docType": "የሰነድ ዓይነት",
+      "document": "ሰነድ",
+      "viewDocument": "ሰነዱን ይመልከቱ",
+      "docTypes": {
+        "fayda": "ፋይዳ ብሔራዊ መታወቂያ",
+        "passport": "ፓስፖርት",
+        "driving_licence": "የመንጃ ፈቃድ",
+        "kebele_id": "የቀበሌ መታወቂያ"
+      }
+    },
+    "reviews": {
+      "explain": "ከምርመራ ገደቡ በላይ የሆኑ ትዕዛዞች እዚህ ይጠብቃሉ። ማጽደቅ ደንበኛው ባረጋገጠው ዋጋ ይፈጸማል — ሁሉም የካዝና እና የሂሳብ ጥበቃዎች በፍጻሜው ጊዜ እንደገና ይሰራሉ። ትዕዛዙ ወደ ምርመራ ሲገባ ምንም ገንዘብ አልተንቀሳቀሰም።",
+      "empty": "ምርመራ የሚጠብቅ ትዕዛዝ የለም።"
+    },
+    "payouts": {
+      "empty": "በዚህ ወረፋ ውስጥ ምንም የለም።",
+      "amount": "መጠን",
+      "destination": "መድረሻ",
+      "note": "ማስታወሻ",
+      "approveSend": "አጽድቅ እና ላክ"
+    },
+    "payoutStatus": {
+      "requested": "የተጠየቀ",
+      "approved": "የጸደቀ",
+      "processing": "በሂደት ላይ",
+      "settled": "የተፈጸመ",
+      "rejected": "ውድቅ የተደረገ"
+    },
+    "orders": {
+      "searchPlaceholder": "በኢሜይል ወይም በደረሰኝ ቁጥር ይፈልጉ",
+      "side": "ዓይነት",
+      "buy": "ግዢ",
+      "sell": "ሽያጭ",
+      "amount": "መጠን",
+      "total": "ጠቅላላ",
+      "status": "ሁኔታ",
+      "serial": "ደረሰኝ",
+      "when": "ጊዜ"
+    },
+    "orderStatus": {
+      "created": "በሂደት ላይ",
+      "review": "በምርመራ ላይ",
+      "settled": "የተፈጸመ",
+      "rejected": "ውድቅ የተደረገ"
+    },
+    "treasury": {
+      "physical": "በካዝና ያለ",
+      "issued": "ለደንበኞች የተሰጠ",
+      "available": "ለሽያጭ የሚገኝ",
+      "coverage": "ሽፋን",
+      "floatTitle": "የገንዘብ መጠባበቂያ",
+      "cash": "በመዝገብ ያለ ገንዘብ",
+      "haltThreshold": "የመልሶ ግዢ ማቆሚያ ገደብ",
+      "sellHeadroom": "የመልሶ ግዢ አቅም",
+      "sellbackToday": "የዛሬ መልሶ ሽያጮች",
+      "chapaTitle": "የቻፓ ነጋዴ ቀሪ ሂሳብ",
+      "chapaAvailable": "የሚገኝ ({currency})",
+      "chapaUnavailable": "የቻፓ ቀሪ ሂሳብ አይገኝም (ቁልፎች አልተዋቀሩም ወይም አቅራቢው አይደረስም)።"
+    },
+    "audit": {
+      "actor": "ፈጻሚ",
+      "action": "እርምጃ",
+      "target": "ዒላማ",
+      "exportCsv": "የ AML CSV አውርድ",
+      "loadMore": "ተጨማሪ አሳይ"
+    }
+  },
+  "kyc": {
+    "title": "የማንነት ማረጋገጫ",
+    "verifiedTitle": "ማንነትዎ ተረጋግጧል",
+    "verifiedBody": "የማንነት ማረጋገጫዎ ተጠናቅቋል። ገቢ፣ ወጪ እና ግብይት ተከፍተዋል።",
+    "pendingTitle": "በምርመራ ላይ",
+    "pendingBody": "የቁጥጥር ባለሙያ ሰነድዎን በመመርመር ላይ ነው። ውሳኔ ሲሰጥ ይነገርዎታል።",
+    "rejectedBanner": "ያለፈው ማስረከቢያዎ ውድቅ ተደርጓል",
+    "docTypeLabel": "የሰነድ ዓይነት",
+    "docTypes": {
+      "fayda": "ፋይዳ ብሔራዊ መታወቂያ",
+      "passport": "ፓስፖርት",
+      "driving_licence": "የመንጃ ፈቃድ",
+      "kebele_id": "የቀበሌ መታወቂያ"
+    },
+    "fileLabel": "የሰነድ ፎቶ",
+    "fileHint": "JPEG፣ PNG፣ WebP ወይም PDF — እስከ 2 ሜጋባይት",
+    "cta": "ለምርመራ ያስገቡ",
+    "privacyNote": "ሰነድዎ ለማንነት ማረጋገጫ ብቻ የሚውል ሲሆን ለቁጥጥር ሠራተኞች ብቻ ይታያል።",
+    "errors": {
+      "unsupported_file_type": "ይህ የፋይል ዓይነት አይደገፍም። JPEG፣ PNG፣ WebP ወይም PDF ይጠቀሙ።",
+      "file_too_large": "ፋይሉ ከ2 ሜጋባይት ይበልጣል።",
+      "kyc_pending_exists": "አስቀድሞ በምርመራ ላይ ያለ ማስረከቢያ አለዎት።",
+      "file_required": "መጀመሪያ የሰነድ ፋይል ይምረጡ።",
+      "generic": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።"
+    }
   }
 }

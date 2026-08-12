@@ -116,27 +116,52 @@ try {
   }
   console.log(`✓ ${bands.length} holding tiers`);
 
-  // 4. Admin user.
-  const existingAdmin = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.email, env.SEED_ADMIN_EMAIL))
-    .limit(1);
-  if (existingAdmin.length === 0) {
-    const passwordHash = await argon2.hash(env.SEED_ADMIN_PASSWORD, {
-      type: argon2.argon2id,
-    });
-    await db.insert(users).values({
+  // 4. Staff users — administrator always; compliance and finance only when
+  // their env pair is set (Phase 5 role-separation demo needs all three).
+  const staffSeeds: { email: string; password: string; role: "administrator" | "compliance" | "finance"; fullName: string }[] = [
+    {
       email: env.SEED_ADMIN_EMAIL,
-      passwordHash,
-      fullName: "ALKEVA Admin",
-      locale: "en",
+      password: env.SEED_ADMIN_PASSWORD,
       role: "administrator",
-      kycTier: 3,
+      fullName: "ALKEVA Admin",
+    },
+  ];
+  if (env.SEED_COMPLIANCE_EMAIL && env.SEED_COMPLIANCE_PASSWORD) {
+    staffSeeds.push({
+      email: env.SEED_COMPLIANCE_EMAIL,
+      password: env.SEED_COMPLIANCE_PASSWORD,
+      role: "compliance",
+      fullName: "ALKEVA Compliance",
     });
-    console.log("✓ admin user created");
-  } else {
-    console.log("✓ admin user exists");
+  }
+  if (env.SEED_FINANCE_EMAIL && env.SEED_FINANCE_PASSWORD) {
+    staffSeeds.push({
+      email: env.SEED_FINANCE_EMAIL,
+      password: env.SEED_FINANCE_PASSWORD,
+      role: "finance",
+      fullName: "ALKEVA Finance",
+    });
+  }
+  for (const staff of staffSeeds) {
+    const existing = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, staff.email))
+      .limit(1);
+    if (existing.length === 0) {
+      const passwordHash = await argon2.hash(staff.password, { type: argon2.argon2id });
+      await db.insert(users).values({
+        email: staff.email,
+        passwordHash,
+        fullName: staff.fullName,
+        locale: "en",
+        role: staff.role,
+        kycTier: 3,
+      });
+      console.log(`✓ ${staff.role} user created`);
+    } else {
+      console.log(`✓ ${staff.role} user exists`);
+    }
   }
 
   // 5. Demo vault intake — only when the vault has no records at all.

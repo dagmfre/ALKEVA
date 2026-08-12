@@ -47,9 +47,37 @@ services:
       - key: SELLBACK_DAILY_CEILING_CENTS
         value: "500000000"
       - key: DEMO_FAUCET_ENABLED
-        value: "true" # flip to "false" when Chapa deposits land (Phase 4)
+        value: "true" # flip to "false" once the Chapa deposit path is demo-verified
       - key: COMPLIANCE_REVIEW_THRESHOLD_CENTS
         value: "50000000"
+      # ── Phase 4/5 secrets — paste in the Render dashboard ──
+      - key: CHAPA_SECRET_KEY
+        sync: false # CHASECK_TEST-… until the merchant account is live
+      - key: CHAPA_WEBHOOK_HASH
+        sync: false # must match Chapa dashboard → Webhooks secret hash;
+        # webhook URL there: https://alkeva-api.onrender.com/webhooks/chapa
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: "gemini-3.6-flash" # rehearsals: gemini-3.5-flash-lite
+      - key: SEED_COMPLIANCE_EMAIL
+        sync: false
+      - key: SEED_COMPLIANCE_PASSWORD
+        sync: false
+      - key: SEED_FINANCE_EMAIL
+        sync: false
+      - key: SEED_FINANCE_PASSWORD
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MAIL_FROM
+        sync: false
 
   - type: web
     name: alkeva-web

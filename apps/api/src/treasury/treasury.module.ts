@@ -7,5 +7,6 @@ import { TreasuryService } from "./treasury.service.js";
   imports: [AuthModule],
   controllers: [TreasuryController],
   providers: [TreasuryService],
+  exports: [TreasuryService],
 })
 export class TreasuryModule {}

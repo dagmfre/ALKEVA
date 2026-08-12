@@ -20,5 +20,9 @@ export function usePageTitle(): string {
   if (pathname.startsWith("/portfolio")) return t("portfolio");
   if (pathname.startsWith("/history")) return t("history");
   if (pathname.startsWith("/receipts") || pathname.startsWith("/receipt/")) return t("receipts");
+  if (pathname.startsWith("/deposit")) return t("deposit");
+  if (pathname.startsWith("/withdraw")) return t("withdraw");
+  if (pathname.startsWith("/kyc")) return t("kyc");
+  if (pathname.startsWith("/assistant")) return t("assistant");
   return t("account");
 }

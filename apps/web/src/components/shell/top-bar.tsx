@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { BalancesResponse, MeResponse, MetalAsset } from "@alkeva/shared";
 
+import { AssistantLink, NotificationsBell } from "@/components/shell/header-actions";
 import { LocaleToggle } from "@/components/shell/locale-toggle";
 import { usePageTitle } from "@/components/shell/page-title";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,6 +45,8 @@ export function TopBar() {
       <Ticker asset="XPT" label={tc("platinum")} />
 
       <span className="ms-auto flex items-center gap-2.5">
+        <AssistantLink />
+        <NotificationsBell />
         <LocaleToggle />
         <span className="inline-flex min-h-10 items-center gap-2.5 rounded-full border border-input px-3.5 text-[0.9375rem]">
           <span className="text-muted-foreground">{tc("birr")}</span>

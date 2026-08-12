@@ -30,6 +30,7 @@ export const KNOWN_ERRORS = new Set([
   "tier_txn_cap",
   "tier_daily_cap",
   "faucet_limit",
+  "kyc_required",
   "amount_too_small",
   "validation_failed",
   "conflict",

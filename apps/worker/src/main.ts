@@ -7,6 +7,7 @@ import {
   UNITS,
   type MetalAsset,
 } from "@alkeva/shared";
+import { checkAlerts } from "./alerts.js";
 import { fetchFallback, fetchPrimary, fetchUsdEtbRate, type FeedResult } from "./feeds.js";
 
 /**
@@ -68,6 +69,13 @@ async function tick(): Promise<void> {
           Number(etbCentsPerGram) / 100
         ).toFixed(2)} ETB/g`,
       );
+      // Alerts fire on the tick that crossed them (F24). An alert failure
+      // must never stop the price loop.
+      try {
+        await checkAlerts(db, env, asset, etbCentsPerGram);
+      } catch (err) {
+        console.error(`[${asset}] alert check failed: ${(err as Error).message}`);
+      }
     } catch (err) {
       console.error(`[${asset}] all feeds failed: ${(err as Error).message}`);
     }

@@ -4,8 +4,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
-import { and, eq, isNull, sql } from "drizzle-orm";
-import { auditLogs, freezes, users, type Db } from "@alkeva/db";
+import { auditLogs, type Db } from "@alkeva/db";
 import type { BalancesResponse, Env, FaucetDto } from "@alkeva/shared";
 import { DB, ENV } from "../core/core.module.js";
 import { LedgerService } from "../ledger/ledger.service.js";
@@ -29,7 +28,7 @@ export class FaucetService {
     if (dto.amountCents > this.env.DEMO_FAUCET_MAX_CENTS) {
       throw new UnprocessableEntityException("faucet_limit");
     }
-    await this.assertNotFrozen(userId);
+    await this.ledger.assertNotFrozen(userId);
 
     const userEtbId = await this.ledger.ensureUserAccount(userId, "ETB");
     const externalId = await this.ledger.systemAccountId("system:external");
@@ -56,21 +55,5 @@ export class FaucetService {
     });
 
     return this.ledger.balancesForUser(userId);
-  }
-
-  private async assertNotFrozen(userId: string): Promise<void> {
-    const rows = await this.db
-      .select({
-        status: users.status,
-        activeFreeze: sql<boolean>`${freezes.id} is not null`,
-      })
-      .from(users)
-      .leftJoin(freezes, and(eq(freezes.userId, users.id), isNull(freezes.liftedAt)))
-      .where(eq(users.id, userId))
-      .limit(1);
-    const row = rows[0];
-    if (!row || row.status === "frozen" || row.activeFreeze) {
-      throw new UnprocessableEntityException("account_frozen");
-    }
   }
 }
