@@ -8,6 +8,12 @@
 #    external traffic that keeps the free instance awake (and ticking) during an active demo.
 #  - Free web services sleep after ~15 min idle → first hit after idle cold-starts ~50s and ticks
 #    pause while asleep. (This is the trade-off vs. the earlier paid-instances decision.)
+#
+# Node version: pinned in THREE places on purpose. The NODE_VERSION env vars below only reach a
+# service on a blueprint sync, so `.node-version` (repo root) is the pin that always applies, and
+# package.json's engines range is upper-bounded as a last resort. An unbounded range resolves to
+# Node's LATEST release (Render docs) — that put Node 26 on a read-only system install, where
+# `corepack enable` died with EROFS trying to write /usr/bin/pnpm. Node 22 installs project-local.
 
 services:
   - type: web
