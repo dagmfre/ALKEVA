@@ -22,16 +22,31 @@ import { NotificationsService } from "../notifications/notifications.service.js"
 
 type PayoutRow = typeof payouts.$inferSelect;
 
+/** Who is moving the money — a staff member, the auto-approve system, or a webhook. */
+interface Actor {
+  id: string | null;
+  label: string;
+}
+
+const SYSTEM_AUTO: Actor = { id: null, label: "system:auto_approve" };
+const CHAPA_WEBHOOK: Actor = { id: null, label: "chapa-webhook" };
+
 /** Thrown inside the tx when a concurrent request holds the idempotency key. */
 class ReplaySentinel extends Error {}
 
 /**
- * Withdrawals — Design §5: request → ledger HOLD → finance approval →
- * Chapa transfer → settle. The user's cents park in system:payout_hold
- * between request and approve/reject, so the balance drop is real and a
- * reject refunds to the cent. Non-negotiable #4: no one moves money alone —
- * the requester and the approver are different people (demo allows the
- * single-step cut-list variant, always audit-logged).
+ * Withdrawals — Design §5: request → ledger HOLD → approval → Chapa transfer
+ * → settle. The user's cents park in system:payout_hold between request and
+ * approve/reject, so the balance drop is real and a reject refunds to the
+ * cent.
+ *
+ * Below PAYOUT_AUTO_APPROVE_MAX_CENTS the approval happens at request time by
+ * a system actor — the audit-logged single-step variant the cut list allows —
+ * so an everyday withdrawal is as instant as a deposit. At or above the
+ * threshold (and whenever Chapa is unconfigured or anything in the instant
+ * path fails) the payout stays `requested` for a human finance approver:
+ * large outflows keep a person in the loop (non-negotiable #4), and a staff
+ * member still can never approve their own payout.
  */
 @Injectable()
 export class PayoutsService {
@@ -137,6 +152,20 @@ export class PayoutsService {
         payoutId: row.id,
       });
     }
+
+    // Instant path: strictly below the threshold, the system approves and
+    // fires the transfer right now. Any failure inside leaves the payout in a
+    // consistent state (requested for the finance queue, or already resolved
+    // by the transfer-path rules) — the user is never stranded.
+    const threshold = this.env.PAYOUT_AUTO_APPROVE_MAX_CENTS;
+    if (threshold > 0n && dto.amountCents < threshold && this.chapa.configured) {
+      try {
+        return await this.executeTransfer(row, SYSTEM_AUTO, "payout_auto_approved");
+      } catch (err) {
+        console.error(`payout auto-approve failed for ${row.id}:`, err);
+        return this.serialize(await this.mustGet(row.id));
+      }
+    }
     return this.serialize(row);
   }
 
@@ -179,24 +208,39 @@ export class PayoutsService {
     this.chapa.assertConfigured();
     const payout = await this.mustGet(payoutId);
     if (payout.userId === actorId) {
-      // Non-negotiable #4: never your own payout, even in the demo.
+      // Non-negotiable #4: never your own payout, even in the demo. The
+      // system auto-approve path is the audited exception, not this one.
       throw new ForbiddenException("cannot_approve_own");
     }
+    return this.executeTransfer(payout, { id: actorId, label: `staff:${actorId}` }, "payout_approved");
+  }
 
-    const reference = `ALKPO${payoutId.replace(/-/g, "")}`;
+  /**
+   * The approval + transfer sequence, shared by the finance approve and the
+   * below-threshold auto-approve. The conditional first UPDATE is the mutex
+   * (double-click, or auto racing a human).
+   */
+  private async executeTransfer(
+    payout: PayoutRow,
+    actor: Actor,
+    approveAction: "payout_approved" | "payout_auto_approved",
+  ): Promise<PayoutResponse> {
+    // 3 + 32 = 35 chars — Chapa rejects references over 36 ("ALKPO" + uuid
+    // was 37 and failed live; caught 13 Aug 2026).
+    const reference = `ALK${payout.id.replace(/-/g, "")}`;
     const claimed = await this.db
       .update(payouts)
       .set({
         status: "processing",
-        approvedBy: actorId,
+        approvedBy: actor.id,
         chapaTransferRef: reference,
       })
-      .where(and(eq(payouts.id, payoutId), eq(payouts.status, "requested")))
+      .where(and(eq(payouts.id, payout.id), eq(payouts.status, "requested")))
       .returning();
     const processing = claimed[0];
     if (!processing) throw new ConflictException("payout_not_pending");
 
-    await this.audit(actorId, "payout_approved", payoutId, {
+    await this.audit(actor, approveAction, payout.id, {
       amountCents: payout.amountCents.toString(),
       reference,
     });
@@ -215,16 +259,16 @@ export class PayoutsService {
         if (/isn'?t available|not available/i.test(err.message)) {
           // Fact-check §6.4 plan B: sandbox without transfers — mark settled
           // with an explicit audit trail rather than faking a Chapa reference.
-          return this.settleLedger(processing, actorId, "sandbox_marked");
+          return this.settleLedger(processing, actor, "sandbox_marked");
         }
         // A definitive Chapa refusal (bad account, insufficient merchant
         // balance, …): the transfer never queued — refund the hold.
-        return this.refundAndReject(processing, actorId, `chapa: ${err.message}`);
+        return this.refundAndReject(processing, actor, `chapa: ${err.message}`);
       }
       // Ambiguous failure (network/timeout): the transfer MAY have queued.
       // Never refund on ambiguity — that could pay the user twice. Stay
       // `processing`; the webhook or a later verify resolves it.
-      await this.audit(actorId, "payout_transfer_ambiguous", payoutId, {
+      await this.audit(actor, "payout_transfer_ambiguous", payout.id, {
         error: String(err),
       });
       return this.serialize(processing);
@@ -238,10 +282,19 @@ export class PayoutsService {
       const verified = await this.chapa.verifyTransfer(reference);
       const status = verified?.status?.toLowerCase() ?? "";
       if (status === "success" || status === "successful") {
-        return this.settleLedger(processing, actorId, "chapa_transfer");
+        return this.settleLedger(processing, actor, "chapa_transfer");
       }
       if (status === "failed" || status === "cancelled") {
-        return this.refundAndReject(processing, actorId, `chapa transfer ${status}`);
+        return this.refundAndReject(processing, actor, `chapa transfer ${status}`);
+      }
+      // Sandbox reality (verified live 13 Aug 2026): test-mode transfers are
+      // forced to success, but /transfers/verify returns `data: [null]` — no
+      // per-transfer status exists in test mode at all, so a forced-success
+      // transfer would sit `processing` forever. An envelope-level success
+      // with no data IS the sandbox confirmation; settle, clearly audited.
+      // Live keys never take this branch.
+      if (this.chapa.testMode && status === "") {
+        return this.settleLedger(processing, actor, "sandbox_transfer_verified");
       }
     } catch {
       /* stay processing — webhook or later verify resolves it */
@@ -261,8 +314,9 @@ export class PayoutsService {
     const rejected = claimed[0];
     if (!rejected) throw new ConflictException("payout_not_pending");
 
-    await this.refundHold(rejected, actorId, "payout_rejected_refund");
-    await this.audit(actorId, "payout_rejected", payoutId, { note: note ?? null });
+    const actor: Actor = { id: actorId, label: `staff:${actorId}` };
+    await this.refundHold(rejected, actor, "payout_rejected_refund");
+    await this.audit(actor, "payout_rejected", payoutId, { note: note ?? null });
     void this.notifications.emit(rejected.userId, "payout_rejected", {
       amountCents: rejected.amountCents.toString(),
     });
@@ -285,10 +339,14 @@ export class PayoutsService {
       const verified = await this.chapa.verifyTransfer(reference);
       const status = verified?.status?.toLowerCase() ?? "";
       if (status === "success" || status === "successful") {
-        await this.settleLedger(payout, null, "chapa_webhook");
+        await this.settleLedger(payout, CHAPA_WEBHOOK, "chapa_webhook");
+      } else if (this.chapa.testMode && status === "") {
+        // Same sandbox gap as the approve path: test-mode verify carries no
+        // per-transfer data, so the envelope success is the confirmation.
+        await this.settleLedger(payout, CHAPA_WEBHOOK, "chapa_webhook_sandbox");
       }
     } else if (event.startsWith("payout.")) {
-      await this.refundAndReject(payout, null, `chapa webhook ${event}`);
+      await this.refundAndReject(payout, CHAPA_WEBHOOK, `chapa webhook ${event}`);
     }
   }
 
@@ -301,7 +359,7 @@ export class PayoutsService {
    */
   private async settleLedger(
     payout: PayoutRow,
-    actorId: string | null,
+    actor: Actor,
     via: string,
   ): Promise<PayoutResponse> {
     const holdId = await this.ledger.systemAccountId("system:payout_hold");
@@ -326,7 +384,7 @@ export class PayoutsService {
       await this.ledger.postTransaction(tx, {
         kind: "withdrawal",
         payoutId: payout.id,
-        initiatedBy: actorId ?? undefined,
+        initiatedBy: actor.id ?? undefined,
         note: via,
         entries: [
           { accountId: holdId, asset: "ETB", amount: -payout.amountCents },
@@ -334,8 +392,8 @@ export class PayoutsService {
         ],
       });
       await tx.insert(auditLogs).values({
-        actorId,
-        actorLabel: actorId ? `staff:${actorId}` : "chapa-webhook",
+        actorId: actor.id,
+        actorLabel: actor.label,
         action: "payout_settled",
         targetType: "payout",
         targetId: payout.id,
@@ -357,7 +415,7 @@ export class PayoutsService {
   /** Transfer could not happen — put the money back, record why. */
   private async refundAndReject(
     payout: PayoutRow,
-    actorId: string | null,
+    actor: Actor,
     reason: string,
   ): Promise<PayoutResponse> {
     const claimed = await this.db
@@ -373,8 +431,8 @@ export class PayoutsService {
     const rejected = claimed[0];
     if (!rejected) return this.serialize(await this.mustGet(payout.id));
 
-    await this.refundHold(rejected, actorId, "payout_failed_refund");
-    await this.audit(actorId, "payout_transfer_failed", payout.id, { reason });
+    await this.refundHold(rejected, actor, "payout_failed_refund");
+    await this.audit(actor, "payout_transfer_failed", payout.id, { reason });
     void this.notifications.emit(rejected.userId, "payout_rejected", {
       amountCents: rejected.amountCents.toString(),
     });
@@ -384,7 +442,7 @@ export class PayoutsService {
   /** hold → user, exactly the requested cents. */
   private async refundHold(
     payout: PayoutRow,
-    actorId: string | null,
+    actor: Actor,
     note: string,
   ): Promise<void> {
     const holdId = await this.ledger.systemAccountId("system:payout_hold");
@@ -394,7 +452,7 @@ export class PayoutsService {
       await this.ledger.postTransaction(tx, {
         kind: "withdrawal",
         payoutId: payout.id,
-        initiatedBy: actorId ?? undefined,
+        initiatedBy: actor.id ?? undefined,
         note,
         entries: [
           { accountId: holdId, asset: "ETB", amount: -payout.amountCents },
@@ -439,14 +497,14 @@ export class PayoutsService {
   }
 
   private async audit(
-    actorId: string | null,
+    actor: Actor,
     action: string,
     payoutId: string,
     after: Record<string, unknown>,
   ): Promise<void> {
     await this.db.insert(auditLogs).values({
-      actorId,
-      actorLabel: actorId ? `staff:${actorId}` : "system",
+      actorId: actor.id,
+      actorLabel: actor.label,
       action,
       targetType: "payout",
       targetId: payoutId,

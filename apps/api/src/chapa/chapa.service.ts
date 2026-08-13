@@ -295,7 +295,13 @@ export class ChapaService {
       throw new ChapaApiError(`non-JSON response (HTTP ${res.status})`, res.status);
     }
     if (!res.ok || envelope.status === "failed") {
-      throw new ChapaApiError(envelope.message ?? `HTTP ${res.status}`, res.status);
+      // Chapa's validation failures put an OBJECT in `message`
+      // ({ account_number: ["…"] }) — stringify so the recorded
+      // failureReason is readable, never "[object Object]".
+      const raw = envelope.message;
+      const msg =
+        typeof raw === "string" ? raw : raw != null ? JSON.stringify(raw) : `HTTP ${res.status}`;
+      throw new ChapaApiError(msg, res.status);
     }
     return envelope;
   }

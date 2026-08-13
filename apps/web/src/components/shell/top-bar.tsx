@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { BalancesResponse, MeResponse, MetalAsset } from "@alkeva/shared";
 
+import { useAssetPrice } from "@/components/market/price-provider";
 import { AssistantLink, NotificationsBell } from "@/components/shell/header-actions";
 import { LocaleToggle } from "@/components/shell/locale-toggle";
 import { usePageTitle } from "@/components/shell/page-title";
 import { Skeleton } from "@/components/ui/skeleton";
-import { eatStamp, money, signedPct } from "@/lib/format";
-import { usePriceSeries } from "@/lib/use-price-series";
+import { eatStamp, money, pctMilli } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
 import { useTradeSheet } from "@/components/trade/trade-sheet-context";
 import { cn } from "@/lib/utils";
@@ -92,19 +92,22 @@ function Clock() {
 
 function Ticker({ asset, label }: { asset: MetalAsset; label: string }) {
   const tc = useTranslations("common");
-  const series = usePriceSeries(asset, "24h");
-  const pct = signedPct(series.changePct);
-  const up = (series.changePct ?? 0) > 0;
-  const down = (series.changePct ?? 0) < 0;
+  // The shared store: this is the identical latest tick every other surface
+  // renders — never a bucket average, never an out-of-phase poll.
+  const price = useAssetPrice(asset);
+  const milli = price?.change24hPctMilli ?? null;
+  const pct = pctMilli(milli);
+  const up = milli !== null && BigInt(milli) > 0n;
+  const down = milli !== null && BigInt(milli) < 0n;
 
   return (
     <span className="flex flex-col gap-px">
       <span className="text-[0.9375rem] leading-normal text-muted-foreground">
         {label} · {tc("perGram")}
       </span>
-      {series.current ? (
+      {price ? (
         <span className="flex items-baseline gap-2">
-          <span className="tnum text-base font-semibold">{money(series.current)}</span>
+          <span className="tnum text-base font-semibold">{money(price.etbCentsPerGram)}</span>
           {pct && (
             <span
               className={cn(
@@ -112,7 +115,7 @@ function Ticker({ asset, label }: { asset: MetalAsset; label: string }) {
                 up ? "text-gain" : down ? "text-loss" : "text-muted-foreground",
               )}
             >
-              {up ? "↑" : down ? "↓" : "·"} {pct}%
+              {up ? "↑" : down ? "↓" : "·"} {up ? "+" : down ? "−" : ""}{pct}%
             </span>
           )}
         </span>

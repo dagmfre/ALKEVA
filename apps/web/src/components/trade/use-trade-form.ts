@@ -6,10 +6,10 @@ import type {
   MetalAsset,
   OrderResponse,
   OrderSide,
-  PriceLatestResponse,
   QuoteResponse,
 } from "@alkeva/shared";
 
+import { useAssetPrice } from "@/components/market/price-provider";
 import { api, ApiError } from "@/lib/api";
 import { gramsToMg } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
@@ -34,6 +34,7 @@ export const KNOWN_ERRORS = new Set([
   "amount_too_small",
   "validation_failed",
   "conflict",
+  "rate_limited",
 ]);
 
 /** Refusals that describe a platform-wide state, not this user's mistake. */
@@ -95,10 +96,10 @@ export function useTradeForm({
   const idemKey = useRef<string | null>(null);
 
   const balances = useResource<BalancesResponse>(active ? "/ledger/balances" : null, { revision });
-  const prices = useResource<PriceLatestResponse>(
-    active ? `/prices/latest?asset=${asset}` : null,
-    { revision },
-  );
+  // The shared store: the estimate row live-updates with the same tick the
+  // ticker shows (previously this was a single fetch frozen at mount time).
+  // The actual price is still set server-side by the quote — this is display.
+  const livePrice = useAssetPrice(asset);
 
   useEffect(() => {
     if (!active) return;
@@ -124,7 +125,7 @@ export function useTradeForm({
     return () => clearInterval(id);
   }, [quote]);
 
-  const tick = prices.data;
+  const tick = livePrice;
   const unitCents = tick ? BigInt(tick.etbCentsPerGram) : null;
 
   const mg = gramsToMg(gramsInput);

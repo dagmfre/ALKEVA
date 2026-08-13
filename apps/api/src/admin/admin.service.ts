@@ -13,12 +13,15 @@ import {
   freezes,
   kycSubmissions,
   orders,
+  payments,
   payouts,
   quotes,
   users,
   type Db,
 } from "@alkeva/db";
 import type {
+  AdminAnalyticsPointDto,
+  AdminAnalyticsResponse,
   AdminAuditItem,
   AdminKycItem,
   AdminOrderSearchItem,
@@ -81,6 +84,127 @@ export class AdminService {
       pendingPayouts: payoutRows?.n ?? 0,
       openReviews: reviews?.n ?? 0,
       frozenUsers: frozen?.n ?? 0,
+    };
+  }
+
+  /**
+   * Day-bucketed activity for the overview charts. Five small grouped
+   * aggregates merged and zero-filled in JS — read-only, like everything else
+   * in this service. Money sums come from the ledgered records (settled
+   * orders via their quote totals, credited payments, settled payouts).
+   */
+  async analytics(days: number): Promise<AdminAnalyticsResponse> {
+    const span = Math.min(Math.max(days, 7), 365);
+    const since = new Date(Date.now() - span * 24 * 3600 * 1000);
+    since.setUTCHours(0, 0, 0, 0);
+    // postgres.js binds raw-sql params as strings — a Date object would throw.
+    const sinceIso = since.toISOString();
+    const dayOf = (col: unknown) => sql<string>`to_char(${col}, 'YYYY-MM-DD')`;
+
+    const [orderRows, paymentRows, payoutRows, userRows, kycRows] = await Promise.all([
+      this.db
+        .select({
+          day: dayOf(orders.settledAt),
+          side: orders.side,
+          cents: sql<string>`coalesce(sum(${quotes.totalCents}), 0)::text`,
+          n: sql<number>`count(*)::int`,
+        })
+        .from(orders)
+        .innerJoin(quotes, eq(orders.quoteId, quotes.id))
+        .where(and(eq(orders.status, "settled"), sql`${orders.settledAt} >= ${sinceIso}`))
+        .groupBy(sql`1`, orders.side),
+      this.db
+        .select({
+          day: dayOf(payments.creditedAt),
+          cents: sql<string>`coalesce(sum(${payments.amountCents}), 0)::text`,
+        })
+        .from(payments)
+        .where(and(eq(payments.status, "credited"), sql`${payments.creditedAt} >= ${sinceIso}`))
+        .groupBy(sql`1`),
+      this.db
+        .select({
+          day: dayOf(payouts.settledAt),
+          cents: sql<string>`coalesce(sum(${payouts.amountCents}), 0)::text`,
+        })
+        .from(payouts)
+        .where(and(eq(payouts.status, "settled"), sql`${payouts.settledAt} >= ${sinceIso}`))
+        .groupBy(sql`1`),
+      this.db
+        .select({ day: dayOf(users.createdAt), n: sql<number>`count(*)::int` })
+        .from(users)
+        .where(sql`${users.createdAt} >= ${sinceIso}`)
+        .groupBy(sql`1`),
+      this.db
+        .select({ day: dayOf(kycSubmissions.createdAt), n: sql<number>`count(*)::int` })
+        .from(kycSubmissions)
+        .where(sql`${kycSubmissions.createdAt} >= ${sinceIso}`)
+        .groupBy(sql`1`),
+    ]);
+
+    // Zero-filled continuous day axis THROUGH today — a quiet day is a real 0,
+    // not a gap, and today's activity is on the chart the moment it happens.
+    const dayCount = Math.floor((Date.now() - since.getTime()) / 86_400_000) + 1;
+    const byDay = new Map<string, AdminAnalyticsPointDto>();
+    for (let i = 0; i < dayCount; i++) {
+      const d = new Date(since.getTime() + i * 24 * 3600 * 1000);
+      const key = d.toISOString().slice(0, 10);
+      byDay.set(key, {
+        day: key,
+        buyCents: "0",
+        sellCents: "0",
+        settledOrders: 0,
+        depositCents: "0",
+        payoutCents: "0",
+        newUsers: 0,
+        kycSubmissions: 0,
+      });
+    }
+    for (const r of orderRows) {
+      const p = byDay.get(r.day);
+      if (!p) continue;
+      if (r.side === "buy") p.buyCents = r.cents;
+      else p.sellCents = r.cents;
+      p.settledOrders += r.n;
+    }
+    for (const r of paymentRows) {
+      const p = byDay.get(r.day);
+      if (p) p.depositCents = r.cents;
+    }
+    for (const r of payoutRows) {
+      const p = byDay.get(r.day);
+      if (p) p.payoutCents = r.cents;
+    }
+    for (const r of userRows) {
+      const p = byDay.get(r.day);
+      if (p) p.newUsers = r.n;
+    }
+    for (const r of kycRows) {
+      const p = byDay.get(r.day);
+      if (p) p.kycSubmissions = r.n;
+    }
+
+    const points = [...byDay.values()];
+    const totals = points.reduce(
+      (acc, p) => ({
+        tradeCents: acc.tradeCents + BigInt(p.buyCents) + BigInt(p.sellCents),
+        settledOrders: acc.settledOrders + p.settledOrders,
+        depositCents: acc.depositCents + BigInt(p.depositCents),
+        payoutCents: acc.payoutCents + BigInt(p.payoutCents),
+        newUsers: acc.newUsers + p.newUsers,
+      }),
+      { tradeCents: 0n, settledOrders: 0, depositCents: 0n, payoutCents: 0n, newUsers: 0 },
+    );
+
+    return {
+      days: span,
+      points,
+      totals: {
+        tradeCents: totals.tradeCents.toString(),
+        settledOrders: totals.settledOrders,
+        depositCents: totals.depositCents.toString(),
+        payoutCents: totals.payoutCents.toString(),
+        newUsers: totals.newUsers,
+      },
     };
   }
 

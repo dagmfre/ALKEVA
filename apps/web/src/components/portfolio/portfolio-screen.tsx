@@ -10,10 +10,12 @@ import type {
   TreasurySummaryResponse,
 } from "@alkeva/shared";
 
+import { useAssetPrice } from "@/components/market/price-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TierMark } from "@/components/shell/nav-items";
 import { useTradeSheet } from "@/components/trade/trade-sheet-context";
+import { revalueHolding } from "@/lib/live-value";
 import {
   ARROW,
   SIGN,
@@ -46,15 +48,26 @@ export function PortfolioScreen() {
   const isDesktop = useIsDesktop();
   const router = useRouter();
   const { data, loading } = useResource<PortfolioResponse>("/portfolio", { revision });
+  const xau = useAssetPrice("XAU");
+  const xpt = useAssetPrice("XPT");
 
   const trade = (asset: MetalAsset, side: "buy" | "sell") =>
     isDesktop ? router.push(`/trade?asset=${asset}&side=${side}`) : open(asset, side);
 
   if (loading || !data) return <PortfolioSkeleton />;
 
-  const held = data.holdings.filter((h) => BigInt(h.gramsMg) > 0n);
-  const dir = direction(data.totalGainLossCents);
-  const pct = pctMilli(data.totalGainLossPctMilli);
+  // Re-mark at the shared live tick: Portfolio ≡ Home total ≡ ticker at every
+  // instant. Cost basis and methodology stay the server's.
+  const held = data.holdings
+    .filter((h) => BigInt(h.gramsMg) > 0n)
+    .map((h) => revalueHolding(h, h.asset === "XAU" ? xau : xpt));
+  const totalMetal = held.reduce((sum, h) => sum + BigInt(h.valueCents), 0n);
+  const totalCost = BigInt(data.totalCostBasisCents);
+  const totalGainLossCents = (totalMetal - totalCost).toString();
+  const totalGainLossPctMilli =
+    totalCost > 0n ? (((totalMetal - totalCost) * 100_000n) / totalCost).toString() : null;
+  const dir = direction(totalGainLossCents);
+  const pct = pctMilli(totalGainLossPctMilli);
 
   if (held.length === 0) {
     return (
@@ -68,7 +81,6 @@ export function PortfolioScreen() {
     );
   }
 
-  const totalMetal = BigInt(data.totalMetalValueCents);
   const share = (h: HoldingDto) =>
     totalMetal > 0n ? (Number(BigInt(h.valueCents)) / Number(totalMetal)) * 100 : 0;
   const largest = held.reduce((a, b) => (BigInt(a.valueCents) >= BigInt(b.valueCents) ? a : b));
@@ -82,7 +94,7 @@ export function PortfolioScreen() {
         <div className="mt-1.5 flex flex-wrap items-end justify-between gap-3">
           <span className="flex items-baseline gap-2">
             <span className="tnum text-[2.125rem] font-semibold leading-none tracking-[-0.01em] lg:text-[2.5rem]">
-              {money(data.totalMetalValueCents)}
+              {money(totalMetal)}
             </span>
             <span className="text-[1.0625rem] text-muted-foreground">{tc("birr")}</span>
           </span>
@@ -95,7 +107,7 @@ export function PortfolioScreen() {
           <span className={cn("flex flex-col items-end gap-0.5", deltaClass(dir))}>
             <span className="tnum text-[1.0625rem] font-semibold">
               {ARROW[dir]} {SIGN[dir]}
-              {signedMoney(data.totalGainLossCents)}
+              {signedMoney(totalGainLossCents)}
             </span>
             {pct && (
               <span className="tnum text-[0.9375rem]">

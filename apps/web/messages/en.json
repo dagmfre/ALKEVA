@@ -142,6 +142,7 @@
       "amount_too_small": "The amount is too small.",
       "validation_failed": "Please check the amount and try again.",
       "conflict": "This request conflicts with an earlier one. Request a new quote.",
+      "rate_limited": "Too many requests — please wait a moment and try again.",
       "generic": "Something went wrong. Please try again."
     }
   },
@@ -281,8 +282,8 @@
     "bankPlaceholder": "Choose a bank or wallet",
     "accountNumberLabel": "Account or wallet number",
     "accountNameLabel": "Account holder name",
-    "cta": "Request withdrawal",
-    "holdNote": "The amount is held immediately and reviewed by our finance team. If the request is declined, it returns to your balance in full.",
+    "cta": "Withdraw",
+    "holdNote": "Everyday withdrawals are sent immediately. Large amounts are reviewed by our finance team; if a request is declined, it returns to your balance in full.",
     "historyTitle": "Your withdrawal requests",
     "status": {
       "requested": "Awaiting approval",
@@ -313,10 +314,15 @@
     "inputPlaceholder": "Ask a question…",
     "send": "Send",
     "thinking": "Checking…",
+    "newChat": "New conversation",
+    "failed": "Not sent",
+    "retry": "Retry",
+    "dismiss": "Dismiss",
     "disclaimer": "The assistant explains — it never gives investment advice and cannot move money.",
     "errors": {
       "ai_unconfigured": "The assistant is not available right now.",
       "ai_unavailable": "The assistant is busy — please try again in a moment.",
+      "ai_rate_limited": "The assistant is receiving a lot of questions — please wait a moment and try again.",
       "generic": "Something went wrong. Please try again."
     }
   },
@@ -380,6 +386,19 @@
       "pendingPayouts": "Pending payouts",
       "openReviews": "Open reviews",
       "frozenUsers": "Frozen accounts",
+      "tradeVolume30d": "Trade volume · 30d",
+      "settledOrders30d": "Settled orders · 30d",
+      "moneyIn30d": "Money in · 30d",
+      "moneyOut30d": "Money out · 30d",
+      "newUsers30d": "New users · 30d",
+      "chartTrade": "Trade volume by day",
+      "chartMoney": "Money in vs out",
+      "chartUsers": "New users",
+      "seriesBuy": "Buys",
+      "seriesSell": "Sells",
+      "seriesIn": "Deposits",
+      "seriesOut": "Withdrawals",
+      "noData": "No activity in this window yet.",
       "note": "Balances are ledger projections and cannot be edited from this console. Every action taken here is written to the append-only audit log."
     },
     "users": {

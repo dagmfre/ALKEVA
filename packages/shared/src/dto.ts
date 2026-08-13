@@ -38,6 +38,19 @@ export interface PriceLatestResponse {
   fxSource: string;
   at: string; // ISO timestamp of the tick
   stale: boolean;
+  /**
+   * Canonical 24h change in milli-percent: (latest − ref24h) × 100_000 / ref24h,
+   * where ref24h is the newest raw tick at least 24h old (oldest tick when the
+   * dataset is younger). Null when no distinct reference exists. Every surface
+   * (ticker, cards, AI) renders THIS number — never a bucket-derived change.
+   */
+  change24hPctMilli: string | null;
+}
+
+/** One payload carrying every metal — what the SSE stream pushes and the poll fallback fetches. */
+export interface PriceSnapshotResponse {
+  prices: PriceLatestResponse[];
+  at: string; // server time the snapshot was assembled
 }
 
 export interface PricePointDto {
@@ -400,6 +413,32 @@ export interface AdminOverviewResponse {
   pendingPayouts: number;
   openReviews: number;
   frozenUsers: number;
+}
+
+/** One calendar day of platform activity (UTC day buckets, zero-filled). */
+export interface AdminAnalyticsPointDto {
+  day: string; // YYYY-MM-DD
+  /** Settled buy / sell volume, ETB cents. */
+  buyCents: string;
+  sellCents: string;
+  settledOrders: number;
+  /** Credited deposits / settled payouts, ETB cents. */
+  depositCents: string;
+  payoutCents: string;
+  newUsers: number;
+  kycSubmissions: number;
+}
+
+export interface AdminAnalyticsResponse {
+  days: number;
+  points: AdminAnalyticsPointDto[];
+  totals: {
+    tradeCents: string;
+    settledOrders: number;
+    depositCents: string;
+    payoutCents: string;
+    newUsers: number;
+  };
 }
 
 export const adminSearchDto = z.object({

@@ -15,6 +15,7 @@ import {
   adminSearchDto,
   decisionNoteDto,
   freezeDto,
+  type AdminAnalyticsResponse,
   type AdminOverviewResponse,
   type AdminSearchDto,
   type AdminTreasuryResponse,
@@ -33,10 +34,12 @@ import { PayoutsService } from "../payouts/payouts.service.js";
 import { AdminService } from "./admin.service.js";
 
 /**
- * The staff console (Design §9). RolesGuard runs on every route; the roles per
- * route follow the separation the spec demands: administrators see, compliance
- * decides identity/freezes/reviews, finance moves money out. There is no
- * balance-adjust route — deliberately, verifiably, permanently.
+ * The staff console (Design §9). RolesGuard runs on every route. The
+ * administrator is the superuser — every queue visible and actionable
+ * (decided 13 Aug 2026); compliance and finance stay scoped to identity/
+ * freezes/reviews and outbound money respectively. The payout self-approval
+ * ban binds administrators too. There is no balance-adjust route —
+ * deliberately, verifiably, permanently.
  */
 @Controller("admin")
 @UseGuards(AuthGuard, RolesGuard)
@@ -54,6 +57,13 @@ export class AdminController {
     return this.admin.overview();
   }
 
+  @Get("analytics")
+  @RequireRoles("administrator", "compliance", "finance")
+  analytics(@Query("days") days?: string): Promise<AdminAnalyticsResponse> {
+    const parsed = Number(days);
+    return this.admin.analytics(Number.isFinite(parsed) && parsed > 0 ? parsed : 30);
+  }
+
   // ── users ───────────────────────────────────────────────────────
 
   @Get("users")
@@ -69,7 +79,7 @@ export class AdminController {
   }
 
   @Post("users/:id/freeze")
-  @RequireRoles("compliance")
+  @RequireRoles("administrator", "compliance")
   async freeze(
     @Auth() auth: AccessPayload,
     @Param("id", ParseUUIDPipe) id: string,
@@ -80,7 +90,7 @@ export class AdminController {
   }
 
   @Post("users/:id/unfreeze")
-  @RequireRoles("compliance")
+  @RequireRoles("administrator", "compliance")
   async unfreeze(
     @Auth() auth: AccessPayload,
     @Param("id", ParseUUIDPipe) id: string,
@@ -92,13 +102,13 @@ export class AdminController {
   // ── KYC queue ───────────────────────────────────────────────────
 
   @Get("kyc")
-  @RequireRoles("compliance")
+  @RequireRoles("administrator", "compliance")
   listKyc(@Query("status") status?: string) {
     return this.admin.listKyc(status);
   }
 
   @Get("kyc/:id/file")
-  @RequireRoles("compliance")
+  @RequireRoles("administrator", "compliance")
   async kycFile(@Param("id", ParseUUIDPipe) id: string, @Res() res: Response): Promise<void> {
     const { data, mime } = await this.kyc.file(id);
     res.setHeader("Content-Type", mime);
@@ -107,7 +117,7 @@ export class AdminController {
   }
 
   @Post("kyc/:id/approve")
-  @RequireRoles("compliance")
+  @RequireRoles("administrator", "compliance")
   async approveKyc(
     @Auth() auth: AccessPayload,
     @Param("id", ParseUUIDPipe) id: string,
@@ -118,7 +128,7 @@ export class AdminController {
   }
 
   @Post("kyc/:id/reject")
-  @RequireRoles("compliance")
+  @RequireRoles("administrator", "compliance")
   async rejectKyc(
     @Auth() auth: AccessPayload,
     @Param("id", ParseUUIDPipe) id: string,
@@ -131,7 +141,7 @@ export class AdminController {
   // ── payout queue (finance) ──────────────────────────────────────
 
   @Get("payouts")
-  @RequireRoles("finance")
+  @RequireRoles("administrator", "finance")
   listPayouts(@Query("status") status?: string) {
     const valid = ["requested", "approved", "processing", "settled", "rejected"];
     return this.payouts.listByStatus(
@@ -140,13 +150,13 @@ export class AdminController {
   }
 
   @Post("payouts/:id/approve")
-  @RequireRoles("finance")
+  @RequireRoles("administrator", "finance")
   approvePayout(@Auth() auth: AccessPayload, @Param("id", ParseUUIDPipe) id: string) {
     return this.payouts.approve(id, auth.sub);
   }
 
   @Post("payouts/:id/reject")
-  @RequireRoles("finance")
+  @RequireRoles("administrator", "finance")
   rejectPayout(
     @Auth() auth: AccessPayload,
     @Param("id", ParseUUIDPipe) id: string,
@@ -158,13 +168,13 @@ export class AdminController {
   // ── review queue (compliance) ───────────────────────────────────
 
   @Get("reviews")
-  @RequireRoles("compliance")
+  @RequireRoles("administrator", "compliance")
   listReviews() {
     return this.admin.listReviews();
   }
 
   @Post("orders/:id/approve-review")
-  @RequireRoles("compliance")
+  @RequireRoles("administrator", "compliance")
   approveReview(
     @Auth() auth: AccessPayload,
     @Param("id", ParseUUIDPipe) id: string,
@@ -174,7 +184,7 @@ export class AdminController {
   }
 
   @Post("orders/:id/reject-review")
-  @RequireRoles("compliance")
+  @RequireRoles("administrator", "compliance")
   rejectReview(
     @Auth() auth: AccessPayload,
     @Param("id", ParseUUIDPipe) id: string,
@@ -204,7 +214,7 @@ export class AdminController {
   }
 
   @Get("compliance/export.csv")
-  @RequireRoles("compliance")
+  @RequireRoles("administrator", "compliance")
   @Header("Content-Type", "text/csv; charset=utf-8")
   @Header("Content-Disposition", 'attachment; filename="alkeva-compliance-events.csv"')
   exportCsv(): Promise<string> {

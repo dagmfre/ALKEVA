@@ -27,7 +27,8 @@ export function AdminUserDetailScreen({ userId }: { userId: string }) {
   };
 
   if (!data) return <Skeleton className="h-64 rounded-lg" />;
-  const isCompliance = me.data?.role === "compliance";
+  // Administrator is the superuser — freeze/unfreeze included.
+  const isCompliance = me.data?.role === "compliance" || me.data?.role === "administrator";
 
   return (
     <div className="flex flex-col gap-4">

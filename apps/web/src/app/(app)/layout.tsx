@@ -1,3 +1,4 @@
+import { PriceProvider } from "@/components/market/price-provider";
 import { BottomNav } from "@/components/shell/bottom-nav";
 import { MobileHeader } from "@/components/shell/mobile-header";
 import { Sidebar } from "@/components/shell/sidebar";
@@ -19,6 +20,7 @@ import { TradeSheetProvider } from "@/components/trade/trade-sheet-context";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <TradeSheetProvider>
+      <PriceProvider>
       <div className="flex min-h-dvh">
         <Sidebar />
 
@@ -35,6 +37,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <BottomNav />
         <TradeSheet />
       </div>
+      </PriceProvider>
     </TradeSheetProvider>
   );
 }

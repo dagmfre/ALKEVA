@@ -1,12 +1,14 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { priceTicks, type Db } from "@alkeva/db";
 import {
   MAX_TICK_AGE_SECONDS,
+  METAL_ASSETS,
   type MetalAsset,
   type PriceHistoryResponse,
   type PriceLatestResponse,
   type PriceRange,
+  type PriceSnapshotResponse,
 } from "@alkeva/shared";
 import { DB } from "../core/core.module.js";
 
@@ -41,7 +43,54 @@ export class PricesService {
       fxSource: tick.fxSource,
       at: tick.at.toISOString(),
       stale: ageSec > MAX_TICK_AGE_SECONDS,
+      change24hPctMilli: await this.change24h(asset, tick.etbCentsPerGram, tick.at),
     };
+  }
+
+  /**
+   * The one canonical 24h change (raw ticks, never bucket averages).
+   * Reference = newest tick ≥24h older than the latest; a dataset younger than
+   * 24h falls back to its oldest tick so a fresh install still shows a number.
+   */
+  private async change24h(
+    asset: MetalAsset,
+    latestCents: bigint,
+    latestAt: Date,
+  ): Promise<string | null> {
+    const cutoff = new Date(latestAt.getTime() - 24 * 3600 * 1000);
+    const [ref] = await this.db
+      .select({ cents: priceTicks.etbCentsPerGram, at: priceTicks.at })
+      .from(priceTicks)
+      .where(and(eq(priceTicks.asset, asset), lte(priceTicks.at, cutoff)))
+      .orderBy(desc(priceTicks.at))
+      .limit(1);
+    const reference =
+      ref ??
+      (
+        await this.db
+          .select({ cents: priceTicks.etbCentsPerGram, at: priceTicks.at })
+          .from(priceTicks)
+          .where(eq(priceTicks.asset, asset))
+          .orderBy(asc(priceTicks.at))
+          .limit(1)
+      )[0];
+    if (!reference || reference.cents === 0n || reference.at.getTime() === latestAt.getTime()) {
+      return null;
+    }
+    return ((latestCents - reference.cents) * 100_000n / reference.cents).toString();
+  }
+
+  /**
+   * Both metals in one payload — the unit the SSE stream pushes and the poll
+   * fallback fetches. An asset with no ticks yet is skipped rather than
+   * failing the whole snapshot (fresh-install case).
+   */
+  async snapshot(): Promise<PriceSnapshotResponse> {
+    const settled = await Promise.allSettled(METAL_ASSETS.map((asset) => this.latest(asset)));
+    const prices = settled
+      .filter((r): r is PromiseFulfilledResult<PriceLatestResponse> => r.status === "fulfilled")
+      .map((r) => r.value);
+    return { prices, at: new Date().toISOString() };
   }
 
   async history(asset: MetalAsset, range: PriceRange): Promise<PriceHistoryResponse> {

@@ -103,6 +103,11 @@ export const envSchema = z.object({
   CHAPA_API_BASE: z.string().url().default("https://api.chapa.co"),
   DEPOSIT_MIN_CENTS: z.coerce.bigint().positive().default(1_000n), // 10 ETB
   PAYOUT_MIN_CENTS: z.coerce.bigint().positive().default(10_000n), // 100 ETB
+  // Withdrawals strictly below this auto-approve at request time (the
+  // audit-logged single-step cut-list variant); at or above it — and whenever
+  // Chapa is unconfigured — finance approves by hand. 0 disables the instant
+  // path entirely. Default mirrors the 500k ETB AML review line.
+  PAYOUT_AUTO_APPROVE_MAX_CENTS: z.coerce.bigint().min(0n).default(50_000_000n),
   // Per-channel caps, display-only (Chapa enforces them at checkout) — from
   // fact-check §6.5. Cents as string bigints, same convention as tier bands.
   DEPOSIT_CHANNELS_JSON: z.string().default(

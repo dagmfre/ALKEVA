@@ -44,6 +44,9 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       /* non-JSON body */
     }
+    // The Nest throttler's message ("ThrottlerException: …") is not a
+    // machine code — normalize any unmapped 429 so screens can localize it.
+    if (res.status === 429 && !/^[a-z0-9_]+$/.test(code)) code = "rate_limited";
     throw new ApiError(res.status, code, body);
   }
 

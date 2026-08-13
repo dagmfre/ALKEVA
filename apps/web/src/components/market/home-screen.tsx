@@ -4,26 +4,24 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import type {
-  BalancesResponse,
-  MetalAsset,
-  OrderListResponse,
-  PriceLatestResponse,
-} from "@alkeva/shared";
+import type { BalancesResponse, MetalAsset, OrderListResponse } from "@alkeva/shared";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PriceAlertButton } from "@/components/market/price-alert-dialog";
 import { PriceChart } from "@/components/market/price-chart";
+import {
+  useAssetPrice,
+  usePrices,
+  type LivePrice,
+} from "@/components/market/price-provider";
 import { TrustPanel } from "@/components/market/trust-panel";
 import { SystemBanner } from "@/components/system/banner";
 import { useTradeSheet } from "@/components/trade/trade-sheet-context";
 import { KNOWN_ERRORS } from "@/components/trade/use-trade-form";
-import { grams, money, signedPct, timeOfDay } from "@/lib/format";
-import { usePriceSeries } from "@/lib/use-price-series";
+import { grams, money, pctMilli, timeOfDay } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
 import { cn } from "@/lib/utils";
-import { PRICE_TICK_MS } from "@/lib/constants";
 import { useIsDesktop } from "@/lib/use-is-desktop";
 
 /**
@@ -44,20 +42,17 @@ export function HomeScreen() {
   const [selected, setSelected] = useState<MetalAsset>("XAU");
 
   const balances = useResource<BalancesResponse>("/ledger/balances", { revision });
-  const xau = useResource<PriceLatestResponse>("/prices/latest?asset=XAU", {
-    intervalMs: PRICE_TICK_MS,
-  });
-  const xpt = useResource<PriceLatestResponse>("/prices/latest?asset=XPT", {
-    intervalMs: PRICE_TICK_MS,
-  });
+  // One shared store — the same tick the ticker, chart tag and AI quote.
+  const { anyStale: stale } = usePrices();
+  const xau = useAssetPrice("XAU");
+  const xpt = useAssetPrice("XPT");
 
-  const stale = Boolean(xau.data?.stale || xpt.data?.stale);
   const totalCents =
-    balances.data && xau.data && xpt.data
+    balances.data && xau && xpt
       ? (
           BigInt(balances.data.etbCents) +
-          (BigInt(xau.data.etbCentsPerGram) * BigInt(balances.data.xauMg)) / 1000n +
-          (BigInt(xpt.data.etbCentsPerGram) * BigInt(balances.data.xptMg)) / 1000n
+          (BigInt(xau.etbCentsPerGram) * BigInt(balances.data.xauMg)) / 1000n +
+          (BigInt(xpt.etbCentsPerGram) * BigInt(balances.data.xptMg)) / 1000n
         ).toString()
       : null;
 
@@ -120,13 +115,13 @@ export function HomeScreen() {
       <div className="grid grid-cols-2 gap-3.5 lg:col-span-8 lg:grid-cols-2 lg:gap-5">
         <PriceCard
           asset="XAU"
-          price={xau.data}
+          price={xau}
           selected={selected === "XAU"}
           onSelect={() => setSelected("XAU")}
         />
         <PriceCard
           asset="XPT"
-          price={xpt.data}
+          price={xpt}
           selected={selected === "XPT"}
           onSelect={() => setSelected("XPT")}
         />
@@ -176,18 +171,19 @@ function PriceCard({
   onSelect,
 }: {
   asset: MetalAsset;
-  price: PriceLatestResponse | null;
+  price: LivePrice | null;
   selected: boolean;
   onSelect: () => void;
 }) {
   const tc = useTranslations("common");
   const t = useTranslations("home");
   const locale = useLocale();
-  const series = usePriceSeries(asset, "24h");
   const isGold = asset === "XAU";
-  const pct = signedPct(series.changePct);
-  const up = (series.changePct ?? 0) > 0;
-  const down = (series.changePct ?? 0) < 0;
+  // Same canonical 24h change the ticker shows — one number platform-wide.
+  const milli = price?.change24hPctMilli ?? null;
+  const pct = pctMilli(milli);
+  const up = milli !== null && BigInt(milli) > 0n;
+  const down = milli !== null && BigInt(milli) < 0n;
 
   return (
     <button
@@ -235,7 +231,7 @@ function PriceCard({
               up ? "text-gain" : down ? "text-loss" : "text-muted-foreground",
             )}
           >
-            {up ? "↑" : down ? "↓" : "·"} {pct}%
+            {up ? "↑" : down ? "↓" : "·"} {up ? "+" : down ? "−" : ""}{pct}%
             <span className="ms-2 font-sans font-normal text-muted-foreground">{t("last24h")}</span>
           </span>
         ) : (

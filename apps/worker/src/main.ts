@@ -21,6 +21,20 @@ const env = loadEnv();
 const { db, client } = createDb(env.DATABASE_URL, { max: 2 });
 const redis = new Redis(env.REDIS_URL);
 
+// Single-writer guard: a session-scoped advisory lock on its own dedicated
+// connection (max: 1 — the lock lives exactly as long as this process).
+// Stale/duplicate worker processes were observed double-writing ticks; a
+// second instance now idles instead of writing.
+const lockConn = createDb(env.DATABASE_URL, { max: 1 }).client;
+const LOCK_KEY = [0x414c4b, 0x707774] as const; // "ALK", "pwt" — price-worker tick lock
+
+async function acquireSingleWriterLock(): Promise<boolean> {
+  const [row] = await lockConn`
+    select pg_try_advisory_lock(${LOCK_KEY[0]}, ${LOCK_KEY[1]}) as ok
+  `;
+  return Boolean(row?.ok);
+}
+
 const FX_CACHE_KEY = "fx:USD:ETB:micro";
 const FX_SOURCE = "open.er-api.com";
 let running = true;
@@ -69,6 +83,13 @@ async function tick(): Promise<void> {
           Number(etbCentsPerGram) / 100
         ).toFixed(2)} ETB/g`,
       );
+      // Wake the API's SSE fan-out the instant the tick lands. A publish
+      // failure must never fail the tick — the API's safety poll covers it.
+      try {
+        await redis.publish("price:tick", asset);
+      } catch (err) {
+        console.error(`[${asset}] tick publish failed: ${(err as Error).message}`);
+      }
       // Alerts fire on the tick that crossed them (F24). An alert failure
       // must never stop the price loop.
       try {
@@ -103,11 +124,20 @@ async function loop(): Promise<void> {
 async function shutdown(signal: string): Promise<void> {
   console.log(`${signal} received, shutting down`);
   running = false;
-  await Promise.allSettled([client.end(), redis.quit()]);
+  await Promise.allSettled([client.end(), lockConn.end(), redis.quit()]);
   process.exit(0);
 }
 
 process.on("SIGINT", () => void shutdown("SIGINT"));
 process.on("SIGTERM", () => void shutdown("SIGTERM"));
 
-await loop();
+if (await acquireSingleWriterLock()) {
+  await loop();
+} else {
+  // Another worker holds the lock. Idle (don't exit: on Render an exit would
+  // restart-loop the whole service) and never write a duplicate tick.
+  console.warn(
+    "price worker: another instance holds the tick lock — idling, not writing",
+  );
+  await new Promise(() => undefined);
+}

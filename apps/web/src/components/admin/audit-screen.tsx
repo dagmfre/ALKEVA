@@ -44,7 +44,7 @@ export function AdminAuditScreen() {
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">{t("nav.audit")}</h1>
-        {me.data?.role === "compliance" && (
+        {(me.data?.role === "compliance" || me.data?.role === "administrator") && (
           <a
             href="/api/admin/compliance/export.csv"
             className="text-[0.9375rem] text-gold-400 hover:text-gold-300"

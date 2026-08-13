@@ -1,5 +1,7 @@
-import { BadRequestException, Controller, Get, Query } from "@nestjs/common";
+import { BadRequestException, Controller, Get, Query, Sse } from "@nestjs/common";
+import { SkipThrottle } from "@nestjs/throttler";
 import { METAL_ASSETS, PRICE_RANGES, type MetalAsset, type PriceRange } from "@alkeva/shared";
+import { PriceFeedService } from "./price-feed.service.js";
 import { PricesService } from "./prices.service.js";
 
 function parseAsset(value: string | undefined): MetalAsset {
@@ -12,11 +14,27 @@ function parseAsset(value: string | undefined): MetalAsset {
 
 @Controller("prices")
 export class PricesController {
-  constructor(private readonly prices: PricesService) {}
+  constructor(
+    private readonly prices: PricesService,
+    private readonly feed: PriceFeedService,
+  ) {}
 
   @Get("latest")
   latest(@Query("asset") asset?: string) {
     return this.prices.latest(parseAsset(asset));
+  }
+
+  /** Poll fallback: both metals + canonical 24h change in one request. */
+  @Get("snapshot")
+  snapshot() {
+    return this.prices.snapshot();
+  }
+
+  /** Live push: a snapshot the moment the worker lands a tick. Long-lived GET — throttling would 429 reconnects. */
+  @SkipThrottle()
+  @Sse("stream")
+  stream() {
+    return this.feed.stream();
   }
 
   @Get("history")

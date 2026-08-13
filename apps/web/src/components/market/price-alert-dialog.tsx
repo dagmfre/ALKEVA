@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import type { AlertsResponse, MetalAsset, PriceLatestResponse } from "@alkeva/shared";
+import type { AlertsResponse, MetalAsset } from "@alkeva/shared";
 
+import { useAssetPrice } from "@/components/market/price-provider";
 import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/api";
 import { money } from "@/lib/format";
-import { useResource } from "@/lib/use-resource";
 import { cn } from "@/lib/utils";
 
 /**
@@ -23,14 +23,15 @@ export function PriceAlertButton({ asset }: { asset: MetalAsset }) {
   const [threshold, setThreshold] = useState("");
   const [busy, setBusy] = useState(false);
   const [state, setState] = useState<"idle" | "saved" | "error">("idle");
-  const price = useResource<PriceLatestResponse>(open ? `/prices/latest?asset=${asset}` : null);
+  // The shared store — instant prefill with the same tick every surface shows.
+  const price = useAssetPrice(asset);
 
   // Prefill with the live price so "a bit above current" is one edit away.
   useEffect(() => {
-    if (open && price.data && threshold === "") {
-      setThreshold((Number(BigInt(price.data.etbCentsPerGram)) / 100).toFixed(2));
+    if (open && price && threshold === "") {
+      setThreshold((Number(BigInt(price.etbCentsPerGram)) / 100).toFixed(2));
     }
-  }, [open, price.data, threshold]);
+  }, [open, price, threshold]);
 
   async function save() {
     const parsed = Number.parseFloat(threshold.replace(/,/g, ""));
@@ -95,9 +96,9 @@ export function PriceAlertButton({ asset }: { asset: MetalAsset }) {
               {tc("birr")}/{tc("g")}
             </span>
           </div>
-          {price.data && (
+          {price && (
             <p className="mb-3 text-[0.8125rem] text-subtle">
-              {t("current", { price: money(price.data.etbCentsPerGram) })}
+              {t("current", { price: money(price.etbCentsPerGram) })}
             </p>
           )}
           {state === "saved" ? (

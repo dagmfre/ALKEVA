@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { MetalAsset, PriceRange } from "@alkeva/shared";
 
+import { useAssetPrice } from "@/components/market/price-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { axisLabel, money } from "@/lib/format";
 import { usePriceSeries } from "@/lib/use-price-series";
@@ -38,6 +39,11 @@ export function PriceChart({
   const tc = useTranslations("common");
   const [range, setRange] = useState<PriceRange>("24h");
   const series = usePriceSeries(asset, range);
+  // "Current" is the shared store's latest raw tick — the buckets only draw
+  // the line. Before the first snapshot lands, fall back to the last bucket
+  // so the chart never shows an empty cell.
+  const live = useAssetPrice(asset);
+  const current = live?.etbCentsPerGram ?? series.lastBucket;
 
   const isGold = asset === "XAU";
   const stroke = isGold ? "var(--gold-400)" : "var(--platinum-400)";
@@ -75,6 +81,8 @@ export function PriceChart({
       area: `M${line} L${W},${H} L0,${H} Z`,
       lastX: x(values.length - 1),
       lastY: y(last),
+      lo,
+      span,
       ticks: niceTicks(lo, hi).map((v) => ({ value: v, y: y(v) })),
       xLabels: pickIndices(points.length).map((i) => ({
         key: i,
@@ -82,6 +90,16 @@ export function PriceChart({
       })),
     };
   }, [points, range]);
+
+  // Pin the current-price tag where the LIVE tick sits on the chart's own
+  // scale, clamped into the frame when the tick has moved outside the window.
+  const tagY = useMemo(() => {
+    if (!geometry) return 0;
+    if (!current) return geometry.lastY;
+    const v = Number(BigInt(current));
+    const raw = H - PAD - ((v - geometry.lo) / geometry.span) * (H - PAD * 2);
+    return Math.min(Math.max(raw, PAD), H - PAD);
+  }, [geometry, current]);
 
   const gradientId = `fade-${asset}`;
 
@@ -128,7 +146,7 @@ export function PriceChart({
           <Ohlc label={t("open")} value={series.open} />
           <Ohlc label={t("high")} value={series.high} />
           <Ohlc label={t("low")} value={series.low} />
-          <Ohlc label={t("current")} value={series.current} accent={isGold ? "gold" : "platinum"} />
+          <Ohlc label={t("current")} value={current} accent={isGold ? "gold" : "platinum"} />
         </div>
       )}
 
@@ -192,9 +210,9 @@ export function PriceChart({
                   "absolute end-0 -translate-y-1/2 rounded-sm px-2 py-0.5 font-semibold tabular-nums text-primary-foreground",
                   isGold ? "bg-gold-500" : "bg-platinum-400",
                 )}
-                style={{ top: `${(geometry.lastY / H) * 100}%` }}
+                style={{ top: `${(tagY / H) * 100}%` }}
               >
-                {series.current ? money(series.current) : ""}
+                {current ? money(current) : ""}
               </span>
             </div>
           </div>
