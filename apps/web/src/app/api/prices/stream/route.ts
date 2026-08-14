@@ -8,6 +8,14 @@
  * (no cookies involved), so this is a plain pipe.
  */
 export const dynamic = "force-dynamic";
+/**
+ * On Vercel this handler is a function invocation, and an SSE connection is
+ * held open for its whole duration. 300s is the platform ceiling, so the chain
+ * (browser → this route → the API function) is cut roughly every five minutes;
+ * EventSource reconnects on its own and PriceProvider re-subscribes. Without
+ * this the connection would drop at the shorter default.
+ */
+export const maxDuration = 300;
 
 export async function GET(): Promise<Response> {
   const base = process.env.API_URL ?? "http://localhost:4000";

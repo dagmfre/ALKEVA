@@ -50,8 +50,13 @@ export class PortfolioService {
     };
 
     const holdings: HoldingDto[] = [];
-    let totalMetalValueCents = 0n;
-    let totalCostBasisCents = 0n;
+    // BigInt(0), not the literal 0n: Vercel's file tracer (@vercel/nft)
+    // constant-folds `let x = 0n` initializers while ignoring the `+=`
+    // accumulation below, then evaluates the gain-loss division as 0n / 0n —
+    // a RangeError that kills the whole deployment. BigInt() is opaque to its
+    // evaluator, so the expression stays runtime-only. Semantics identical.
+    let totalMetalValueCents = BigInt(0);
+    let totalCostBasisCents = BigInt(0);
     let fxRateMicro: bigint | null = null;
 
     for (const asset of METAL_ASSETS) {
@@ -147,8 +152,11 @@ export class PortfolioService {
       )
       .orderBy(asc(orders.settledAt), asc(orders.createdAt));
 
-    let heldMg = 0n;
-    let costCents = 0n;
+    // BigInt(0) for the same @vercel/nft constant-folding reason as forUser's
+    // accumulators: `(costCents * soldMg) / heldMg` below must not be
+    // statically evaluable with a zero divisor.
+    let heldMg = BigInt(0);
+    let costCents = BigInt(0);
 
     for (const row of rows) {
       if (row.side === "buy") {

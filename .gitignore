@@ -15,8 +15,12 @@ out/
 
 # tooling/session files
 .claude/
+.vercel/
 *.log
 
 # OS
 .DS_Store
 Thumbs.db
+
+.vercel
+.env*

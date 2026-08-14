@@ -1,0 +1,21 @@
+// Type-checks the Vercel entrypoint (api/index.js), which is plain JavaScript
+// so that Vercel's Node builder does not have to compile it — see the header
+// comment in that file. `@ts-check` + checkJs gives it the same checking a .ts
+// file would get.
+//
+// It lives outside api/ deliberately: a tsconfig.json inside that directory
+// would be picked up by the builder as compile instructions for the function.
+//
+// The entrypoint imports the *built* AppModule from dist/, so this only runs
+// after `pnpm --filter @alkeva/api build`. That is why it is a separate script
+// (`typecheck:entry`) rather than part of `pnpm typecheck`, which must stay
+// self-contained on a clean clone.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": true
+  },
+  "include": ["api"]
+}

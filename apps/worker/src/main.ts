@@ -1,3 +1,4 @@
+import http from "node:http";
 import { Redis } from "ioredis";
 import { createDb, priceTicks } from "@alkeva/db";
 import {
@@ -38,6 +39,37 @@ async function acquireSingleWriterLock(): Promise<boolean> {
 const FX_CACHE_KEY = "fx:USD:ETB:micro";
 const FX_SOURCE = "open.er-api.com";
 let running = true;
+let holdsWriteLock = false;
+let lastTickAt: string | null = null;
+
+/**
+ * Health listener. Two jobs, both consequences of Render's free tier having no
+ * background-worker type — this process runs as a *web* service:
+ *   1. Render fails a deploy that never opens a port.
+ *   2. Free web services sleep after ~15 min without traffic, and the price
+ *      loop sleeps with them. Now that the API lives on Vercel, no ALKEVA
+ *      traffic reaches Render at all, so an external uptime pinger hitting
+ *      /healthz is the only thing keeping ticks flowing.
+ * Binds only when PORT is set, so local `pnpm dev:worker` opens nothing.
+ */
+function startHealthServer(): void {
+  const port = process.env.PORT;
+  if (!port) return;
+  http
+    .createServer((req, res) => {
+      res.setHeader("content-type", "application/json");
+      if (req.url === "/healthz" || req.url === "/") {
+        res.statusCode = 200;
+        // `writer` distinguishes the ticking instance from an idling duplicate
+        // holding no lock — otherwise both look identically "up".
+        res.end(JSON.stringify({ ok: true, writer: holdsWriteLock, lastTickAt }));
+        return;
+      }
+      res.statusCode = 404;
+      res.end(JSON.stringify({ message: "not_found" }));
+    })
+    .listen(Number(port), () => console.log(`worker health listening on :${port}`));
+}
 
 /** cents/g = (usdPerOzMicro × fxMicro × 100_000) / (1e12 × TROY_OZ_MG) */
 function computeEtbCentsPerGram(usdPerOzMicro: bigint, fxMicro: bigint): bigint {
@@ -78,6 +110,7 @@ async function tick(): Promise<void> {
         source: feed.source,
         fxSource: FX_SOURCE,
       });
+      lastTickAt = new Date().toISOString();
       console.log(
         `[${asset}] ${feed.source}: ${(Number(feed.usdPerOzMicro) / 1e6).toFixed(2)} USD/oz → ${(
           Number(etbCentsPerGram) / 100
@@ -131,7 +164,13 @@ async function shutdown(signal: string): Promise<void> {
 process.on("SIGINT", () => void shutdown("SIGINT"));
 process.on("SIGTERM", () => void shutdown("SIGTERM"));
 
+// Bind before the lock check: an idling duplicate must still answer Render's
+// port probe and the keep-alive pings, otherwise the whole service is marked
+// unhealthy and the real writer gets restarted along with it.
+startHealthServer();
+
 if (await acquireSingleWriterLock()) {
+  holdsWriteLock = true;
   await loop();
 } else {
   // Another worker holds the lock. Idle (don't exit: on Render an exit would

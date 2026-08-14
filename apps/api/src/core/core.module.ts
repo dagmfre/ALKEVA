@@ -36,7 +36,11 @@ class CoreShutdown implements OnApplicationShutdown {
     { provide: ENV, useFactory: (): Env => loadEnv() },
     {
       provide: DB_CLIENT,
-      useFactory: (env: Env) => createDb(env.DATABASE_URL),
+      useFactory: (env: Env) =>
+        createDb(env.DATABASE_URL, {
+          max: env.DB_POOL_MAX,
+          idleTimeoutSec: env.DB_IDLE_TIMEOUT_SEC,
+        }),
       inject: [ENV],
     },
     {

@@ -38,6 +38,13 @@ export const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url(),
 
+  // Postgres pool shape. Defaults suit a long-lived process (Render/local).
+  // On a serverless host every warm instance keeps its own pool, so DB_POOL_MAX
+  // is set low there and DB_IDLE_TIMEOUT_SEC matters: without it, postgres-js
+  // holds connections forever and frozen instances exhaust Supabase's pooler.
+  DB_POOL_MAX: z.coerce.number().int().positive().default(10),
+  DB_IDLE_TIMEOUT_SEC: z.coerce.number().int().nonnegative().default(20),
+
   JWT_SECRET: z.string().min(16),
   JWT_REFRESH_SECRET: z.string().min(16),
   ACCESS_TOKEN_TTL_SEC: z.coerce.number().int().positive().default(900),

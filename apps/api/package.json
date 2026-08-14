@@ -3,10 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "node --watch --import @swc-node/register/esm-register src/main.ts",
+    "build": "tsc -p tsconfig.build.json && pnpm run bundle",
+    "bundle": "esbuild dist/app.module.js --bundle --platform=node --format=esm --packages=external --outfile=dist/server.js",
     "start": "node --import @swc-node/register/esm-register src/main.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:entry": "tsc -p tsconfig.entry.json"
   },
   "dependencies": {
     "@alkeva/db": "workspace:*",
@@ -34,6 +40,7 @@
     "@types/multer": "^2.2.0",
     "@types/node": "^22.10.6",
     "@types/nodemailer": "^8.0.1",
+    "esbuild": "^0.28.2",
     "typescript": "^5.7.3"
   }
 }

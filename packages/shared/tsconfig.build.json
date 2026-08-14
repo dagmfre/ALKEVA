@@ -1,0 +1,12 @@
+// Emit config. The default tsconfig.json stays noEmit for `pnpm typecheck`;
+// this one produces the dist/ that Node actually loads. Needed because a
+// Vercel function bundles compiled JS — it cannot resolve `main: src/index.ts`.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src"]
+}

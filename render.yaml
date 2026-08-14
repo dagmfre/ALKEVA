@@ -1,75 +1,60 @@
-# ALKEVA — Render blueprint (web + api + key-value), free tier.
-# Postgres lives on Supabase; paste its session-pooler DATABASE_URL when prompted.
+# ALKEVA — Render blueprint, free tier. Price worker only.
+#
+# The web app and the API moved to Vercel (apps/web and apps/api each have their
+# own vercel.json). Render keeps exactly one job: the 30s price tick, which has
+# no home on Vercel — Hobby cron fires once a day and a tick loop is a
+# long-lived process, not a request.
 #
 # Free-tier constraints handled here:
-#  - No preDeployCommand on free → migrate+seed run at the start of the api startCommand (both idempotent).
-#  - No background-worker service on free → the price-tick loop runs INSIDE the api web service,
-#    backgrounded before the API starts. The web dashboard polls /prices every ~30s, which is
-#    external traffic that keeps the free instance awake (and ticking) during an active demo.
-#  - Free web services sleep after ~15 min idle → first hit after idle cold-starts ~50s and ticks
-#    pause while asleep. (This is the trade-off vs. the earlier paid-instances decision.)
+#  - No background-worker type on free → the worker runs as a *web* service and
+#    binds a health port (apps/worker/src/main.ts::startHealthServer).
+#  - No preDeployCommand on free → migrate + seed (both idempotent) run at the
+#    start of the startCommand.
+#  - Free web services sleep after ~15 min idle. Previously the dashboard's own
+#    polling kept this awake; with the API on Vercel, NO ALKEVA traffic reaches
+#    Render any more. An external uptime pinger must hit /healthz every ~5 min
+#    or the price loop stops. See docs/deploy/vercel-setup.md.
 #
-# Node version: pinned in THREE places on purpose. The NODE_VERSION env vars below only reach a
-# service on a blueprint sync, so `.node-version` (repo root) is the pin that always applies, and
-# package.json's engines range is upper-bounded as a last resort. An unbounded range resolves to
-# Node's LATEST release (Render docs) — that put Node 26 on a read-only system install, where
-# `corepack enable` died with EROFS trying to write /usr/bin/pnpm. Node 22 installs project-local.
+# Redis is no longer a Render Key Value service: that one is internal-only
+# (ipAllowList: []), and the Vercel API has to reach the same instance the
+# worker publishes price:tick to. Both now point at one publicly reachable
+# Redis (paste REDIS_URL below and use the identical value on Vercel).
+#
+# Node version: pinned in .node-version (repo root) — the NODE_VERSION env var
+# below only reaches a service on a blueprint sync. An unbounded engines range
+# resolves to Node's LATEST release, which put Node 26 on a read-only system
+# install where `corepack enable` died with EROFS writing /usr/bin/pnpm.
 
 services:
   - type: web
-    name: alkeva-api
+    name: alkeva-worker
     runtime: node
     plan: free
-    buildCommand: corepack enable && pnpm install --frozen-lockfile
-    # migrate + seed (idempotent) → background the price worker → start the API in the foreground.
-    startCommand: pnpm db:migrate && pnpm db:seed && (pnpm --filter @alkeva/worker start &) && pnpm --filter @alkeva/api start
+    # packages/db and packages/shared now compile to dist/ (a Vercel function
+    # bundles JS, not `main: src/index.ts`), so a build step is required —
+    # the "@alkeva/worker..." filter builds the worker's dependencies.
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter "@alkeva/worker..." build
+    startCommand: pnpm db:migrate && pnpm db:seed && pnpm --filter @alkeva/worker start
     healthCheckPath: /healthz
     envVars:
       - key: NODE_VERSION
         value: "22"
       - key: DATABASE_URL
-        sync: false # paste the Supabase session-pooler connection string
+        sync: false # Supabase session-pooler connection string
       - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: alkeva-redis
-          property: connectionString
+        sync: false # must be the SAME instance the Vercel API subscribes to
+      # Required by the shared env schema (loadEnv validates the whole thing).
+      # The worker neither issues nor verifies tokens — these only need to
+      # satisfy the min-16-char rule. The API's real secrets live on Vercel.
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
-      - key: WEB_ORIGIN
-        sync: false # https://alkeva-web.onrender.com once known
+      # Seed values — this service is the only thing that runs db:seed now.
       - key: SEED_ADMIN_EMAIL
         sync: false
       - key: SEED_ADMIN_PASSWORD
         sync: false
-      - key: FEE_COMMISSION_PCT
-        value: "2.0"
-      - key: TREASURY_FLOAT_ETB_CENTS
-        value: "1000000000"
-      - key: TREASURY_HALT_CENTS
-        value: "150000000"
-      - key: SELLBACK_DAILY_CEILING_CENTS
-        value: "500000000"
-      - key: DEMO_FAUCET_ENABLED
-        value: "true" # flip to "false" once the Chapa deposit path is demo-verified
-      - key: COMPLIANCE_REVIEW_THRESHOLD_CENTS
-        value: "50000000"
-      # Withdrawals strictly below this settle instantly (audited system
-      # auto-approve); at/above it finance approves by hand. 0 = all manual.
-      - key: PAYOUT_AUTO_APPROVE_MAX_CENTS
-        value: "50000000"
-      # ── Phase 4/5 secrets — paste in the Render dashboard ──
-      - key: CHAPA_SECRET_KEY
-        sync: false # CHASECK_TEST-… until the merchant account is live
-      - key: CHAPA_WEBHOOK_HASH
-        sync: false # must match Chapa dashboard → Webhooks secret hash;
-        # webhook URL there: https://alkeva-api.onrender.com/webhooks/chapa
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: GEMINI_MODEL
-        value: "gemini-3.6-flash" # rehearsals: gemini-3.5-flash-lite
       - key: SEED_COMPLIANCE_EMAIL
         sync: false
       - key: SEED_COMPLIANCE_PASSWORD
@@ -78,6 +63,17 @@ services:
         sync: false
       - key: SEED_FINANCE_PASSWORD
         sync: false
+      - key: TREASURY_FLOAT_ETB_CENTS
+        value: "1000000000"
+      - key: TREASURY_HALT_CENTS
+        value: "150000000"
+      - key: VAULT_SEED_XAU_MG
+        value: "5000000"
+      - key: VAULT_SEED_XPT_MG
+        value: "1000000"
+      # Price loop + alert emails (alerts fire from the tick that crosses them).
+      - key: PRICE_TICK_SECONDS
+        value: "30"
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
@@ -88,20 +84,3 @@ services:
         sync: false
       - key: MAIL_FROM
         sync: false
-
-  - type: web
-    name: alkeva-web
-    runtime: node
-    plan: free
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @alkeva/web build
-    startCommand: pnpm --filter @alkeva/web start
-    envVars:
-      - key: NODE_VERSION
-        value: "22"
-      - key: API_URL
-        sync: false # https://alkeva-api.onrender.com once known
-
-  - type: keyvalue
-    name: alkeva-redis
-    plan: free
-    ipAllowList: [] # internal access only

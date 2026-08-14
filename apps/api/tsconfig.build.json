@@ -1,0 +1,24 @@
+// Emit config for the Vercel serverless bundle.
+//
+// Locally and on Render the API runs straight from TS via @swc-node/register,
+// so no build artifact ever existed. A Vercel function bundles compiled JS, so
+// this emits one. tsc (not esbuild) is deliberate: esbuild cannot emit
+// `emitDecoratorMetadata`, and Nest resolves constructor injection from the
+// `design:paramtypes` metadata it produces — without it every controller fails
+// to instantiate at runtime.
+//
+// Declarations stay on (inherited from the base config) so that api/index.ts —
+// which imports the built AppModule — can be type-checked against dist rather
+// than treated as untyped JS.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    // No source maps in the deployed bundle: they are dead weight in a lambda,
+    // and Vercel's builder chokes on this output with "Division by zero".
+    "sourceMap": false
+  },
+  "include": ["src"]
+}

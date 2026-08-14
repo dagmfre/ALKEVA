@@ -1,0 +1,12 @@
+// Emit config — see packages/shared/tsconfig.build.json for why.
+// drizzle.config.ts is deliberately excluded: drizzle-kit reads it as TS from
+// source, and including it would push it outside rootDir.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src"]
+}
