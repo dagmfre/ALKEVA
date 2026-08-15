@@ -88,11 +88,16 @@ async function getFxMicro(): Promise<bigint> {
 }
 
 async function fetchMetal(asset: MetalAsset): Promise<FeedResult> {
+  // Swissquote first — reversing the original gold-api-primary order.
+  // On 15 Aug 2026 gold-api.com served a price frozen to six decimals for
+  // over an hour while refreshing its updatedAt, flat-lining every chart;
+  // Swissquote's public bank feed ticks continuously. gold-api remains the
+  // backup, and provenance still records whichever source actually served.
   try {
-    return await fetchPrimary(env.PRICE_PRIMARY_URL, asset);
-  } catch (primaryErr) {
-    console.warn(`[${asset}] primary feed failed: ${(primaryErr as Error).message}`);
     return await fetchFallback(env.PRICE_FALLBACK_URL, asset);
+  } catch (swissquoteErr) {
+    console.warn(`[${asset}] swissquote failed: ${(swissquoteErr as Error).message}`);
+    return await fetchPrimary(env.PRICE_PRIMARY_URL, asset);
   }
 }
 
@@ -138,7 +143,7 @@ async function tick(): Promise<void> {
 
 async function loop(): Promise<void> {
   console.log(
-    `ALKEVA price worker: every ${env.PRICE_TICK_SECONDS}s, primary=${env.PRICE_PRIMARY_URL}`,
+    `ALKEVA price worker: every ${env.PRICE_TICK_SECONDS}s, primary=${env.PRICE_FALLBACK_URL} (swissquote), backup=${env.PRICE_PRIMARY_URL}`,
   );
   while (running) {
     const started = Date.now();
