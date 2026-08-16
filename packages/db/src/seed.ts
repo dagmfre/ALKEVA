@@ -116,16 +116,24 @@ try {
   }
   console.log(`✓ ${bands.length} holding tiers`);
 
-  // 4. Staff users — administrator always; compliance and finance only when
-  // their env pair is set (Phase 5 role-separation demo needs all three).
-  const staffSeeds: { email: string; password: string; role: "administrator" | "compliance" | "finance"; fullName: string }[] = [
-    {
+  // 4. Staff users — every account, administrator included, is seeded only
+  // when its env pair is set. There is no default admin password any more: a
+  // known default surviving into a real deployment is a takeover waiting to
+  // happen, so an empty SEED_ADMIN_PASSWORD skips the admin loudly instead.
+  const staffSeeds: { email: string; password: string; role: "administrator" | "compliance" | "finance"; fullName: string }[] = [];
+  if (env.SEED_ADMIN_EMAIL && env.SEED_ADMIN_PASSWORD) {
+    staffSeeds.push({
       email: env.SEED_ADMIN_EMAIL,
       password: env.SEED_ADMIN_PASSWORD,
       role: "administrator",
       fullName: "ALKEVA Admin",
-    },
-  ];
+    });
+  } else {
+    console.warn(
+      "⚠ SEED_ADMIN_PASSWORD is not set — administrator account NOT seeded/reset. " +
+        "Set SEED_ADMIN_EMAIL + SEED_ADMIN_PASSWORD to manage the admin login.",
+    );
+  }
   if (env.SEED_COMPLIANCE_EMAIL && env.SEED_COMPLIANCE_PASSWORD) {
     staffSeeds.push({
       email: env.SEED_COMPLIANCE_EMAIL,

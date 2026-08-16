@@ -4,11 +4,13 @@ import { notifications, users, type Db } from "@alkeva/db";
 import type { NotificationsResponse } from "@alkeva/shared";
 import { DB } from "../core/core.module.js";
 import { MailService } from "./mail.service.js";
+// Templates live in @alkeva/shared so the worker sends the identical copy —
+// it used to carry its own duplicated alert wording.
 import {
   renderNotification,
   type NotificationPayload,
   type NotificationTemplate,
-} from "./templates.js";
+} from "@alkeva/shared";
 
 /**
  * One entry point for "the user was informed": inserts the in-app record,
@@ -43,12 +45,8 @@ export class NotificationsService {
         .returning({ id: notifications.id });
       const row = inserted[0];
 
-      const { subject, body } = renderNotification(template, user.locale, payload);
-      const outcome = await this.mail.send(
-        user.email,
-        subject,
-        `<p style="font-family:sans-serif;font-size:15px">${body}</p>`,
-      );
+      const { subject, text, html } = renderNotification(template, user.locale, payload);
+      const outcome = await this.mail.send(user.email, subject, html, text);
 
       // "skipped" (no SMTP configured) keeps status=queued: recorded, undelivered.
       if (row && outcome !== "skipped") {

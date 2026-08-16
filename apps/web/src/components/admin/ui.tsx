@@ -4,10 +4,23 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { api, ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-/** Consistent table chrome for every console screen. */
+/**
+ * Consistent table chrome for every console screen — a thin wrapper over the
+ * shadcn Table primitives so all nine queues share one treatment. Screens
+ * still supply raw <tr> rows; the tbody selectors style them, so the wrapper
+ * upgrade needed no per-screen edits.
+ */
 export function AdminTable({
   headers,
   children,
@@ -18,28 +31,25 @@ export function AdminTable({
   className?: string;
 }) {
   return (
-    <div className={cn("overflow-x-auto rounded-lg border border-border bg-card", className)}>
-      <table className="w-full min-w-[640px] text-[0.9375rem]">
-        <thead>
-          <tr className="border-b border-border text-start">
+    <div className={cn("overflow-hidden rounded-lg border border-border bg-card", className)}>
+      <Table className="min-w-[640px]">
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
             {headers.map((h) => (
-              <th
-                key={h}
-                className="px-4 py-2.5 text-start text-[0.8125rem] font-medium text-muted-foreground"
-              >
-                {h}
-              </th>
+              <TableHead key={h}>{h}</TableHead>
             ))}
-          </tr>
-        </thead>
-        <tbody>{children}</tbody>
-      </table>
+          </TableRow>
+        </TableHeader>
+        <TableBody className="[&_tr]:border-b [&_tr]:border-border [&_tr:last-child]:border-0 [&_tr]:transition-colors [&_tr:hover]:bg-popover/50">
+          {children}
+        </TableBody>
+      </Table>
     </div>
   );
 }
 
 export function Td({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <td className={cn("border-t border-border px-4 py-2.5 align-middle", className)}>{children}</td>;
+  return <TableCell className={className}>{children}</TableCell>;
 }
 
 /**

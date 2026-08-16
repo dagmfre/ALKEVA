@@ -1,5 +1,11 @@
+import { Suspense } from "react";
 import { AuthForm } from "@/components/auth-form";
 
+/* AuthForm reads searchParams (?reset=1) — app router wants a boundary. */
 export default function LoginPage() {
-  return <AuthForm mode="login" />;
+  return (
+    <Suspense>
+      <AuthForm mode="login" />
+    </Suspense>
+  );
 }

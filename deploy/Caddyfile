@@ -1,0 +1,53 @@
+# ALKEVA edge. Automatic HTTPS via Let's Encrypt — set ALKEVA_DOMAIN and
+# ALKEVA_ACME_EMAIL in /opt/alkeva/.env.
+#
+# One origin serves both apps, which is what keeps auth cookies first-party.
+# The split is by path, not by host:
+#
+#   /api/*  → the NestJS API, prefix stripped
+#   /*      → Next.js
+#
+# Routing /api/* here rather than through Next's rewrite proxy is deliberate
+# and fixes two things the Vercel split had to work around:
+#
+#   1. Chapa signs its webhook with HMAC-SHA256 over the exact bytes it sent.
+#      Caddy is a byte-transparent proxy; an application-level rewrite through
+#      Next is one more chance for the body to be re-serialized before
+#      `req.rawBody` sees it.
+#   2. `flush_interval -1` disables response buffering, so /api/prices/stream
+#      (SSE) pushes each tick straight through instead of pooling.
+#
+# Next's own /api/prices/stream shadow route still exists for local dev, where
+# there is no Caddy in front. In production it is simply never reached.
+
+{
+	email {$ALKEVA_ACME_EMAIL}
+}
+
+{$ALKEVA_DOMAIN} {
+	encode zstd gzip
+
+	handle /api/* {
+		uri strip_prefix /api
+		reverse_proxy api:4000 {
+			flush_interval -1
+		}
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	log {
+		output file /data/access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

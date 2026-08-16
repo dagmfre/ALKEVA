@@ -80,12 +80,12 @@ export const envSchema = z.object({
     .default("https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument"),
   FX_URL: z.string().url().default("https://open.er-api.com/v6/latest/USD"),
 
-  // Phase 2 — demo faucet: self-serve test money until Chapa deposits land
-  // (Phase 4). One flag turns it off; the cap bounds a single credit.
+  // Demo faucet — OFF by default since the production stage. Real money enters
+  // through Chapa deposits; sandbox environments may re-enable this explicitly.
   // z.enum+transform, NOT z.coerce.boolean — the latter coerces "false" to true.
   DEMO_FAUCET_ENABLED: z
     .enum(["true", "false"])
-    .default("true")
+    .default("false")
     .transform((v) => v === "true"),
   DEMO_FAUCET_MAX_CENTS: z.coerce.bigint().positive().default(20_000_000n),
 
@@ -94,7 +94,10 @@ export const envSchema = z.object({
   COMPLIANCE_REVIEW_THRESHOLD_CENTS: z.coerce.bigint().positive().default(50_000_000n),
 
   SEED_ADMIN_EMAIL: z.string().email().default("admin@alkeva.local"),
-  SEED_ADMIN_PASSWORD: z.string().min(8).default("change-me-on-first-login"),
+  // No default password since the production stage: empty = the seed skips
+  // creating/resetting the administrator and logs the skip loudly. A known
+  // default admin password must never survive into a real deployment.
+  SEED_ADMIN_PASSWORD: z.string().optional().default(""),
   // Staff seeds for the Phase 5 role separation demo — seeded only when both
   // halves of a pair are set (empty = skipped).
   SEED_COMPLIANCE_EMAIL: z.string().optional().default(""),
@@ -125,6 +128,24 @@ export const envSchema = z.object({
   // gemini-3.5-flash-lite to preserve the free-tier daily cap).
   GEMINI_API_KEY: z.string().optional().default(""),
   GEMINI_MODEL: z.string().default("gemini-3.6-flash"),
+
+  // Google sign-in (production stage). Empty = the endpoints answer 503
+  // auth_google_unconfigured and the web hides the button — the same
+  // degrade-not-crash pattern as Chapa. Redirect URI must be registered
+  // EXACTLY in Google Cloud Console: `${WEB_ORIGIN}/auth/google/callback`.
+  GOOGLE_CLIENT_ID: z.string().optional().default(""),
+  GOOGLE_CLIENT_SECRET: z.string().optional().default(""),
+
+  // WebAuthn / passkeys (production stage). RP_ID is the registrable domain
+  // credentials bind to (vercel.app is on the Public Suffix List, so on
+  // Vercel it must be the FULL subdomain); ORIGIN is the exact https origin.
+  // Empty = endpoints 503, UI hidden.
+  WEBAUTHN_RP_ID: z.string().optional().default(""),
+  WEBAUTHN_ORIGIN: z.string().optional().default(""),
+
+  // Badges: accounts created before this ISO date earn early_adopter.
+  // Empty = the badge is never awarded.
+  BADGE_EARLY_ADOPTER_BEFORE: z.string().optional().default(""),
 
   // Phase 5 — email. Provider-agnostic SMTP (free tiers: Brevo, Gmail app
   // password). Unset = notifications still recorded, delivery skipped.

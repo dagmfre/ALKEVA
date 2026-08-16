@@ -22,6 +22,7 @@ export class MailService {
     to: string,
     subject: string,
     html: string,
+    text?: string,
   ): Promise<"sent" | "failed" | "skipped"> {
     if (!this.configured) return "skipped";
     try {
@@ -34,7 +35,8 @@ export class MailService {
             ? { user: this.env.SMTP_USER, pass: this.env.SMTP_PASS }
             : undefined,
       });
-      await this.transport.sendMail({ from: this.env.MAIL_FROM, to, subject, html });
+      // text alongside html: multipart bodies score better with spam filters.
+      await this.transport.sendMail({ from: this.env.MAIL_FROM, to, subject, html, text });
       return "sent";
     } catch (err) {
       console.error(`mail send failed (${subject} → ${to}):`, err);

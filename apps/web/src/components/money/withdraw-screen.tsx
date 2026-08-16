@@ -11,7 +11,14 @@ import type {
 } from "@alkeva/shared";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SystemBanner } from "@/components/system/banner";
 import { api, ApiError } from "@/lib/api";
@@ -94,9 +101,9 @@ export function WithdrawScreen() {
   }
 
   return (
-    <div className="mx-auto flex max-w-[36rem] flex-col gap-3.5">
+    <div className="mx-auto grid w-full max-w-[64rem] grid-cols-1 items-start gap-3.5 lg:mx-0 lg:max-w-none lg:grid-cols-12 lg:gap-5">
       {needsKyc ? (
-        <Card className="flex flex-col gap-3 p-5">
+        <Panel className="flex flex-col gap-3 p-5 lg:col-span-7">
           <h2 className="text-lg font-semibold">{t("kycGateTitle")}</h2>
           <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
             {t("kycGateBody")}
@@ -104,9 +111,9 @@ export function WithdrawScreen() {
           <Button size="cta" asChild>
             <Link href="/kyc">{t("kycGateCta")}</Link>
           </Button>
-        </Card>
+        </Panel>
       ) : (
-        <Card className="p-5">
+        <Panel className="p-5 lg:col-span-7">
           <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-4">
             <div className="well flex items-center justify-between rounded-md px-3.5 py-2.5">
               <span className="text-[0.9375rem] text-muted-foreground">{t("available")}</span>
@@ -134,28 +141,35 @@ export function WithdrawScreen() {
               </div>
             </label>
 
-            <label className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5">
               <span className="text-[0.9375rem] font-medium">{t("bankLabel")}</span>
-              <select
+              <Select
                 value={bankCode}
-                onChange={(e) => setBankCode(e.target.value)}
-                required
+                onValueChange={setBankCode}
                 disabled={busy || banks.data === null}
-                className="well min-h-12 rounded-md px-3 text-base outline-none"
               >
-                <option value="" disabled>
-                  {banks.data === null ? tc("loading") : t("bankPlaceholder")}
-                </option>
-                {sortedBanks.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
+                {/* Matches the sunk `.well` fields around it — one form-control
+                    vocabulary per surface. */}
+                <SelectTrigger
+                  className="min-h-12 w-full border-border bg-well! shadow-[var(--sunk)]"
+                  aria-label={t("bankLabel")}
+                >
+                  <SelectValue
+                    placeholder={banks.data === null ? tc("loading") : t("bankPlaceholder")}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortedBanks.map((b) => (
+                    <SelectItem key={b.id} value={String(b.id)}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {banks.error && (
                 <span className="text-[0.8125rem] text-loss">{t("errors.banks_unavailable")}</span>
               )}
-            </label>
+            </div>
 
             <label className="flex flex-col gap-1.5">
               <span className="text-[0.9375rem] font-medium">{t("accountNumberLabel")}</span>
@@ -197,33 +211,63 @@ export function WithdrawScreen() {
             </Button>
             <p className="text-[0.8125rem] leading-relaxed text-subtle">{t("holdNote")}</p>
           </form>
-        </Card>
+        </Panel>
       )}
 
-      {(list.data?.payouts.length ?? 0) > 0 && (
-        <Card className="px-5 pb-2 pt-4">
-          <h2 className="mb-1 text-base font-semibold">{t("historyTitle")}</h2>
-          {list.data?.payouts.map((p) => (
-            <div
-              key={p.id}
-              className="flex flex-wrap items-center gap-x-4 gap-y-0.5 border-t border-border py-3 first:border-t-0"
-            >
-              <span className="tnum flex-1 text-base font-semibold">
-                {money(p.amountCents)} <span className="font-sans font-normal">{tc("birr")}</span>
-              </span>
-              <span className="tnum flex-1 text-[0.9375rem] text-muted-foreground">
-                {p.accountNumber}
-              </span>
-              <span className="flex-1 text-end">
-                <PayoutStatus status={p.status} />
-              </span>
-              <span className="font-latin w-full text-[0.8125rem] text-subtle">
-                {eatStamp(p.createdAt)}
-              </span>
+      <div className="flex flex-col gap-3.5 lg:col-span-5 lg:gap-5">
+        <Panel>
+          <PanelHeader title={t("historyTitle")} />
+          {(list.data?.payouts.length ?? 0) === 0 ? (
+            <PanelBody>
+              <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
+                {t("historyEmpty")}
+              </p>
+            </PanelBody>
+          ) : (
+            <div className="border-t border-border">
+              {list.data?.payouts.map((p) => (
+                <div key={p.id} className="border-b border-border px-4 py-3 last:border-0 lg:px-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="tnum text-base font-semibold">
+                      {money(p.amountCents)}{" "}
+                      <span className="font-sans font-normal text-muted-foreground">
+                        {tc("birr")}
+                      </span>
+                    </span>
+                    <PayoutStatus status={p.status} />
+                  </div>
+                  <div className="mt-1 flex items-center justify-between gap-3">
+                    <span className="tnum text-[0.875rem] text-muted-foreground">
+                      {p.accountNumber}
+                    </span>
+                    <span className="font-latin text-[0.8125rem] text-subtle">
+                      {eatStamp(p.createdAt)}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </Card>
-      )}
+          )}
+        </Panel>
+
+        <Panel>
+          <PanelHeader title={t("howTitle")} />
+          <PanelBody>
+            <ol className="flex flex-col gap-3">
+              {[t("how1"), t("how2"), t("how3")].map((step, i) => (
+                <li key={step} className="flex gap-3">
+                  <span className="tnum grid size-6 flex-none place-items-center rounded-full border border-input text-[0.8125rem] font-semibold text-gold-400">
+                    {i + 1}
+                  </span>
+                  <span className="text-[0.9375rem] leading-relaxed text-muted-foreground">
+                    {step}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </PanelBody>
+        </Panel>
+      </div>
     </div>
   );
 }

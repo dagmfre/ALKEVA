@@ -1,0 +1,21 @@
+node_modules
+**/node_modules
+**/dist
+**/.next
+**/*.tsbuildinfo
+
+.git
+.github
+.vercel
+**/.vercel
+**/.claude
+
+# Secrets never enter the build context — the VM injects them via env_file.
+.env
+.env.*
+!.env.example
+
+docs
+design
+scripts/verify-contrast.mjs
+*.log

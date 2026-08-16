@@ -36,9 +36,6 @@ const buttonVariants = cva(
         ghost: "bg-transparent text-muted-foreground hover:text-foreground",
         destructive:
           "bg-destructive text-destructive-foreground hover:opacity-90",
-        /** Demo-only affordances must look like scaffolding, never like a real
-            money movement. Dashed border says "this is not a deposit". */
-        demo: "border border-dashed border-input bg-transparent text-muted-foreground hover:text-foreground",
         link: "text-gold-400 underline-offset-4 hover:underline",
       },
       size: {
@@ -47,6 +44,9 @@ const buttonVariants = cva(
         cta: "min-h-13 w-full px-4 text-base",
         pill: "min-h-11 rounded-full px-4 text-[0.9375rem]",
         icon: "size-11",
+        /** Dense icon step — exists for vendored ai-elements internals only;
+            our own screens keep the 44px floor. */
+        "icon-sm": "size-9",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

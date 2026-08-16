@@ -5,14 +5,16 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { PortfolioResponse } from "@alkeva/shared";
 
-import { Mark } from "@/components/brand/mark";
 import { NavIcon, TierMark, useNavItems, type NavItem } from "@/components/shell/nav-items";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useResource } from "@/lib/use-resource";
 import { cn } from "@/lib/utils";
 
 /**
- * The desktop rail (≥1024px).
+ * The desktop rail (≥1024px) — Tradeo density: tight ~34px rows, small section
+ * labels with more space above than below, an active pill that adds only a
+ * background layer (the geometry never shifts). The brand block lives in the
+ * global header now, aligned over this rail.
  *
  * Two labelled sections rather than a flat list — the market you watch and the
  * account you own are different kinds of destination. The active item is the
@@ -24,7 +26,7 @@ import { cn } from "@/lib/utils";
 export function Sidebar() {
   const t = useTranslations("nav");
   const tt = useTranslations("tier");
-  const { market, account } = useNavItems();
+  const { market, account, money } = useNavItems();
   const portfolio = useResource<PortfolioResponse>("/portfolio");
 
   const tierName = portfolio.data?.tier.name ?? null;
@@ -33,33 +35,27 @@ export function Sidebar() {
   const band = portfolio.data?.tier.bandMaxUsd;
 
   return (
-    <aside className="hidden w-[248px] flex-none flex-col gap-5 border-e border-border px-3.5 pb-4 pt-5 lg:flex">
-      <Link href="/" className="flex items-center gap-2.5 px-2">
-        <Mark size={28} />
-        <span className="flex flex-col leading-[1.15]">
-          <span className="font-latin text-[1.0625rem] font-semibold tracking-[0.02em]">ALKEVA</span>
-          <span className="font-latin text-[0.6875rem] tracking-[0.08em] text-subtle">
-            XAU · XPT
-          </span>
-        </span>
-      </Link>
-
-      <nav className="flex flex-col gap-1" aria-label={t("home")}>
+    <aside className="hidden w-[240px] flex-none flex-col gap-4 border-e border-border px-3.5 pb-4 pt-4 lg:flex">
+      <nav className="flex flex-col gap-px" aria-label={t("home")}>
         <SectionLabel>{t("sectionMarket")}</SectionLabel>
         {market.map((item) => (
           <NavLink key={item.key} item={item} />
         ))}
-        <SectionLabel className="pt-3.5">{t("sectionAccount")}</SectionLabel>
+        <SectionLabel className="pt-4">{t("sectionAccount")}</SectionLabel>
         {account.map((item) => (
+          <NavLink key={item.key} item={item} />
+        ))}
+        <SectionLabel className="pt-4">{t("sectionMoney")}</SectionLabel>
+        {money.map((item) => (
           <NavLink key={item.key} item={item} />
         ))}
       </nav>
 
-      <div className="mt-auto flex items-center gap-2.5 rounded-md border border-border bg-card px-3 py-3">
+      <div className="mt-auto flex items-center gap-2.5 rounded-md border border-border bg-card px-3 py-2.5">
         <TierMark />
         {localizedTier ? (
           <span className="flex flex-col">
-            <span className="text-[0.9375rem] font-semibold leading-normal">{localizedTier}</span>
+            <span className="text-sm font-semibold leading-normal">{localizedTier}</span>
             <span className="font-latin text-xs text-muted-foreground">
               {band === null ? tt("topBand") : band ? `< $${band.toLocaleString("en-US")}` : "—"}
             </span>
@@ -72,10 +68,9 @@ export function Sidebar() {
   );
 }
 
+/** Small, quiet, never uppercase (Ethiopic has no caps — the rule is global). */
 function SectionLabel({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <span className={cn("px-3 pb-1 text-[0.9375rem] text-subtle", className)}>{children}</span>
-  );
+  return <span className={cn("px-3 pb-1 text-xs text-subtle", className)}>{children}</span>;
 }
 
 function NavLink({ item }: { item: NavItem }) {
@@ -93,7 +88,7 @@ function NavLink({ item }: { item: NavItem }) {
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex min-h-[46px] items-center gap-3 rounded-md px-3 text-base transition-colors",
+        "flex min-h-[34px] items-center gap-2.5 rounded-md px-3 text-sm transition-colors",
         active
           ? "pill-active font-semibold"
           : "text-muted-foreground hover:bg-card hover:text-foreground",

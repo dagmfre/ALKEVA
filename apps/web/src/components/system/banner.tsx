@@ -12,7 +12,7 @@ export function SystemBanner({
   children,
   className,
 }: {
-  tone: "caution" | "critical";
+  tone: "caution" | "critical" | "info";
   children: React.ReactNode;
   className?: string;
 }) {
@@ -23,10 +23,11 @@ export function SystemBanner({
         "mb-3 flex items-start gap-2.5 rounded-lg border px-3.5 py-3 text-[0.9375rem]",
         tone === "caution" && "border-border bg-popover text-platinum-400",
         tone === "critical" && "border-loss/40 bg-loss/[0.13] text-loss",
+        tone === "info" && "border-gain/40 bg-gain/[0.1] text-gain",
         className,
       )}
     >
-      <span aria-hidden="true">{tone === "caution" ? "◑" : "▲"}</span>
+      <span aria-hidden="true">{tone === "caution" ? "◑" : tone === "info" ? "✓" : "▲"}</span>
       <span>{children}</span>
     </div>
   );

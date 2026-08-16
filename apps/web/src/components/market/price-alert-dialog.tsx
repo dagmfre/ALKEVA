@@ -6,6 +6,14 @@ import type { AlertsResponse, MetalAsset } from "@alkeva/shared";
 
 import { useAssetPrice } from "@/components/market/price-provider";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { api, ApiError } from "@/lib/api";
 import { money } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -14,6 +22,9 @@ import { cn } from "@/lib/utils";
  * Set a one-shot threshold alert (F24). Non-advisory by design: the dialog
  * asks for a number and a direction, and the notification that eventually
  * fires states the crossing — it never suggests acting on it.
+ *
+ * A real Dialog (focus-trapped, Escape closes, backdrop) — the old hand-rolled
+ * popover positioned itself off the card and could clip against the viewport.
  */
 export function PriceAlertButton({ asset }: { asset: MetalAsset }) {
   const t = useTranslations("alerts");
@@ -61,56 +72,66 @@ export function PriceAlertButton({ asset }: { asset: MetalAsset }) {
   }
 
   return (
-    <div className="relative">
-      <Button variant="outline" className="w-full" onClick={() => setOpen((v) => !v)}>
-        {t("cta", { metal: asset === "XAU" ? tc("gold") : tc("platinum") })}
-      </Button>
-
-      {open && (
-        <div className="absolute bottom-full start-0 z-40 mb-2 w-full min-w-[280px] rounded-lg border border-border bg-popover p-4 shadow-lg">
-          <p className="mb-3 text-[0.9375rem] font-semibold">{t("title")}</p>
-          <div className="mb-3 grid grid-cols-2 gap-1.5">
-            {(["above", "below"] as const).map((d) => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setDirection(d)}
-                className={cn(
-                  "rounded-md px-3 py-2 text-[0.875rem]",
-                  direction === d ? "pill-active" : "well text-muted-foreground",
-                )}
-              >
-                {t(d)}
-              </button>
-            ))}
-          </div>
-          <div className="well mb-3 flex items-center rounded-md">
-            <input
-              inputMode="decimal"
-              value={threshold}
-              onChange={(e) => setThreshold(e.target.value)}
-              className="tnum min-h-11 w-full bg-transparent px-3 text-base outline-none"
-              disabled={busy}
-            />
-            <span className="pe-3 text-[0.875rem] text-muted-foreground">
-              {tc("birr")}/{tc("g")}
-            </span>
-          </div>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full">
+          {t("cta", { metal: asset === "XAU" ? tc("gold") : tc("platinum") })}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-[24rem]">
+        <DialogHeader>
+          <DialogTitle>{t("title")}</DialogTitle>
           {price && (
-            <p className="mb-3 text-[0.8125rem] text-subtle">
+            <DialogDescription>
               {t("current", { price: money(price.etbCentsPerGram) })}
-            </p>
+            </DialogDescription>
           )}
-          {state === "saved" ? (
-            <p className="text-[0.9375rem] text-gain">✓ {t("saved")}</p>
-          ) : (
-            <Button variant="flat" size="sm" className="w-full" disabled={busy} onClick={() => void save()}>
-              {t("save")}
-            </Button>
-          )}
-          {state === "error" && <p className="mt-2 text-[0.875rem] text-loss">{t("error")}</p>}
+        </DialogHeader>
+
+        <div className="grid grid-cols-2 gap-1.5">
+          {(["above", "below"] as const).map((d) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => setDirection(d)}
+              className={cn(
+                "min-h-11 rounded-md px-3 py-2 text-[0.875rem]",
+                direction === d ? "pill-active" : "well text-muted-foreground",
+              )}
+            >
+              {t(d)}
+            </button>
+          ))}
         </div>
-      )}
-    </div>
+
+        <div className="well flex items-center rounded-md">
+          <input
+            inputMode="decimal"
+            value={threshold}
+            onChange={(e) => setThreshold(e.target.value)}
+            className="tnum min-h-11 w-full bg-transparent px-3 text-base outline-none"
+            disabled={busy}
+          />
+          <span className="pe-3 text-[0.875rem] text-muted-foreground">
+            {tc("birr")}/{tc("g")}
+          </span>
+        </div>
+
+        {state === "saved" ? (
+          <p className="text-[0.9375rem] text-gain">✓ {t("saved")}</p>
+        ) : (
+          <Button
+            variant="flat"
+            size="sm"
+            className="w-full"
+            disabled={busy}
+            onClick={() => void save()}
+          >
+            {t("save")}
+          </Button>
+        )}
+        {state === "error" && <p className="text-[0.875rem] text-loss">{t("error")}</p>}
+      </DialogContent>
+    </Dialog>
   );
 }

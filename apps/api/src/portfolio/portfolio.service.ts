@@ -11,12 +11,14 @@ import {
 import {
   METAL_ASSETS,
   UNITS,
+  type BadgeDto,
+  type Env,
   type HoldingDto,
   type MetalAsset,
   type PortfolioResponse,
   type TierDto,
 } from "@alkeva/shared";
-import { DB } from "../core/core.module.js";
+import { DB, ENV } from "../core/core.module.js";
 import { LedgerService } from "../ledger/ledger.service.js";
 
 interface LatestTick {
@@ -37,6 +39,7 @@ interface LatestTick {
 export class PortfolioService {
   constructor(
     @Inject(DB) private readonly db: Db,
+    @Inject(ENV) private readonly env: Env,
     private readonly ledger: LedgerService,
   ) {}
 
@@ -92,6 +95,7 @@ export class PortfolioService {
     const totalGainLossCents = totalMetalValueCents - totalCostBasisCents;
 
     const tier = await this.tierFor(userId, totalValueCents, fxRateMicro);
+    const badges = await this.badgesFor(userId, heldMg);
 
     return {
       etbCents: etbCents.toString(),
@@ -105,8 +109,62 @@ export class PortfolioService {
           ? null
           : ((totalGainLossCents * 100_000n) / totalCostBasisCents).toString(),
       tier,
+      badges,
       asOf: new Date().toISOString(),
     };
+  }
+
+  /**
+   * Badges — computed on read from data this projection already owns; zero
+   * writes (Phase 3.5, built at the production stage; the empty badge tables
+   * from migration 0000 are superseded by this derivation).
+   */
+  private async badgesFor(
+    userId: string,
+    heldMg: Record<MetalAsset, bigint>,
+  ): Promise<BadgeDto[]> {
+    const settled = await this.db
+      .select({ side: orders.side, settledAt: orders.settledAt })
+      .from(orders)
+      .where(and(eq(orders.userId, userId), eq(orders.status, "settled")))
+      .orderBy(asc(orders.settledAt));
+
+    const firstBuy = settled.find((o) => o.side === "buy")?.settledAt ?? null;
+    const tenth = settled.length >= 10 ? settled[9]!.settledAt : null;
+
+    let earlyAdopter: BadgeDto = { key: "early_adopter", earned: false, earnedAt: null };
+    if (this.env.BADGE_EARLY_ADOPTER_BEFORE) {
+      const cutoff = new Date(this.env.BADGE_EARLY_ADOPTER_BEFORE);
+      if (!Number.isNaN(cutoff.getTime())) {
+        const row = await this.db
+          .select({ createdAt: users.createdAt })
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1);
+        const createdAt = row[0]?.createdAt ?? null;
+        if (createdAt && createdAt < cutoff) {
+          earlyAdopter = { key: "early_adopter", earned: true, earnedAt: createdAt.toISOString() };
+        }
+      }
+    }
+
+    return [
+      {
+        key: "first_purchase",
+        earned: firstBuy !== null,
+        earnedAt: firstBuy?.toISOString() ?? null,
+      },
+      {
+        key: "ten_trades",
+        earned: settled.length >= 10,
+        earnedAt: tenth?.toISOString() ?? null,
+      },
+      // State badges: earned describes NOW (≥1g gold / any platinum) — they
+      // can lapse when the holding is sold, which is honest for a status.
+      { key: "gold_holder", earned: heldMg.XAU >= 1000n, earnedAt: null },
+      { key: "platinum_holder", earned: heldMg.XPT > 0n, earnedAt: null },
+      earlyAdopter,
+    ];
   }
 
   private async latestTick(asset: MetalAsset): Promise<LatestTick | null> {

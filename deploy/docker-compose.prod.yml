@@ -1,0 +1,110 @@
+# ALKEVA — production stack for a single Google Compute Engine VM.
+#
+#   caddy  :80/:443  ─┬─ /api/*  → api:4000   (prefix stripped)
+#                     └─ /*      → web:3000
+#   worker            (no ingress; ticks prices, publishes price:tick)
+#   redis             (internal only — never published to the host)
+#
+# Postgres is NOT here: it stays on Supabase (Decision, 16 Aug 2026). Only
+# DATABASE_URL points off-box.
+#
+# Every service runs the same image, differing only by command. Build it once:
+#   docker compose -f deploy/docker-compose.prod.yml build
+#
+# Secrets live in /opt/alkeva/.env on the VM (chmod 600), never in this file.
+
+name: alkeva
+
+x-app: &app
+  image: alkeva:latest
+  build:
+    context: ..
+    dockerfile: Dockerfile
+    target: runtime
+  env_file: [/opt/alkeva/.env]
+  restart: unless-stopped
+  depends_on:
+    redis:
+      condition: service_healthy
+    migrate:
+      condition: service_completed_successfully
+
+services:
+  redis:
+    image: redis:7-alpine
+    # appendonly so idempotency keys and WebAuthn challenges survive a restart.
+    # No ports: — the whole reason this deployment is cheaper than the Vercel
+    # split is that Redis is now reachable only inside this network.
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # One-shot. Both scripts are idempotent, so this runs on every `up` and the
+  # app services wait for it to exit 0 — the same ordering Render got from
+  # folding migrate+seed into the worker's startCommand, but without coupling
+  # schema changes to the price loop.
+  migrate:
+    image: alkeva:latest
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      target: runtime
+    env_file: [/opt/alkeva/.env]
+    working_dir: /app/packages/db
+    command: ["sh", "-c", "./node_modules/.bin/tsx src/migrate.ts && ./node_modules/.bin/tsx src/seed.ts"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    <<: *app
+    working_dir: /app
+    command: ["node", "apps/api/dist/main.js"]
+    expose: ["4000"]
+
+  web:
+    <<: *app
+    working_dir: /app/apps/web
+    # API_URL is only used by next.config.ts's rewrite, which Caddy now
+    # short-circuits for real traffic. Kept correct so a request that does
+    # reach Next's proxy still lands on the API instead of localhost.
+    environment:
+      API_URL: http://api:4000
+      PORT: "3000"
+    command: ["./node_modules/.bin/next", "start"]
+    expose: ["3000"]
+
+  worker:
+    <<: *app
+    working_dir: /app/apps/worker
+    # PORT makes the worker bind its /healthz listener (apps/worker/src/main.ts
+    # ::startHealthServer). Nothing external pings it any more — the process
+    # never sleeps here — but it gives `docker compose ps` a real health signal.
+    environment:
+      PORT: "8080"
+    command: ["./node_modules/.bin/tsx", "src/main.ts"]
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file: [/opt/alkeva/.env]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on: [web, api]
+    restart: unless-stopped
+
+volumes:
+  redisdata:
+  caddydata: # ACME account + issued certificates — losing this re-issues, and
+  caddyconfig: # Let's Encrypt rate-limits. Do not prune it.

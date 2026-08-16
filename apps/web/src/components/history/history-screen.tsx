@@ -1,22 +1,28 @@
 "use client";
 
-import { useMemo } from "react";
-import Link from "next/link";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import type { OrderListItem, OrderListResponse } from "@alkeva/shared";
 
+import { OrdersTable, type OrderGroup } from "@/components/orders/orders-table";
 import { Button } from "@/components/ui/button";
+import { Panel, PanelHeader, Stat } from "@/components/ui/panel";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTradeSheet } from "@/components/trade/trade-sheet-context";
-import { KNOWN_ERRORS } from "@/components/trade/use-trade-form";
-import { dayKey, grams, longDate, money, timeOfDay } from "@/lib/format";
+import { dayKey, longDate, money } from "@/lib/format";
 import { useIsDesktop } from "@/lib/use-is-desktop";
 import { useResource } from "@/lib/use-resource";
-import { cn } from "@/lib/utils";
+
+const FILTERS = ["all", "buys", "sells", "refused"] as const;
+type Filter = (typeof FILTERS)[number];
+
+const PAGE = 50;
 
 /**
- * Every order, grouped by day, newest first.
+ * Every order, grouped by day, newest first — with the four figures a holder
+ * actually asks of a statement above it.
  *
  * Rejected rows carry their reason inline: a user should be able to scroll
  * their history and understand every refusal without tapping into it. That is
@@ -25,157 +31,136 @@ import { cn } from "@/lib/utils";
  */
 export function HistoryScreen() {
   const t = useTranslations("history");
+  const tc = useTranslations("common");
   const th = useTranslations("home");
+  const locale = useLocale();
   const { open, revision } = useTradeSheet();
   const isDesktop = useIsDesktop();
   const router = useRouter();
-  const { data, loading } = useResource<OrderListResponse>("/orders?limit=50", { revision });
+  const [filter, setFilter] = useState<Filter>("all");
+  const { data, loading } = useResource<OrderListResponse>(`/orders?limit=${PAGE}`, {
+    revision,
+  });
 
-  const groups = useMemo(() => {
+  const orders = useMemo(() => data?.orders ?? [], [data]);
+
+  const shown = useMemo(
+    () =>
+      orders.filter((o) =>
+        filter === "all"
+          ? true
+          : filter === "buys"
+            ? o.side === "buy" && o.status !== "rejected"
+            : filter === "sells"
+              ? o.side === "sell" && o.status !== "rejected"
+              : o.status === "rejected",
+      ),
+    [orders, filter],
+  );
+
+  /** Figures over the window that is actually loaded — the footnote says so. */
+  const totals = useMemo(() => {
+    let bought = 0n;
+    let sold = 0n;
+    let settled = 0;
+    let refused = 0;
+    for (const o of orders) {
+      if (o.status === "rejected") refused += 1;
+      if (o.status !== "settled") continue;
+      settled += 1;
+      if (o.side === "buy") bought += BigInt(o.totalCents);
+      else sold += BigInt(o.totalCents);
+    }
+    return { bought, sold, settled, refused };
+  }, [orders]);
+
+  const groups = useMemo<OrderGroup[]>(() => {
     const out = new Map<string, OrderListItem[]>();
-    for (const o of data?.orders ?? []) {
+    for (const o of shown) {
       const key = dayKey(o.createdAt);
       const list = out.get(key);
       if (list) list.push(o);
       else out.set(key, [o]);
     }
-    return [...out.entries()];
-  }, [data]);
+    const todayKey = dayKey(new Date().toISOString());
+    const yesterdayKey = dayKey(new Date(Date.now() - 86_400_000).toISOString());
+    return [...out.entries()].map(([key, list]) => ({
+      key,
+      label:
+        key === todayKey
+          ? t("today")
+          : key === yesterdayKey
+            ? t("yesterday")
+            : longDate(list[0]!.createdAt, locale),
+      orders: list,
+    }));
+  }, [shown, t, locale]);
 
   if (loading) {
     return (
       <div className="flex flex-col gap-3.5">
         <Skeleton className="h-24 rounded-lg" />
-        <Skeleton className="h-24 rounded-lg" />
+        <Skeleton className="h-72 rounded-lg" />
       </div>
     );
   }
 
-  if (groups.length === 0) {
+  if (orders.length === 0) {
     return (
-      <div className="mx-auto max-w-[36rem] rounded-lg border border-border bg-card p-5">
+      <Panel className="mx-auto max-w-[36rem] p-5">
         <h2 className="text-[1.125rem] font-semibold">{t("emptyTitle")}</h2>
         <p className="mb-3.5 mt-1 text-[0.9375rem] text-muted-foreground">{t("emptyBody")}</p>
-        <Button
-          size="cta"
-          onClick={() => (isDesktop ? router.push("/trade") : open("XAU", "buy"))}
-        >
+        <Button size="cta" onClick={() => (isDesktop ? router.push("/trade") : open("XAU", "buy"))}>
           {th("buyGoldCta")}
         </Button>
-      </div>
+      </Panel>
     );
   }
 
-  const todayKey = dayKey(new Date().toISOString());
-  const yesterdayKey = dayKey(new Date(Date.now() - 86_400_000).toISOString());
-
   return (
-    <div className="mx-auto flex max-w-[64rem] flex-col gap-4 lg:mx-0 lg:max-w-none">
-      {groups.map(([key, orders]) => (
-        <section key={key}>
-          <h2 className="pb-1.5 text-[0.9375rem] font-normal text-muted-foreground">
-            {key === todayKey
-              ? t("today")
-              : key === yesterdayKey
-                ? t("yesterday")
-                : longDate(orders[0]!.createdAt, "en")}
-          </h2>
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
-            {orders.map((o, i) => (
-              <OrderRow key={o.id} order={o} divided={i < orders.length - 1} />
-            ))}
-          </div>
-        </section>
-      ))}
+    <div className="flex flex-col gap-3.5 lg:gap-5">
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4 lg:gap-3.5">
+        <Stat label={t("statSettled")} value={String(totals.settled)} size="lg" />
+        <Stat
+          label={t("statBought")}
+          value={money(totals.bought)}
+          unit={tc("birr")}
+          size="lg"
+        />
+        <Stat label={t("statSold")} value={money(totals.sold)} unit={tc("birr")} size="lg" />
+        <Stat
+          label={t("statRefused")}
+          value={String(totals.refused)}
+          tone={totals.refused > 0 ? "loss" : undefined}
+          size="lg"
+        />
+      </div>
+
+      <Panel>
+        <PanelHeader
+          title={t("title")}
+          hint={t("scopeNote", { count: orders.length })}
+          action={
+            <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
+              <TabsList className="border-b-0">
+                {FILTERS.map((f) => (
+                  <TabsTrigger key={f} value={f}>
+                    {t(`filter.${f}` as never)}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          }
+          className="border-b border-border pb-0 lg:pb-0"
+        />
+        {shown.length === 0 ? (
+          <p className="px-4 py-10 text-center text-[0.9375rem] text-muted-foreground lg:px-5">
+            {t("filterEmpty")}
+          </p>
+        ) : (
+          <OrdersTable groups={groups} showSerial />
+        )}
+      </Panel>
     </div>
   );
-}
-
-/**
- * One row, two compositions: a table line on a wide screen, a two-line block
- * on a phone. Same data in both — the phone never gets an abridged truth.
- */
-export function OrderRow({ order: o, divided }: { order: OrderListItem; divided?: boolean }) {
-  const t = useTranslations("history");
-  const tc = useTranslations("common");
-  const tt = useTranslations("trade");
-  const locale = useLocale();
-
-  const metal = o.asset === "XAU" ? tc("gold") : tc("platinum");
-  const label = o.side === "buy" ? t("buyLabel", { metal }) : t("sellLabel", { metal });
-  const reason =
-    o.failureReason && KNOWN_ERRORS.has(o.failureReason)
-      ? tt(`errors.${o.failureReason}` as never)
-      : null;
-
-  const inner = (
-    <>
-      <span className="flex items-center gap-2.5 text-base font-medium lg:flex-[1.4]">
-        <span
-          className={cn(
-            "size-2 flex-none rounded-full",
-            o.asset === "XAU" ? "bg-gold-500" : "bg-platinum-400",
-          )}
-        />
-        {label}
-      </span>
-
-      <span className="tnum order-3 text-[0.9375rem] text-muted-foreground lg:order-none lg:flex-1">
-        {grams(o.gramsMg)} <span className="font-sans">{tc("g")}</span>
-      </span>
-
-      <span
-        className={cn(
-          "tnum text-end text-base font-semibold lg:flex-1",
-          o.status === "rejected" && "text-subtle",
-        )}
-      >
-        {money(o.totalCents)}
-      </span>
-
-      <span className="order-4 lg:order-none lg:flex-1 lg:text-end">
-        <StatusLabel status={o.status} />
-      </span>
-
-      <span className="font-latin order-5 text-end text-[0.8125rem] text-subtle lg:order-none lg:flex-[0.7]">
-        {timeOfDay(o.createdAt, locale)}
-      </span>
-
-      <span className="hidden lg:block lg:flex-[0.7] lg:text-end">
-        {o.receiptSerial && (
-          <span className="text-[0.9375rem] text-gold-400">{t("receiptLink")}</span>
-        )}
-      </span>
-
-      {reason && (
-        <span className="order-6 w-full text-[0.9375rem] text-muted-foreground lg:order-none">
-          {reason}
-        </span>
-      )}
-    </>
-  );
-
-  const cls = cn(
-    "grid grid-cols-2 items-center gap-x-4 gap-y-1 px-4 py-3.5 lg:flex lg:gap-4 lg:px-5",
-    divided && "border-b border-border",
-  );
-
-  return o.status === "settled" ? (
-    <Link href={`/receipt/${o.id}`} className={cn(cls, "transition-colors hover:bg-popover/50")}>
-      {inner}
-    </Link>
-  ) : (
-    <div className={cls}>{inner}</div>
-  );
-}
-
-function StatusLabel({ status }: { status: OrderListItem["status"] }) {
-  const t = useTranslations("history");
-  if (status === "settled")
-    return <span className="text-[0.9375rem] text-gain">✓ {t("settled")}</span>;
-  if (status === "review")
-    return <span className="text-[0.9375rem] text-platinum-400">◑ {t("review")}</span>;
-  if (status === "rejected")
-    return <span className="text-[0.9375rem] text-loss">✕ {t("rejected")}</span>;
-  return <span className="text-[0.9375rem] text-muted-foreground">{t("created")}</span>;
 }

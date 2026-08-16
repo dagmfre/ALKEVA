@@ -13,8 +13,8 @@ out/
 .env.*
 !.env.example
 
-# tooling/session files
-.claude/
+# tooling/session files — anywhere in the tree, not only the repo root
+**/.claude/
 .vercel/
 *.log
 

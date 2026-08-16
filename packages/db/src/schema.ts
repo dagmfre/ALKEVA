@@ -93,7 +93,9 @@ export const users = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     email: text("email").notNull(),
-    passwordHash: text("password_hash").notNull(),
+    /** NULL for provider-only accounts (Google sign-in, migration 0006) —
+        they gain a password through the reset flow, never through login. */
+    passwordHash: text("password_hash"),
     fullName: text("full_name").notNull(),
     phone: text("phone"),
     locale: localeEnum("locale").notNull().default("am"),
@@ -103,9 +105,81 @@ export const users = pgTable(
     /** Cached holding tier name; authoritative value recomputed from holdings. */
     holdingTier: text("holding_tier"),
     refreshTokenHash: text("refresh_token_hash"),
+    /** When the user accepted terms+privacy at registration (migration 0005).
+        NULL for accounts that predate the consent gate — grandfathered. */
+    termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex("user_email_uq").on(sql`lower(${t.email})`)],
+);
+
+/**
+ * Password reset tokens (migration 0005). Only the sha256 of the raw token is
+ * stored — a database leak must not mint working reset links. 30-minute TTL,
+ * single use (used_at), and issuing a new token invalidates prior unused ones.
+ */
+export const passwordResetTokens = pgTable(
+  "password_reset_token",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("prt_user_idx").on(t.userId)],
+);
+
+/**
+ * External identity providers (migration 0006). One row per (provider, sub);
+ * a user may hold both a password and a Google identity. The API issues its
+ * own JWT/refresh cookies either way — the provider only proves the email.
+ */
+export const authIdentities = pgTable(
+  "auth_identity",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    provider: text("provider").notNull(),
+    providerUserId: text("provider_user_id").notNull(),
+    email: text("email"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("auth_identity_provider_uq").on(t.provider, t.providerUserId),
+    index("auth_identity_user_idx").on(t.userId),
+  ],
+);
+
+/**
+ * WebAuthn/passkey credentials (migration 0007). credential_id is base64url;
+ * the signature counter is checked and advanced on every assertion (a cloned
+ * authenticator replays an old counter and is refused).
+ */
+export const webauthnCredentials = pgTable(
+  "webauthn_credential",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    credentialId: text("credential_id").notNull().unique(),
+    publicKey: bytea("public_key").notNull(),
+    counter: bigint("counter", { mode: "bigint" }).notNull().default(sql`0`),
+    /** JSON array string of transports ("internal", "hybrid", …). */
+    transports: text("transports"),
+    deviceType: text("device_type"),
+    backedUp: boolean("backed_up").notNull().default(false),
+    label: text("label"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+  },
+  (t) => [index("webauthn_user_idx").on(t.userId)],
 );
 
 export const kycSubmissions = pgTable(
@@ -425,9 +499,19 @@ export const deliveryRequests = pgTable(
     gramsMg: bigint("grams_mg", { mode: "bigint" }).notNull(),
     eligibilitySnapshot: jsonb("eligibility_snapshot"),
     status: deliveryStatusEnum("status").notNull().default("requested"),
+    /** Contact + review fields (migration 0008) — the request workflow.
+        This table records intent; it never posts ledger entries. The metal
+        handover ledger movement is the fulfilment step, out of scope here. */
+    contactPhone: text("contact_phone"),
+    address: text("address"),
+    note: text("note"),
+    reviewerId: uuid("reviewer_id").references(() => users.id),
+    reviewNote: text("review_note"),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    scheduledFor: timestamp("scheduled_for", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("delivery_user_idx").on(t.userId)],
+  (t) => [index("delivery_user_idx").on(t.userId), index("delivery_status_idx").on(t.status)],
 );
 
 export const badges = pgTable("badge", {

@@ -36,6 +36,34 @@
       "when": 1786443996383,
       "tag": "0004_payouts_kyc_alerts",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786790000000,
+      "tag": "0005_password_reset_and_terms",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786790000001,
+      "tag": "0006_auth_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786790000002,
+      "tag": "0007_webauthn_credential",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786790000003,
+      "tag": "0008_delivery_review_fields",
+      "breakpoints": true
     }
   ]
 }

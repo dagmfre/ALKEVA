@@ -1,26 +1,31 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { toast } from "sonner";
 import type { MetalAsset, OrderSide } from "@alkeva/shared";
 
 import { Button } from "@/components/ui/button";
+import { Panel, PanelHeader } from "@/components/ui/panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CountdownRing } from "@/components/trade/countdown-ring";
 import { useTradeSheet } from "@/components/trade/trade-sheet-context";
 import { useTradeForm } from "@/components/trade/use-trade-form";
+import { OrdersTable } from "@/components/orders/orders-table";
 import { PriceChart } from "@/components/market/price-chart";
 import { SystemBanner } from "@/components/system/banner";
 import { coverage, grams, money, timeOfDay } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
 import { cn } from "@/lib/utils";
-import type { TreasurySummaryResponse } from "@alkeva/shared";
+import type { OrderListResponse, TreasurySummaryResponse } from "@alkeva/shared";
 
 const QUICK_GRAMS = ["1", "5", "10"];
 
 /**
- * The desktop trading workspace: position, ticket, market — left to right.
+ * The desktop trading workspace — the Tradeo composition: one compact order
+ * ticket on the left (~1 part), the dominant market visualization on the
+ * right (~2.5 parts), and a secondary card underneath the chart sharing its
+ * exact width.
  *
  * It mounts the same `useTradeForm` state machine as the phone sheet, so the
  * proven Phase 2 behaviours (one idempotency key per quote, a countdown driven
@@ -48,7 +53,6 @@ export function TradeWorkspace({
     initialSide,
     revision,
     settled,
-    onFaucetSuccess: () => toast.success(t("faucetOk")),
   });
 
   const {
@@ -73,7 +77,6 @@ export function TradeWorkspace({
     heldMg,
     requestQuote,
     confirm,
-    faucet,
     setMax,
     backToAmount,
   } = form;
@@ -95,123 +98,10 @@ export function TradeWorkspace({
         </SystemBanner>
       )}
 
-      <div className="grid grid-cols-1 items-start gap-3.5 lg:grid-cols-[18rem_29.25rem_1fr] lg:gap-5">
-        {/* ── Position: what you can trade with ───────────────────── */}
-        <section className="flex flex-col gap-3.5 rounded-lg border border-border bg-card p-4 lg:h-[34rem] lg:p-[18px]">
-          <div>
-            <FieldLabel>{t("selectMetal")}</FieldLabel>
-            <div className="flex gap-1.5 rounded-full bg-well p-1">
-              {(["XAU", "XPT"] as const).map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => setAsset(a)}
-                  aria-pressed={asset === a}
-                  className={cn(
-                    "flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full text-[0.9375rem] transition-colors",
-                    asset === a
-                      ? "pill-active font-semibold"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "size-2 rounded-full",
-                      a === "XAU" ? "bg-gold-500" : "bg-platinum-400",
-                    )}
-                  />
-                  {a === "XAU" ? tc("gold") : tc("platinum")}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <FieldLabel>{t("sideLabel")}</FieldLabel>
-            <div className="flex gap-1.5 rounded-full bg-well p-1">
-              {(["buy", "sell"] as const).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setSide(s)}
-                  aria-pressed={side === s}
-                  className={cn(
-                    "min-h-11 flex-1 rounded-full text-[0.9375rem] transition-colors",
-                    side === s
-                      ? "pill-active font-semibold"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {s === "buy" ? `↓ ${t("buy")}` : `↑ ${t("sell")}`}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <BalanceRow label={t("availableBirr")} divided>
-              {balances.data ? money(balances.data.etbCents) : <Skeleton className="h-5 w-24" />}
-            </BalanceRow>
-            <BalanceRow label={t("heldMetal", { metal: metalLabel })}>
-              {balances.data ? (
-                <>
-                  {grams(heldMg)}
-                  <span className="ms-1 font-sans text-[0.9375rem] font-normal text-muted-foreground">
-                    {tc("g")}
-                  </span>
-                </>
-              ) : (
-                <Skeleton className="h-5 w-16" />
-              )}
-            </BalanceRow>
-          </div>
-
-          <div className="rounded-md border border-input bg-popover px-3.5 py-3">
-            <div className="text-[0.9375rem] leading-snug text-muted-foreground">
-              {t("currentPrice")} · {tc("perGram")}
-            </div>
-            {tick ? (
-              <>
-                <div
-                  className={cn(
-                    "tnum mt-0.5 text-[1.375rem] font-semibold",
-                    isGold ? "text-gold-400" : "text-platinum-400",
-                  )}
-                >
-                  {money(tick.etbCentsPerGram)}
-                </div>
-                <div className="mt-1 text-[0.9375rem] leading-relaxed text-subtle">
-                  {tc("updated")}{" "}
-                  <span className="font-latin">
-                    {timeOfDay(tick.at, locale)} · {tick.source}
-                  </span>
-                </div>
-              </>
-            ) : (
-              <Skeleton className="mt-1 h-7 w-32" />
-            )}
-          </div>
-
-          <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
-            {th("coverage")}{" "}
-            <span className="tnum font-semibold text-gold-400">
-              {reserve ? (coverage(reserve.reserveRatioPctMilli) ?? "∞") : "—"}
-            </span>{" "}
-            — {th("vaultShort")}
-          </p>
-
-          <Button
-            variant="demo"
-            className="mt-auto w-full"
-            onClick={() => void faucet()}
-            disabled={busy}
-          >
-            {t("faucet")}
-          </Button>
-        </section>
-
-        {/* ── Ticket ──────────────────────────────────────────────── */}
-        <section className="flex flex-col rounded-lg border border-input bg-card p-4 lg:h-[34rem] lg:p-5">
+      {/* 1 : ~2.5 — the ticket is compact, the chart dominates. */}
+      <div className="grid grid-cols-1 items-start gap-3.5 lg:grid-cols-[minmax(300px,340px)_1fr] lg:gap-5">
+        {/* ── Order ticket ────────────────────────────────────────── */}
+        <section className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 lg:min-h-[34rem]">
           {stage === "done" && order ? (
             <SettledPanel
               orderId={order.id}
@@ -223,66 +113,129 @@ export function TradeWorkspace({
             />
           ) : (
             <>
-              <div className="mb-3.5 flex items-center justify-between gap-3">
-                <h2 className="text-[1.125rem] font-semibold">
-                  {side === "buy"
-                    ? t("buyTitleShort", { metal: metalLabel })
-                    : t("sellTitleShort", { metal: metalLabel })}
-                </h2>
-                {stage === "quote" && (
-                  <span className="text-[0.9375rem] text-muted-foreground">{t("lockedPrice")}</span>
-                )}
+              {/* Panel header: which market. */}
+              <div>
+                <FieldLabel>{t("selectMetal")}</FieldLabel>
+                <div className="flex gap-1.5 rounded-full bg-well p-1">
+                  {(["XAU", "XPT"] as const).map((a) => (
+                    <button
+                      key={a}
+                      type="button"
+                      onClick={() => setAsset(a)}
+                      aria-pressed={asset === a}
+                      className={cn(
+                        "flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full text-[0.9375rem] transition-colors",
+                        asset === a
+                          ? "pill-active font-semibold"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "size-2 rounded-full",
+                          a === "XAU" ? "bg-gold-500" : "bg-platinum-400",
+                        )}
+                      />
+                      {a === "XAU" ? tc("gold") : tc("platinum")}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <FieldLabel>{t("amount")}</FieldLabel>
-              <div className="well flex min-h-[54px] items-center gap-2.5 rounded-md ps-3.5 pe-2">
-                <input
-                  id="grams"
-                  value={gramsInput}
-                  onChange={(e) => setGramsInput(e.target.value)}
-                  inputMode="decimal"
-                  autoComplete="off"
-                  aria-label={t("amount")}
-                  className="tnum w-full flex-1 border-0 bg-transparent text-[1.375rem] font-semibold outline-none"
-                />
-                <span className="text-[0.9375rem] text-muted-foreground">{tc("gram")}</span>
-                <button
-                  type="button"
-                  onClick={setMax}
-                  className="font-latin inline-flex min-h-11 items-center rounded-full border border-input px-4 text-[0.8125rem] font-semibold text-gold-400 transition-colors hover:border-gold-400"
-                >
-                  MAX
-                </button>
+              {/* Account section: what you can trade with. */}
+              <div className="border-b border-border pb-1">
+                <BalanceRow label={t("availableBirr")} divided>
+                  {balances.data ? (
+                    money(balances.data.etbCents)
+                  ) : (
+                    <Skeleton className="h-5 w-24" />
+                  )}
+                </BalanceRow>
+                <BalanceRow label={t("heldMetal", { metal: metalLabel })}>
+                  {balances.data ? (
+                    <>
+                      {grams(heldMg)}
+                      <span className="ms-1 font-sans text-[0.9375rem] font-normal text-muted-foreground">
+                        {tc("g")}
+                      </span>
+                    </>
+                  ) : (
+                    <Skeleton className="h-5 w-16" />
+                  )}
+                </BalanceRow>
               </div>
 
-              <div className="mb-3 mt-2.5 flex gap-2">
-                {QUICK_GRAMS.map((g) => (
+              {/* Buy / Sell mode selector. */}
+              <div className="flex gap-1.5 rounded-full bg-well p-1">
+                {(["buy", "sell"] as const).map((s) => (
                   <button
-                    key={g}
+                    key={s}
                     type="button"
-                    onClick={() => setGramsInput(g)}
+                    onClick={() => setSide(s)}
+                    aria-pressed={side === s}
                     className={cn(
-                      "min-h-9 rounded-full border px-3.5 text-[0.9375rem] transition-colors",
-                      gramsInput === g
-                        ? "border-gold-500 font-semibold text-gold-400"
-                        : "border-input text-muted-foreground hover:text-foreground",
+                      "min-h-11 flex-1 rounded-full text-[0.9375rem] transition-colors",
+                      side === s
+                        ? "pill-active font-semibold"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    {g} {tc("g")}
+                    {s === "buy" ? `↓ ${t("buy")}` : `↑ ${t("sell")}`}
                   </button>
                 ))}
-                <button
-                  type="button"
-                  onClick={setMax}
-                  className="min-h-9 rounded-full border border-input px-3.5 text-[0.9375rem] text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {t("max")}
-                </button>
+              </div>
+
+              <div>
+                <FieldLabel>{t("amount")}</FieldLabel>
+                <div className="well flex min-h-[54px] items-center gap-2.5 rounded-md ps-3.5 pe-2">
+                  <input
+                    id="grams"
+                    value={gramsInput}
+                    onChange={(e) => setGramsInput(e.target.value)}
+                    inputMode="decimal"
+                    autoComplete="off"
+                    aria-label={t("amount")}
+                    className="tnum w-full flex-1 border-0 bg-transparent text-[1.375rem] font-semibold outline-none"
+                  />
+                  <span className="text-[0.9375rem] text-muted-foreground">{tc("gram")}</span>
+                  <button
+                    type="button"
+                    onClick={setMax}
+                    className="font-latin inline-flex min-h-11 items-center rounded-full border border-input px-4 text-[0.8125rem] font-semibold text-gold-400 transition-colors hover:border-gold-400"
+                  >
+                    MAX
+                  </button>
+                </div>
+
+                <div className="mt-2.5 flex gap-2">
+                  {QUICK_GRAMS.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => setGramsInput(g)}
+                      className={cn(
+                        "min-h-9 rounded-full border px-3.5 text-[0.9375rem] transition-colors",
+                        gramsInput === g
+                          ? "border-gold-500 font-semibold text-gold-400"
+                          : "border-input text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {g} {tc("g")}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={setMax}
+                    className="min-h-9 rounded-full border border-input px-3.5 text-[0.9375rem] text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {t("max")}
+                  </button>
+                </div>
               </div>
 
               {stage === "quote" && quote ? (
                 <>
-                  <div className="mb-3 flex items-center gap-3.5 rounded-md bg-popover px-3.5 py-3">
+                  <div className="flex items-center gap-3.5 rounded-md bg-popover px-3.5 py-3">
                     <CountdownRing seconds={secondsLeft} total={quoteTtl} />
                     <span className="flex flex-col gap-0.5">
                       <span className="text-base font-semibold leading-normal">
@@ -299,7 +252,7 @@ export function TradeWorkspace({
                       Zero-value lines are omitted rather than shown as 0.00. */}
                   <div
                     className={cn(
-                      "well mb-3.5 rounded-md px-4 pb-3 pt-1 transition-opacity",
+                      "well rounded-md px-4 pb-3 pt-1 transition-opacity",
                       expired && "opacity-55",
                     )}
                   >
@@ -337,7 +290,7 @@ export function TradeWorkspace({
                   )}
 
                   {/* The line that makes this a quote and not a guess. */}
-                  <p className="mt-3 flex gap-2.5 text-[0.9375rem] leading-relaxed text-subtle">
+                  <p className="flex gap-2.5 text-[0.9375rem] leading-relaxed text-subtle">
                     <span aria-hidden="true" className="text-gold-400">
                       ◆
                     </span>
@@ -349,13 +302,13 @@ export function TradeWorkspace({
                     </span>
                   </p>
 
-                  <Button variant="ghost" className="mt-1 w-full" onClick={backToAmount}>
+                  <Button variant="ghost" className="w-full" onClick={backToAmount}>
                     {t("cancel")}
                   </Button>
                 </>
               ) : (
                 <>
-                  <p className="mb-auto text-[0.9375rem] text-muted-foreground">
+                  <p className="text-[0.9375rem] text-muted-foreground">
                     ≈{" "}
                     <span className="tnum text-foreground">
                       {estimateCents ? money(estimateCents) : "—"}
@@ -367,14 +320,88 @@ export function TradeWorkspace({
                   </Button>
                 </>
               )}
+
+              {/* Panel foot: market context + the way money actually enters. */}
+              <div className="mt-auto flex flex-col gap-3 border-t border-border pt-3.5">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-[0.9375rem] text-muted-foreground">
+                    {t("currentPrice")} · {tc("perGram")}
+                  </span>
+                  {tick ? (
+                    <span
+                      className={cn(
+                        "tnum text-base font-semibold",
+                        isGold ? "text-gold-400" : "text-platinum-400",
+                      )}
+                    >
+                      {money(tick.etbCentsPerGram)}
+                    </span>
+                  ) : (
+                    <Skeleton className="h-5 w-24" />
+                  )}
+                </div>
+                {tick && (
+                  <p className="text-[0.8125rem] leading-relaxed text-subtle">
+                    {tc("updated")}{" "}
+                    <span className="font-latin">
+                      {timeOfDay(tick.at, locale)} · {tick.source}
+                    </span>
+                  </p>
+                )}
+                <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
+                  {th("coverage")}{" "}
+                  <span className="tnum font-semibold text-gold-400">
+                    {reserve ? (coverage(reserve.reserveRatioPctMilli) ?? "∞") : "—"}
+                  </span>{" "}
+                  — {th("vaultShort")}
+                </p>
+                <Button variant="secondary" className="w-full" asChild>
+                  <Link href="/deposit">{t("deposit")}</Link>
+                </Button>
+              </div>
             </>
           )}
         </section>
 
-        {/* ── Market ──────────────────────────────────────────────── */}
-        <PriceChart asset={asset} className="lg:h-[34rem]" chartClassName="h-[180px] lg:h-auto" />
+        {/* ── Market column: dominant chart + secondary card, same width ── */}
+        <div className="flex min-w-0 flex-col gap-3.5 lg:gap-5">
+          <PriceChart asset={asset} className="lg:h-[34rem]" chartClassName="h-[180px] lg:h-auto" />
+          <RecentAssetOrders asset={asset} revision={revision} />
+        </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * The secondary content card under the chart — the user's latest orders in
+ * the selected market, sharing the chart's exact width. Reuses History's row
+ * renderer so the phone and the desk never disagree about an order.
+ */
+function RecentAssetOrders({ asset, revision }: { asset: MetalAsset; revision: number }) {
+  const t = useTranslations("trade");
+  const { data, loading } = useResource<OrderListResponse>("/orders?limit=25", { revision });
+
+  const rows = useMemo(
+    () => (data?.orders ?? []).filter((o) => o.asset === asset).slice(0, 5),
+    [data, asset],
+  );
+
+  if (loading) return <Skeleton className="hidden h-40 rounded-lg lg:block" />;
+  if (rows.length === 0) return null;
+
+  return (
+    <Panel className="hidden overflow-hidden lg:block">
+      <PanelHeader
+        title={t("recentOrders")}
+        action={
+          <Link href="/history" className="text-[0.9375rem] text-gold-400 hover:underline">
+            {t("allOrders")} →
+          </Link>
+        }
+      />
+      <OrdersTable groups={[{ key: asset, orders: rows }]} />
+    </Panel>
   );
 }
 

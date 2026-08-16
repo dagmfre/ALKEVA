@@ -1,35 +1,29 @@
 "use client";
 
-import { useMemo } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { BadgeCheck, Banknote, ScanSearch, Snowflake } from "lucide-react";
 import type {
   AdminAnalyticsResponse,
+  AdminAuditItem,
   AdminOverviewResponse,
   MeResponse,
 } from "@alkeva/shared";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  XAxis,
-  YAxis,
-} from "recharts";
 
-import { Skeleton } from "@/components/ui/skeleton";
+import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+
+import { AdminTable, Td } from "@/components/admin/ui";
 import { CHART, ChartContainer, ChartTooltip, RechartsTooltip } from "@/components/ui/chart";
-import { money } from "@/lib/format";
+import { Skeleton } from "@/components/ui/skeleton";
+import { eatStamp, money } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
 import { cn } from "@/lib/utils";
 
 /**
  * The control room's front page: the four "is anything waiting on a human?"
- * cards, then thirty days of the platform's pulse — trade volume, money in
- * vs out, and user growth — drawn from the same ledgered records the audit
- * trail proves. Administrator sees everything; compliance and finance see
- * their own queues.
+ * cards and the 30-day totals. The charts moved to their own Analytics
+ * destination (with a real date-range control) — the overview answers "does
+ * anything need me right now?", not "how was the month?".
  */
 export function AdminOverviewScreen() {
   const t = useTranslations("admin");
@@ -42,27 +36,30 @@ export function AdminOverviewScreen() {
   });
   const role = me.data?.role;
   const isAdmin = role === "administrator";
+  const seesAudit = isAdmin || role === "compliance";
+  // The audit feed is compliance-scoped server-side — never even ask as finance.
+  const audit = useResource<{ entries: AdminAuditItem[] }>(
+    seesAudit ? "/admin/audit" : null,
+    { intervalMs: 60_000 },
+  );
 
-  const cards: { key: keyof AdminOverviewResponse; href: string; visible: boolean }[] = [
-    { key: "pendingKyc", href: "/admin/kyc", visible: isAdmin || role === "compliance" },
-    { key: "pendingPayouts", href: "/admin/payouts", visible: isAdmin || role === "finance" },
-    { key: "openReviews", href: "/admin/reviews", visible: isAdmin || role === "compliance" },
-    { key: "frozenUsers", href: "/admin/users", visible: role !== "finance" },
+  const cards: {
+    key: keyof AdminOverviewResponse;
+    href: string;
+    visible: boolean;
+    icon: typeof BadgeCheck;
+  }[] = [
+    { key: "pendingKyc", href: "/admin/kyc", visible: isAdmin || role === "compliance", icon: BadgeCheck },
+    { key: "pendingPayouts", href: "/admin/payouts", visible: isAdmin || role === "finance", icon: Banknote },
+    { key: "openReviews", href: "/admin/reviews", visible: isAdmin || role === "compliance", icon: ScanSearch },
+    { key: "frozenUsers", href: "/admin/users", visible: role !== "finance", icon: Snowflake },
   ];
 
-  const points = useMemo(
-    () =>
-      (analytics.data?.points ?? []).map((p) => ({
-        day: p.day,
-        buy: Number(BigInt(p.buyCents)) / 100,
-        sell: Number(BigInt(p.sellCents)) / 100,
-        deposits: Number(BigInt(p.depositCents)) / 100,
-        payouts: Number(BigInt(p.payoutCents)) / 100,
-        users: p.newUsers,
-      })),
-    [analytics.data],
-  );
   const totals = analytics.data?.totals ?? null;
+  const trend = (analytics.data?.points ?? []).map((p) => ({
+    day: p.day,
+    volume: Number(BigInt(p.buyCents) + BigInt(p.sellCents)) / 100,
+  }));
 
   return (
     <div className="flex flex-col gap-5">
@@ -72,6 +69,7 @@ export function AdminOverviewScreen() {
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
         {cards.map((card) => {
           const value = data ? data[card.key] : null;
+          const Icon = card.icon;
           const body = (
             <div
               className={cn(
@@ -79,7 +77,8 @@ export function AdminOverviewScreen() {
                 card.visible && "hover:border-input",
               )}
             >
-              <span className="text-[0.875rem] text-muted-foreground">
+              <span className="flex items-center gap-2 text-[0.875rem] text-muted-foreground">
+                <Icon className="size-4 flex-none" aria-hidden="true" />
                 {t(`overview.${card.key}` as never)}
               </span>
               {value === null ? (
@@ -106,7 +105,8 @@ export function AdminOverviewScreen() {
         })}
       </div>
 
-      {/* 30-day totals — the numbers a visitor asks for first. */}
+      {/* 30-day totals — the numbers a visitor asks for first. Full curves
+          with a range control live on /admin/analytics. */}
       <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-5">
         <Stat label={t("overview.tradeVolume30d")} value={totals ? money(totals.tradeCents) : null} unit="ETB" gold />
         <Stat label={t("overview.settledOrders30d")} value={totals ? String(totals.settledOrders) : null} />
@@ -115,146 +115,91 @@ export function AdminOverviewScreen() {
         <Stat label={t("overview.newUsers30d")} value={totals ? String(totals.newUsers) : null} />
       </div>
 
-      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2 lg:gap-5">
-        {/* Trade volume: buy vs sell, stacked by day. */}
-        <ChartPanel
-          title={t("overview.chartTrade")}
-          legend={[
-            { label: t("overview.seriesBuy"), color: CHART.gold },
-            { label: t("overview.seriesSell"), color: CHART.platinum },
-          ]}
-          loading={analytics.loading}
-          empty={points.length === 0}
-          emptyLabel={t("overview.noData")}
-        >
-          <BarChart data={points} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
-            <CartesianGrid stroke={CHART.grid} strokeOpacity={0.6} vertical={false} />
-            <XAxis
-              dataKey="day"
-              tickFormatter={shortDay}
-              tick={{ fill: CHART.axis, fontSize: 11 }}
-              tickLine={false}
-              axisLine={false}
-              minTickGap={32}
-            />
-            <YAxis
-              tickFormatter={(v: number) => v.toLocaleString("en-US")}
-              tick={{ fill: CHART.axis, fontSize: 11 }}
-              tickLine={false}
-              axisLine={false}
-              width={72}
-            />
-            <RechartsTooltip
-              cursor={{ fill: "var(--popover)", opacity: 0.5 }}
-              content={<ChartTooltip formatter={etb} labelFormatter={shortDay} />}
-            />
-            <Bar dataKey="buy" name={t("overview.seriesBuy")} stackId="v" fill={CHART.gold} stroke="var(--card)" strokeWidth={1} />
-            <Bar dataKey="sell" name={t("overview.seriesSell")} stackId="v" fill={CHART.platinum} stroke="var(--card)" strokeWidth={1} radius={[3, 3, 0, 0]} />
-          </BarChart>
-        </ChartPanel>
+      {/* The month at a glance — the same ledgered figures the analytics
+          destination draws in full, small enough to read on the way past. */}
+      <section className="rounded-lg border border-border bg-card px-4 pb-4 pt-3.5 lg:px-5">
+        <div className="mb-2 flex items-baseline justify-between gap-3">
+          <h2 className="text-[1.0625rem] font-semibold">{t("overview.chartTrade")}</h2>
+          <Link href="/admin/analytics" className="text-[0.875rem] text-gold-400 hover:underline">
+            {t("overview.openAnalytics")} →
+          </Link>
+        </div>
+        {analytics.loading ? (
+          <Skeleton className="h-[140px] rounded-md" />
+        ) : trend.length === 0 ? (
+          <p className="py-10 text-center text-[0.9375rem] text-muted-foreground">
+            {t("overview.noData")}
+          </p>
+        ) : (
+          <ChartContainer height={140}>
+            <BarChart data={trend} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
+              <CartesianGrid stroke={CHART.grid} strokeOpacity={0.6} vertical={false} />
+              <XAxis
+                dataKey="day"
+                tickFormatter={(d: string) => d.slice(5)}
+                tick={{ fill: CHART.axis, fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+                minTickGap={40}
+              />
+              <RechartsTooltip
+                cursor={{ fill: "var(--popover)", opacity: 0.5 }}
+                content={
+                  <ChartTooltip
+                    formatter={(v: number) => `${v.toLocaleString("en-US")} ETB`}
+                    labelFormatter={(d: string) => d}
+                  />
+                }
+              />
+              <Bar
+                dataKey="volume"
+                name={t("overview.tradeVolume30d")}
+                fill={CHART.gold}
+                radius={[3, 3, 0, 0]}
+              />
+            </BarChart>
+          </ChartContainer>
+        )}
+      </section>
 
-        {/* Money in vs out, paired by day. */}
-        <ChartPanel
-          title={t("overview.chartMoney")}
-          legend={[
-            { label: t("overview.seriesIn"), color: CHART.gold },
-            { label: t("overview.seriesOut"), color: CHART.platinum },
-          ]}
-          loading={analytics.loading}
-          empty={points.length === 0}
-          emptyLabel={t("overview.noData")}
-        >
-          <BarChart data={points} barGap={2} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
-            <CartesianGrid stroke={CHART.grid} strokeOpacity={0.6} vertical={false} />
-            <XAxis
-              dataKey="day"
-              tickFormatter={shortDay}
-              tick={{ fill: CHART.axis, fontSize: 11 }}
-              tickLine={false}
-              axisLine={false}
-              minTickGap={32}
-            />
-            <YAxis
-              tickFormatter={(v: number) => v.toLocaleString("en-US")}
-              tick={{ fill: CHART.axis, fontSize: 11 }}
-              tickLine={false}
-              axisLine={false}
-              width={72}
-            />
-            <RechartsTooltip
-              cursor={{ fill: "var(--popover)", opacity: 0.5 }}
-              content={<ChartTooltip formatter={etb} labelFormatter={shortDay} />}
-            />
-            <Bar dataKey="deposits" name={t("overview.seriesIn")} fill={CHART.gold} radius={[3, 3, 0, 0]} />
-            <Bar dataKey="payouts" name={t("overview.seriesOut")} fill={CHART.platinum} radius={[3, 3, 0, 0]} />
-          </BarChart>
-        </ChartPanel>
-
-        {/* User growth — single series, the title carries identity. */}
-        <ChartPanel
-          title={t("overview.chartUsers")}
-          loading={analytics.loading}
-          empty={points.length === 0}
-          emptyLabel={t("overview.noData")}
-          className="lg:col-span-2"
-          height={180}
-        >
-          <LineChart data={points} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
-            <CartesianGrid stroke={CHART.grid} strokeOpacity={0.6} vertical={false} />
-            <XAxis
-              dataKey="day"
-              tickFormatter={shortDay}
-              tick={{ fill: CHART.axis, fontSize: 11 }}
-              tickLine={false}
-              axisLine={false}
-              minTickGap={32}
-            />
-            <YAxis
-              allowDecimals={false}
-              tick={{ fill: CHART.axis, fontSize: 11 }}
-              tickLine={false}
-              axisLine={false}
-              width={36}
-            />
-            <RechartsTooltip
-              cursor={{ stroke: CHART.grid }}
-              content={
-                <ChartTooltip formatter={(v) => String(v)} labelFormatter={shortDay} />
-              }
-            />
-            <Line
-              type="monotone"
-              dataKey="users"
-              name={t("overview.chartUsers")}
-              stroke={CHART.platinum}
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 4 }}
-            />
-          </LineChart>
-        </ChartPanel>
-      </div>
+      {/* Recent activity — the audit log's newest rows, so the front page
+          shows WHO did WHAT, not just how much is queued. */}
+      {seesAudit && (
+        <section className="flex flex-col gap-2">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-[1.0625rem] font-semibold">{t("overview.recentActivity")}</h2>
+            <Link href="/admin/audit" className="text-[0.875rem] text-gold-400 hover:underline">
+              {t("overview.openAudit")} →
+            </Link>
+          </div>
+          {audit.loading ? (
+            <Skeleton className="h-40 rounded-lg" />
+          ) : (
+            <AdminTable
+              headers={[t("audit.actor"), t("audit.action"), t("audit.target"), t("orders.when")]}
+            >
+              {(audit.data?.entries ?? []).slice(0, 8).map((e) => (
+                <tr key={e.id}>
+                  <Td className="font-latin text-[0.875rem]">{e.actorLabel}</Td>
+                  <Td className="font-latin">{e.action}</Td>
+                  <Td className="font-latin text-[0.8125rem] text-subtle">
+                    {e.targetType ? `${e.targetType} ${e.targetId ?? ""}` : "—"}
+                  </Td>
+                  <Td className="font-latin text-[0.8125rem] text-subtle">
+                    {eatStamp(e.createdAt)}
+                  </Td>
+                </tr>
+              ))}
+            </AdminTable>
+          )}
+        </section>
+      )}
 
       <p className="max-w-[640px] text-[0.875rem] leading-relaxed text-subtle">
         {t("overview.note")}
       </p>
     </div>
   );
-}
-
-/** "2026-08-05" → "5 Aug" (Latin figures, like every other axis). */
-function shortDay(day: string): string {
-  const d = new Date(`${day}T00:00:00Z`);
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  }).format(d);
-}
-
-/** Tooltip money: full grouped ETB, never abbreviated. */
-function etb(value: number): string {
-  return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB`;
 }
 
 function Stat({
@@ -284,57 +229,5 @@ function Stat({
         </span>
       )}
     </div>
-  );
-}
-
-function ChartPanel({
-  title,
-  legend,
-  loading,
-  empty,
-  emptyLabel,
-  children,
-  className,
-  height = 220,
-}: {
-  title: string;
-  legend?: { label: string; color: string }[];
-  loading: boolean;
-  empty: boolean;
-  emptyLabel: string;
-  children: React.ReactElement;
-  className?: string;
-  height?: number;
-}) {
-  return (
-    <section className={cn("rounded-lg border border-border bg-card p-4 lg:p-5", className)}>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-[1.0625rem] font-semibold">{title}</h2>
-        {legend && (
-          <span className="flex items-center gap-4">
-            {legend.map((item) => (
-              <span
-                key={item.label}
-                className="flex items-center gap-1.5 text-[0.8125rem] text-muted-foreground"
-              >
-                <span
-                  className="size-2 rounded-full"
-                  style={{ background: item.color }}
-                  aria-hidden="true"
-                />
-                {item.label}
-              </span>
-            ))}
-          </span>
-        )}
-      </div>
-      {loading ? (
-        <Skeleton className="rounded-md" style={{ height }} />
-      ) : empty ? (
-        <p className="py-10 text-center text-[0.9375rem] text-muted-foreground">{emptyLabel}</p>
-      ) : (
-        <ChartContainer height={height}>{children}</ChartContainer>
-      )}
-    </section>
   );
 }

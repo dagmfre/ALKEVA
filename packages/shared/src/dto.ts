@@ -8,6 +8,9 @@ export const registerDto = z.object({
   password: z.string().min(8).max(128),
   fullName: z.string().min(2).max(120),
   locale: z.enum(["am", "en"]).default("am"),
+  /** Terms+privacy consent is a hard gate: literal true, not a boolean —
+      an unchecked box must fail validation, not save `false`. */
+  acceptTerms: z.literal(true),
 });
 export type RegisterDto = z.infer<typeof registerDto>;
 
@@ -192,6 +195,24 @@ export interface TierDto {
   dailyCapCents: string | null;
 }
 
+/**
+ * Achievement badges — COMPUTED ON READ from data the portfolio already
+ * queries; nothing is ever written. Names/criteria live in the locale files.
+ */
+export type BadgeKey =
+  | "first_purchase"
+  | "ten_trades"
+  | "gold_holder"
+  | "platinum_holder"
+  | "early_adopter";
+
+export interface BadgeDto {
+  key: BadgeKey;
+  earned: boolean;
+  /** When derivable from a ledgered event (e.g. the settling order); null for state badges. */
+  earnedAt: string | null;
+}
+
 export interface PortfolioResponse {
   etbCents: string;
   holdings: HoldingDto[];
@@ -202,6 +223,7 @@ export interface PortfolioResponse {
   totalGainLossCents: string;
   totalGainLossPctMilli: string | null;
   tier: TierDto;
+  badges: BadgeDto[];
   asOf: string;
 }
 
@@ -406,6 +428,19 @@ export interface AiConversationResponse {
   }[];
 }
 
+export interface AiConversationSummary {
+  id: string;
+  /** The first user message, trimmed server-side — the thread's display name. */
+  title: string;
+  /** Timestamp of the newest message in the thread. */
+  lastAt: string;
+  messageCount: number;
+}
+
+export interface AiConversationsResponse {
+  conversations: AiConversationSummary[];
+}
+
 // ── Admin console (Phase 5) ───────────────────────────────────────
 
 export interface AdminOverviewResponse {
@@ -539,4 +574,46 @@ export interface TreasurySummaryResponse {
     sellbackCeilingCents: string;
   };
   asOf: string;
+}
+
+// ── Delivery requests (spec F18; production stage) ────────────────
+export const createDeliveryDto = z.object({
+  asset: z.enum(METAL_ASSETS),
+  /** Milligrams, as a string bigint — same convention as orders. */
+  gramsMg: z.string().regex(/^[0-9]+$/),
+  contactPhone: z.string().min(7).max(20),
+  address: z.string().min(10).max(400),
+  note: z.string().max(400).optional(),
+});
+export type CreateDeliveryDto = z.infer<typeof createDeliveryDto>;
+
+export const deliveryScheduleDto = z.object({
+  /** ISO date-time the handover is scheduled for. */
+  scheduledFor: z.string().datetime(),
+});
+export type DeliveryScheduleDto = z.infer<typeof deliveryScheduleDto>;
+
+export type DeliveryStatus = "requested" | "reviewing" | "approved" | "scheduled" | "rejected";
+
+export interface DeliveryItem {
+  id: string;
+  asset: MetalAsset;
+  gramsMg: string;
+  status: DeliveryStatus;
+  contactPhone: string | null;
+  address: string | null;
+  note: string | null;
+  reviewNote: string | null;
+  scheduledFor: string | null;
+  createdAt: string;
+}
+
+export interface DeliveryListResponse {
+  requests: DeliveryItem[];
+}
+
+export interface AdminDeliveryItem extends DeliveryItem {
+  userEmail: string;
+  /** Advisory: the metal the user holds right now (re-checked at approve). */
+  heldMg: string;
 }

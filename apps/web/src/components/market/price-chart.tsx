@@ -64,7 +64,7 @@ export function PriceChart({
      * bottom of the frame to the top. On a savings product that is a lie told
      * with geometry: the shape says "something happened" when nothing did.
      */
-    const MIN_SPAN_RATIO = 0.01;
+    const MIN_SPAN_RATIO = 0.004;
     const minSpan = Math.max(1, mid * MIN_SPAN_RATIO);
     const lo = max - min < minSpan ? mid - minSpan / 2 : min;
     const hi = max - min < minSpan ? mid + minSpan / 2 : max;
@@ -86,6 +86,7 @@ export function PriceChart({
       ticks: niceTicks(lo, hi).map((v) => ({ value: v, y: y(v) })),
       xLabels: pickIndices(points.length).map((i) => ({
         key: i,
+        x: x(i),
         label: axisLabel(points[i]!.at, range),
       })),
     };
@@ -121,7 +122,9 @@ export function PriceChart({
             · {tc("perGram")}
           </span>
         </span>
-        <span className="flex items-center gap-0.5">
+        {/* Timeframe navigation — a compact tab strip, not big buttons: the
+            active range carries a 2px gold underline (Tradeo reference §19). */}
+        <span className="flex items-center gap-1">
           {RANGES.map((r) => (
             <button
               key={r}
@@ -129,13 +132,20 @@ export function PriceChart({
               onClick={() => setRange(r)}
               aria-pressed={range === r}
               className={cn(
-                "font-latin min-h-9 rounded-full px-3.5 text-[0.8125rem] transition-colors",
+                "font-latin relative min-h-9 px-3 text-[0.8125rem] transition-colors",
                 range === r
-                  ? "bg-popover font-semibold text-foreground"
+                  ? "font-semibold text-foreground"
                   : "font-medium text-muted-foreground hover:text-foreground",
               )}
             >
               {r}
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute inset-x-2.5 bottom-0.5 h-0.5 rounded-full",
+                  range === r ? "bg-gold-500" : "bg-transparent",
+                )}
+              />
             </button>
           ))}
         </span>
@@ -164,10 +174,17 @@ export function PriceChart({
               aria-label={`${asset} ${range}`}
             >
               <defs>
+                {/* The fill states "this is the area below the price", then
+                    gets out of the way. At a flat 0.18 it read as a solid
+                    olive block filling half the panel. */}
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={stroke} stopOpacity="0.18" />
+                  <stop offset="0%" stopColor={stroke} stopOpacity="0.16" />
+                  <stop offset="45%" stopColor={stroke} stopOpacity="0.05" />
                   <stop offset="100%" stopColor={stroke} stopOpacity="0" />
                 </linearGradient>
+                <filter id={`${gradientId}-glow`} x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="4" />
+                </filter>
               </defs>
               {geometry.ticks.map((tick) => (
                 <line
@@ -182,7 +199,35 @@ export function PriceChart({
                   vectorEffect="non-scaling-stroke"
                 />
               ))}
+              {/* Time gridlines under the axis labels — a quiet grid, so a
+                  flat stretch of price still reads as a measured window. */}
+              {geometry.xLabels.slice(1, -1).map((l) => (
+                <line
+                  key={`v-${l.key}`}
+                  x1={l.x}
+                  y1="0"
+                  x2={l.x}
+                  y2={H}
+                  stroke="var(--border)"
+                  strokeOpacity="0.5"
+                  strokeWidth="1"
+                  vectorEffect="non-scaling-stroke"
+                />
+              ))}
               <path d={geometry.area} fill={`url(#${gradientId})`} />
+              {/* Soft glow: the same path blurred at low opacity BEHIND the
+                  crisp line — the sanctioned live-indicator glow, applied to
+                  the market line itself (Gauld reference §12). */}
+              <path
+                d={geometry.line}
+                fill="none"
+                stroke={stroke}
+                strokeOpacity="0.45"
+                strokeWidth="6"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                filter={`url(#${gradientId}-glow)`}
+              />
               <path
                 d={geometry.line}
                 fill="none"
@@ -208,7 +253,7 @@ export function PriceChart({
               <span
                 className={cn(
                   "absolute end-0 -translate-y-1/2 rounded-sm px-2 py-0.5 font-semibold tabular-nums text-primary-foreground",
-                  isGold ? "bg-gold-500" : "bg-platinum-400",
+                  isGold ? "glow-gold bg-gold-500" : "bg-platinum-400",
                 )}
                 style={{ top: `${(tagY / H) * 100}%` }}
               >
@@ -262,16 +307,24 @@ function Ohlc({
 }
 
 /**
- * Gridline values a human would have chosen: 1/2/5 × a power of ten inside the
- * visible span. Dividing the span into equal thirds instead would print axis
- * labels like 22,183.33 — arithmetically fine, unreadable on a chart.
+ * Gridline values a human would have chosen: 1/2/2.5/5 × a power of ten inside
+ * the visible span. Dividing the span into equal thirds instead would print
+ * axis labels like 22,183.33 — arithmetically fine, unreadable on a chart.
+ *
+ * The steps are chosen in BIRR and converted back to cents, so the axis lands
+ * on 22,700 / 22,750 rather than on round numbers of cents nobody reads.
  */
-function niceTicks(lo: number, hi: number, target = 4): number[] {
+function niceTicks(loCents: number, hiCents: number, target = 5): number[] {
+  const lo = loCents / 100;
+  const hi = hiCents / 100;
   const raw = (hi - lo) / Math.max(1, target - 1);
   const magnitude = 10 ** Math.floor(Math.log10(raw));
-  const step = [1, 2, 5, 10].map((m) => m * magnitude).find((s) => s >= raw) ?? magnitude * 10;
+  const step =
+    [1, 2, 2.5, 5, 10].map((m) => m * magnitude).find((s) => s >= raw) ?? magnitude * 10;
   const out: number[] = [];
-  for (let v = Math.ceil(lo / step) * step; v <= hi + step * 0.001; v += step) out.push(v);
+  for (let v = Math.ceil(lo / step) * step; v <= hi + step * 0.001; v += step) {
+    out.push(Math.round(v * 100));
+  }
   return out;
 }
 

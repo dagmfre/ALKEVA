@@ -6,11 +6,12 @@ import {
   ServiceUnavailableException,
 } from "@nestjs/common";
 import { GoogleGenAI } from "@google/genai";
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, max } from "drizzle-orm";
 import { aiConversations, aiMessages, freezes, users, type Db } from "@alkeva/db";
 import type {
   AiChatResponse,
   AiConversationResponse,
+  AiConversationsResponse,
   Env,
   MetalAsset,
   PriceRange,
@@ -255,7 +256,94 @@ export class AiService {
       .limit(1);
     const conversation = convRows[0];
     if (!conversation) return { conversationId: null, messages: [] };
+    return this.messagesFor(conversation.id);
+  }
 
+  /**
+   * The thread list. Threads live in OUR database with no retention window —
+   * this is the long-term memory surface. Titles are derived on read from the
+   * first user message (no title column to migrate or keep in sync), and
+   * message-less rows are hidden: resolveConversation inserts the row before
+   * the model turn, so a failed first turn leaves an empty shell behind.
+   */
+  async listConversations(userId: string): Promise<AiConversationsResponse> {
+    const convs = await this.db
+      .select({ id: aiConversations.id, createdAt: aiConversations.createdAt })
+      .from(aiConversations)
+      .where(eq(aiConversations.userId, userId))
+      .orderBy(desc(aiConversations.createdAt))
+      .limit(100);
+    if (convs.length === 0) return { conversations: [] };
+    const ids = convs.map((c) => c.id);
+
+    const stats = await this.db
+      .select({
+        conversationId: aiMessages.conversationId,
+        n: count(),
+        lastAt: max(aiMessages.createdAt),
+      })
+      .from(aiMessages)
+      .where(inArray(aiMessages.conversationId, ids))
+      .groupBy(aiMessages.conversationId);
+
+    const firsts = await this.db
+      .selectDistinctOn([aiMessages.conversationId], {
+        conversationId: aiMessages.conversationId,
+        content: aiMessages.content,
+      })
+      .from(aiMessages)
+      .where(and(inArray(aiMessages.conversationId, ids), eq(aiMessages.role, "user")))
+      .orderBy(aiMessages.conversationId, asc(aiMessages.createdAt));
+
+    const statBy = new Map(stats.map((s) => [s.conversationId, s]));
+    const titleBy = new Map(firsts.map((f) => [f.conversationId, f.content]));
+
+    const conversations = convs
+      .map((c) => {
+        const stat = statBy.get(c.id);
+        if (!stat || stat.n === 0) return null;
+        const raw = (titleBy.get(c.id) ?? "").replace(/\s+/g, " ").trim();
+        return {
+          id: c.id,
+          title: raw.length > 80 ? `${raw.slice(0, 80)}…` : raw,
+          lastAt: (stat.lastAt ?? c.createdAt).toISOString(),
+          messageCount: stat.n,
+        };
+      })
+      .filter((c): c is NonNullable<typeof c> => c !== null)
+      .sort((a, b) => (a.lastAt < b.lastAt ? 1 : -1));
+
+    return { conversations };
+  }
+
+  /** One thread's messages — own threads only; anyone else's id is a 404, never a 403. */
+  async conversationById(userId: string, id: string): Promise<AiConversationResponse> {
+    const rows = await this.db
+      .select({ id: aiConversations.id })
+      .from(aiConversations)
+      .where(and(eq(aiConversations.id, id), eq(aiConversations.userId, userId)))
+      .limit(1);
+    if (!rows[0]) throw new NotFoundException("conversation_not_found");
+    return this.messagesFor(id);
+  }
+
+  /**
+   * Deleting a thread is the user erasing their own chat history — the AI
+   * tables are theirs, unlike the ledger. Messages first (FK), then the row.
+   */
+  async deleteConversation(userId: string, id: string): Promise<{ ok: true }> {
+    const rows = await this.db
+      .select({ id: aiConversations.id })
+      .from(aiConversations)
+      .where(and(eq(aiConversations.id, id), eq(aiConversations.userId, userId)))
+      .limit(1);
+    if (!rows[0]) throw new NotFoundException("conversation_not_found");
+    await this.db.delete(aiMessages).where(eq(aiMessages.conversationId, id));
+    await this.db.delete(aiConversations).where(eq(aiConversations.id, id));
+    return { ok: true };
+  }
+
+  private async messagesFor(conversationId: string): Promise<AiConversationResponse> {
     const rows = await this.db
       .select({
         id: aiMessages.id,
@@ -264,11 +352,11 @@ export class AiService {
         createdAt: aiMessages.createdAt,
       })
       .from(aiMessages)
-      .where(eq(aiMessages.conversationId, conversation.id))
+      .where(eq(aiMessages.conversationId, conversationId))
       .orderBy(asc(aiMessages.createdAt));
 
     return {
-      conversationId: conversation.id,
+      conversationId,
       messages: rows
         .filter((m) => m.role === "user" || m.role === "assistant")
         .map((m) => ({

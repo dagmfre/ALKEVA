@@ -43,3 +43,17 @@ export type PriceRange = (typeof PRICE_RANGES)[number];
 export const QUOTE_TTL_SECONDS = 30;
 /** Quote engine refuses ticks older than this (stale-price protection). */
 export const MAX_TICK_AGE_SECONDS = 180;
+
+/** Ethiopia's fixed UTC offset. No DST — East Africa Time never shifts. */
+const EAT_OFFSET_MS = 3 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * The UTC instant at which "today" began in Addis Ababa. Daily caps and
+ * sell-back ceilings reset at midnight EAT (the day the customer lives in),
+ * not midnight UTC. Pure arithmetic is safe here only because Ethiopia has a
+ * fixed offset and no daylight saving; a DST zone would need a tz database.
+ */
+export function eatDayStartUtc(now: Date = new Date()): Date {
+  return new Date(Math.floor((now.getTime() + EAT_OFFSET_MS) / DAY_MS) * DAY_MS - EAT_OFFSET_MS);
+}

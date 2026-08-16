@@ -12,6 +12,8 @@
     "gram": "grams",
     "perGram": "per gram",
     "updated": "Updated",
+    "live": "Live",
+    "delayed": "Delayed",
     "back": "Back",
     "retry": "Try again",
     "somethingWrong": "Something went wrong. Please try again."
@@ -29,7 +31,117 @@
     "errorInvalidCredentials": "Incorrect email or password.",
     "errorEmailTaken": "An account with this email already exists.",
     "errorValidation": "Please check the form: password needs at least 8 characters and a valid email.",
-    "errorGeneric": "Something went wrong. Please try again."
+    "errorGeneric": "Something went wrong. Please try again.",
+    "forgotPassword": "Forgot password?",
+    "forgotTitle": "Reset your password",
+    "forgotBody": "Enter the email you registered with. If it belongs to an ALKEVA account, a reset link is on its way.",
+    "sendReset": "Send reset link",
+    "resetSent": "If that address belongs to an ALKEVA account, a reset link has been sent. It works for 30 minutes.",
+    "resetTitle": "Choose a new password",
+    "resetBody": "Setting a new password signs you out everywhere else.",
+    "newPassword": "New password",
+    "resetButton": "Set new password",
+    "resetOk": "Password updated. Log in with your new password.",
+    "errorResetToken": "This reset link is invalid or has expired. Request a new one.",
+    "acceptTerms": "I agree to the",
+    "termsLink": "Terms of Service",
+    "privacyLink": "Privacy Policy",
+    "orDivider": "or",
+    "continueWithGoogle": "Continue with Google",
+    "googleNeedsConsent": "Accept the terms above to continue with Google.",
+    "googleSigningIn": "Finishing sign-in with Google…",
+    "googleFailed": "Google sign-in did not complete. Please try again.",
+    "passkeyButton": "Sign in with a passkey",
+    "passkeyFailed": "Passkey sign-in did not complete."
+  },
+  "public": {
+    "signIn": "Sign in",
+    "heroTitle": "Own gold, one gram at a time",
+    "heroBody": "Buy and sell vaulted gold and platinum in Ethiopian birr — live market prices, receipts for every trade, and a vault that is never oversold.",
+    "heroCta": "Create your account",
+    "trust1Title": "Backed by the vault",
+    "trust1Body": "ALKEVA does not sell a gram it does not hold. Every purchase is checked against the vault before it settles.",
+    "trust2Title": "A receipt for everything",
+    "trust2Body": "Every settled trade carries a serial-numbered receipt with the exact price, fees, and the price source it was taken from.",
+    "trust3Title": "Prices that expire",
+    "trust3Body": "You confirm against a quoted price that is held for you for 30 seconds — never against a moving number.",
+    "termsTitle": "Terms of Service",
+    "privacyTitle": "Privacy Policy",
+    "legalDraftNotice": "Draft — this text describes how the platform actually works and will be replaced by counsel-approved terms before public launch.",
+    "legalTerms1": "ALKEVA is a digital platform for buying and selling vaulted precious metals in Ethiopian birr. ALKEVA acts as the counterparty to every trade: you buy from and sell to the platform at quoted prices that expire after 30 seconds.",
+    "legalTerms2": "Every balance change is recorded as a pair of immutable ledger entries. Deposits and withdrawals move through licensed payment providers. Identity verification is required before depositing, withdrawing, or trading.",
+    "legalTerms3": "Trading limits apply per account tier. The platform may pause buying when vault reserves would be exceeded and may hold transactions for compliance review. Frozen accounts retain their holdings; freezing suspends actions, never balances.",
+    "legalPrivacy1": "ALKEVA collects the information needed to operate a regulated financial service: your name, email, identity documents you submit for verification, and the transaction records the service inherently produces.",
+    "legalPrivacy2": "Identity documents are stored encrypted and are reviewed only by authorised compliance staff. Every staff action on your account is written to an append-only audit log.",
+    "legalPrivacy3": "Your data is not sold. It is shared only with the payment provider processing your deposits and withdrawals, and with authorities where the law requires it.",
+    "createAccount": "Create account",
+    "heroSecondaryCta": "See live prices",
+    "heroFact1": "Vault-backed",
+    "heroFact2": "Serial-numbered receipts",
+    "heroFact3": "Amharic and English",
+    "liveNow": "Live now",
+    "marketTitle": "The market, as the platform sees it",
+    "marketBody": "Prices come from an international metals feed converted to birr and refresh continuously. The number on this page is the same tick the trading screen quotes.",
+    "marketSource": "Source and exact time are stamped on every quote and every receipt.",
+    "stepsTitle": "From birr to metal in three steps",
+    "step1Title": "Fund your account",
+    "step1Body": "Deposit birr with Telebirr, CBEBirr, a bank transfer, or a card. The balance is credited only after the payment is verified with the provider.",
+    "step2Title": "Buy at a price held for you",
+    "step2Body": "The price, the commission and the total are all on screen before you confirm. The quote is locked for 30 seconds — you never confirm against a moving number.",
+    "step3Title": "Hold, sell, or take delivery",
+    "step3Body": "Your grams sit in the vault. Sell back at the live price whenever you want, or request physical delivery once your holding reaches the top bands.",
+    "rulesTitle": "Five rules the software enforces",
+    "rulesBody": "Not policies we promise to follow. Gates written into the code that runs every trade — the same code the audit log records.",
+    "rule1Title": "Never a gram the vault does not hold",
+    "rule1Body": "Every purchase is checked against the reserve inside the transaction that settles it. If the vault would be oversold, the buy is refused. There is no override, for anyone.",
+    "rule2Title": "Balances are never edited",
+    "rule2Body": "A balance is the sum of immutable ledger entries. Nothing in the admin console can add or remove a cent — every movement is a pair of entries that must sum to zero.",
+    "rule3Title": "Quotes expire",
+    "rule3Body": "You confirm against a quote, not a live price. When it runs out you are given a new one, so a trade is never silently re-priced under you.",
+    "rule4Title": "No one moves money alone",
+    "rule4Body": "Payouts above the review threshold need a second approver, and nobody may approve their own. Every staff action lands in an append-only audit log.",
+    "rule5Title": "The assistant reads, never acts",
+    "rule5Body": "The Amharic assistant explains prices, fees and your own position. It cannot trade, approve, freeze, or move anything — it has no write access at all.",
+    "receiptTitle": "Every settled trade leaves a document",
+    "receiptBody": "A serial number allocated at settlement, the exact unit price, every fee line, and the feed and moment the price was taken from. It opens, it shares, it prints.",
+    "receiptExample": "Example",
+    "receiptSerialSample": "ALK-2026-000148",
+    "tiersTitle": "Holding levels",
+    "tiersBody": "As the value you hold grows, your account moves through gemstone bands. Higher bands raise the per-transaction and daily limits, and the top bands unlock physical delivery of your metal.",
+    "tiersNote": "Levels are computed from what you hold — nothing to apply for.",
+    "ethiopiaTitle": "Built for Ethiopia",
+    "ethiopia1Title": "Paid in birr",
+    "ethiopia1Body": "Deposits and withdrawals run through Chapa: Telebirr, CBEBirr, bank transfer, and card.",
+    "ethiopia2Title": "Amharic first",
+    "ethiopia2Body": "The whole product, including the assistant, works in Amharic. English is one tap away.",
+    "ethiopia3Title": "Addis time",
+    "ethiopia3Body": "Receipts and daily limits use East Africa Time, so a document never changes its hour with the reader's laptop.",
+    "ethiopia4Title": "Identity checked once",
+    "ethiopia4Body": "Verification is required before money moves, reviewed by compliance staff, and stored encrypted.",
+    "faqTitle": "Questions people ask first",
+    "faq1Q": "Is the gold really there?",
+    "faq1A": "The vault holds physical metal, and the platform refuses any purchase that would issue more grams than it holds. Coverage — vault grams against issued grams — is shown inside the app on every screen where you buy.",
+    "faq2Q": "What does it cost?",
+    "faq2A": "A commission on each trade, shown as its own line on the quote and on the receipt before you confirm. There is no subscription and no custody fee.",
+    "faq3Q": "Can I sell back?",
+    "faq3A": "Yes, at the live price, in the same screen you buy from. The birr lands in your balance immediately and can be withdrawn to your bank.",
+    "faq4Q": "How fast is a withdrawal?",
+    "faq4A": "Smaller amounts are sent to your bank as soon as you request them. Larger amounts wait for a finance approver — the birr sits in a hold, visibly out of your balance, until it settles or is returned.",
+    "faq5Q": "What if the price feed goes down?",
+    "faq5A": "The app keeps showing the last known price with its timestamp, and the platform refuses to quote on a stale tick rather than guess.",
+    "faq6Q": "Can I get the metal itself?",
+    "faq6A": "Physical delivery can be requested from the top holding bands. Our team reviews the request and confirms the handover with you directly.",
+    "ctaTitle": "Open an account and buy your first gram",
+    "ctaBody": "Registration takes a minute. Identity verification is required before your first deposit.",
+    "footerNote": "ALKEVA is the counterparty to every trade on this platform.",
+    "receiptSerialLabel": "Serial number",
+    "receiptMetalLabel": "Metal",
+    "receiptMetalSample": "Gold",
+    "receiptQtyLabel": "Quantity",
+    "receiptUnitLabel": "Price per gram",
+    "receiptFeeLabel": "Commission",
+    "receiptTotalLabel": "Total paid",
+    "receiptSourceLabel": "Price source"
   },
   "nav": {
     "home": "Home",
@@ -43,7 +155,9 @@
     "kyc": "Identity check",
     "assistant": "Assistant",
     "sectionMarket": "Market",
-    "sectionAccount": "Account"
+    "sectionAccount": "Account",
+    "adminConsole": "Admin console",
+    "sectionMoney": "Money"
   },
   "home": {
     "totalLabel": "Total holdings",
@@ -74,7 +188,12 @@
     "viewAll": "View all",
     "receipt": "Receipt",
     "depositCta": "Deposit",
-    "withdrawCta": "Withdraw"
+    "withdrawCta": "Withdraw",
+    "cash": "Cash",
+    "openPortfolio": "Portfolio",
+    "youHold": "You hold",
+    "buyShort": "Buy",
+    "sellShort": "Sell"
   },
   "trade": {
     "title": "Trade",
@@ -86,8 +205,9 @@
     "max": "Max",
     "atCurrentPrice": "at the current price",
     "getQuote": "See the price",
-    "faucet": "Get demo birr",
-    "faucetOk": "Demo birr added",
+    "deposit": "Deposit birr",
+    "recentOrders": "Recent orders",
+    "allOrders": "See all",
     "pricePerGram": "Price per gram",
     "grams": "Grams",
     "subtotal": "Subtotal",
@@ -137,7 +257,6 @@
       "sellback_ceiling": "Today's sell-back ceiling has been reached. Try again tomorrow.",
       "tier_txn_cap": "This amount exceeds your tier's per-transaction limit.",
       "tier_daily_cap": "You have reached your tier's daily limit.",
-      "faucet_limit": "That exceeds the demo money limit per request.",
       "kyc_required": "Verify your identity first — it takes one document.",
       "amount_too_small": "The amount is too small.",
       "validation_failed": "Please check the amount and try again.",
@@ -148,6 +267,51 @@
   },
   "portfolio": {
     "title": "Portfolio",
+    "vaultVisualTitle": "Your metal",
+    "delivery": {
+      "title": "Physical delivery",
+      "body": "Your tier is eligible to request the physical handover of held grams.",
+      "request": "Request delivery",
+      "dialogBody": "Our team reviews every request and confirms the handover with you. Nothing moves from your balance until the handover itself.",
+      "metal": "Metal",
+      "grams": "Grams",
+      "phone": "Contact phone",
+      "address": "Delivery address",
+      "cancel": "Cancel",
+      "submit": "Submit request",
+      "status": {
+        "requested": "Requested",
+        "reviewing": "In review",
+        "approved": "Approved",
+        "scheduled": "Scheduled",
+        "rejected": "Declined"
+      },
+      "errors": {
+        "delivery_not_eligible": "Your tier is not eligible for physical delivery yet.",
+        "delivery_already_open": "You already have an open delivery request for this metal.",
+        "insufficient_metal": "You do not hold that many grams.",
+        "amount_too_small": "The amount is too small.",
+        "account_frozen": "Your account is frozen — delivery requests are paused.",
+        "generic": "Something went wrong. Please try again."
+      }
+    },
+    "badges": {
+      "title": "Badges",
+      "names": {
+        "first_purchase": "First purchase",
+        "ten_trades": "Ten trades",
+        "gold_holder": "Gold holder",
+        "platinum_holder": "Platinum holder",
+        "early_adopter": "Early adopter"
+      },
+      "criteria": {
+        "first_purchase": "Settle your first buy order.",
+        "ten_trades": "Settle ten orders.",
+        "gold_holder": "Hold at least 1 gram of gold.",
+        "platinum_holder": "Hold any platinum.",
+        "early_adopter": "Joined during the launch period."
+      }
+    },
     "totalValue": "Total value",
     "totalMetalValue": "Total metal value",
     "holdingsTitle": "Your holdings",
@@ -161,7 +325,9 @@
     "firstLoss": "The difference is the commission you paid. It returns as the price rises.",
     "cashLabel": "Cash",
     "emptyTitle": "You hold no metal yet",
-    "emptyBody": "You can buy from 1 gram."
+    "emptyBody": "You can buy from 1 gram.",
+    "metalColumn": "Metal",
+    "vaultVisualHint": "size follows the grams you hold"
   },
   "tier": {
     "label": "Tier",
@@ -194,7 +360,26 @@
     "emptyTitle": "No transactions yet",
     "emptyBody": "Your first purchase will appear here.",
     "loadMore": "Show more",
-    "receiptLink": "Receipt"
+    "receiptLink": "Receipt",
+    "colOrder": "Order",
+    "colSerial": "Receipt no.",
+    "colAmount": "Quantity",
+    "colValue": "Total",
+    "colStatus": "Status",
+    "colWhen": "Time",
+    "statSettled": "Settled orders",
+    "statBought": "Bought",
+    "statSold": "Sold",
+    "statGrams": "Grams bought",
+    "scopeNote": "last {count} orders",
+    "filterEmpty": "No orders match this view.",
+    "filter": {
+      "all": "All",
+      "buys": "Buys",
+      "sells": "Sells",
+      "refused": "Refused"
+    },
+    "statRefused": "Refused"
   },
   "receipt": {
     "title": "Receipt",
@@ -221,10 +406,30 @@
     "share": "Share",
     "linkCopied": "Link copied",
     "emptyTitle": "No receipts yet",
-    "emptyBody": "A receipt appears here once a trade settles."
+    "emptyBody": "A receipt appears here once a trade settles.",
+    "countNote": "{count} receipts",
+    "searchSerial": "Search serial",
+    "noMatch": "No receipt matches that serial.",
+    "clearSearch": "Clear search"
   },
   "account": {
     "title": "Account",
+    "passkeys": {
+      "title": "Passkeys",
+      "body": "Sign in with your fingerprint, face, or device PIN.",
+      "add": "Add a passkey",
+      "addBody": "Your device will ask you to confirm with your fingerprint, face, or PIN. Give this passkey a name so you can recognise it later.",
+      "labelField": "Name (optional)",
+      "confirmAdd": "Create passkey",
+      "cancel": "Cancel",
+      "empty": "No passkeys yet.",
+      "unnamed": "Passkey",
+      "lastUsed": "last used",
+      "remove": "Remove",
+      "removeTitle": "Remove this passkey?",
+      "removeBody": "You will no longer be able to sign in with it on that device. Your password keeps working.",
+      "failed": "That did not complete. Please try again."
+    },
     "language": "Language",
     "tierLabel": "Tier",
     "kyc": "Identity check",
@@ -236,7 +441,17 @@
     "depositLink": "Deposit",
     "withdrawLink": "Withdraw",
     "email": "Email",
-    "logout": "Log out"
+    "logout": "Log out",
+    "preferencesTitle": "Preferences",
+    "moneyTitle": "Money in and out",
+    "passwordLabel": "Password",
+    "passwordAction": "Reset password",
+    "roles": {
+      "user": "User",
+      "administrator": "Administrator",
+      "compliance": "Compliance",
+      "finance": "Finance"
+    }
   },
   "deposit": {
     "title": "Deposit",
@@ -272,7 +487,12 @@
       "payments_unconfigured": "Deposits are not available right now.",
       "chapa_error": "The payment provider could not be reached. Please try again.",
       "generic": "Something went wrong. Please try again."
-    }
+    },
+    "balanceTitle": "Your birr balance",
+    "howTitle": "How a deposit works",
+    "how1": "Enter the amount and continue to Chapa's secure checkout.",
+    "how2": "Pay with Telebirr, CBEBirr, a bank transfer, or a card.",
+    "how3": "ALKEVA verifies the payment with Chapa, then credits your balance."
   },
   "withdraw": {
     "title": "Withdraw",
@@ -303,7 +523,12 @@
       "payments_unconfigured": "Withdrawals are not available right now.",
       "banks_unavailable": "The bank list could not be loaded. Please try again.",
       "generic": "Something went wrong. Please try again."
-    }
+    },
+    "historyEmpty": "No withdrawals yet.",
+    "howTitle": "How a withdrawal works",
+    "how1": "Your birr moves to a hold the moment you request it — the balance drops immediately.",
+    "how2": "Finance reviews larger requests; smaller ones are sent straight to the bank.",
+    "how3": "Once the transfer is confirmed the hold is released to your bank account."
   },
   "assistant": {
     "emptyTitle": "Ask about your gold",
@@ -324,7 +549,14 @@
       "ai_unavailable": "The assistant is busy — please try again in a moment.",
       "ai_rate_limited": "The assistant is receiving a lot of questions — please wait a moment and try again.",
       "generic": "Something went wrong. Please try again."
-    }
+    },
+    "threads": "Conversations",
+    "noThreads": "No conversations yet",
+    "deleteChat": "Delete conversation",
+    "deleteConfirmTitle": "Delete this conversation?",
+    "deleteConfirmBody": "Its messages are removed permanently. Your orders and receipts are not affected.",
+    "cancel": "Cancel",
+    "today": "Today"
   },
   "notifications": {
     "title": "Notices",
@@ -373,13 +605,43 @@
     },
     "nav": {
       "overview": "Overview",
+      "analytics": "Analytics",
       "users": "Users",
       "kyc": "KYC queue",
       "reviews": "Reviews",
       "payouts": "Payouts",
       "orders": "Transactions",
       "treasury": "Treasury",
-      "audit": "Audit log"
+      "compliance": "Compliance",
+      "audit": "Audit log",
+      "delivery": "Deliveries"
+    },
+    "analytics": {
+      "days7": "Last 7 days",
+      "days30": "Last 30 days",
+      "days90": "Last 90 days"
+    },
+    "delivery": {
+      "explain": "Requests to hand over held grams physically. Nothing is reserved by a request — the held-now column shows what the user holds at this moment, and approval re-checks it.",
+      "empty": "No delivery requests in this state.",
+      "amount": "Requested",
+      "heldNow": "Holds now",
+      "contact": "Contact",
+      "scheduleWeek": "Schedule (+7 days)",
+      "status": {
+        "requested": "Requested",
+        "reviewing": "In review",
+        "approved": "Approved",
+        "scheduled": "Scheduled",
+        "rejected": "Declined"
+      }
+    },
+    "compliance": {
+      "exportTitle": "AML export",
+      "exportBody": "Every compliance event — threshold reviews, their resolutions, and the evidence recorded with them — as a CSV for the regulator or the partner bank.",
+      "exportButton": "Download CSV",
+      "rulesTitle": "Active rules",
+      "rulesBody": "Orders at or above the review threshold are held for a compliance decision before they settle; accounts can be frozen and unfrozen manually, with a mandatory reason. Every action is written to the append-only audit log."
     },
     "overview": {
       "pendingKyc": "Pending KYC",
@@ -399,7 +661,10 @@
       "seriesIn": "Deposits",
       "seriesOut": "Withdrawals",
       "noData": "No activity in this window yet.",
-      "note": "Balances are ledger projections and cannot be edited from this console. Every action taken here is written to the append-only audit log."
+      "openAnalytics": "Open analytics",
+      "note": "Balances are ledger projections and cannot be edited from this console. Every action taken here is written to the append-only audit log.",
+      "recentActivity": "Recent activity",
+      "openAudit": "Full audit log"
     },
     "users": {
       "searchPlaceholder": "Search by email or name",
@@ -424,10 +689,15 @@
       "resolved": "Resolved"
     },
     "kyc": {
-      "empty": "No pending submissions.",
+      "empty": "No submissions in this state.",
       "docType": "Document type",
       "document": "Document",
       "viewDocument": "View document",
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
       "docTypes": {
         "fayda": "Fayda national ID",
         "passport": "Passport",

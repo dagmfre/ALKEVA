@@ -12,8 +12,20 @@ import type {
 
 import { useAssetPrice } from "@/components/market/price-provider";
 import { Button } from "@/components/ui/button";
+import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { TierMark } from "@/components/shell/nav-items";
+import { BadgesRow } from "@/components/portfolio/badges-row";
+import { DeliveryCard } from "@/components/portfolio/delivery-card";
+import { MetalMass } from "@/components/three/metal-mass";
 import { useTradeSheet } from "@/components/trade/trade-sheet-context";
 import { revalueHolding } from "@/lib/live-value";
 import {
@@ -86,7 +98,7 @@ export function PortfolioScreen() {
   const largest = held.reduce((a, b) => (BigInt(a.valueCents) >= BigInt(b.valueCents) ? a : b));
 
   return (
-    <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-12 lg:gap-5">
+    <div className="grid grid-cols-1 items-start gap-3.5 lg:grid-cols-12 lg:gap-5">
       <section className="flex flex-col rounded-lg border border-border bg-card p-4 lg:col-span-8 lg:p-5">
         <span className="text-[0.9375rem] leading-relaxed text-muted-foreground">
           {t("totalMetalValue")}
@@ -154,18 +166,38 @@ export function PortfolioScreen() {
 
       <TierCard tier={data.tier} className="lg:col-span-4" />
 
-      <section className="rounded-lg border border-border bg-card px-4 pb-3 lg:col-span-8 lg:px-5">
-        <div className="flex items-center justify-between py-3.5">
-          <h2 className="text-[1.125rem] font-semibold">{t("holdingsTitle")}</h2>
-          <span className="text-[0.9375rem] text-subtle">{t("costFromLedger")}</span>
+      {/* What you own, with the ledger's own cost basis beside it. */}
+      <Panel className="overflow-hidden lg:col-span-8">
+        <PanelHeader
+          title={t("holdingsTitle")}
+          action={<span className="text-[0.9375rem] text-subtle">{t("costFromLedger")}</span>}
+          className="border-b border-border"
+        />
+        <Table className="hidden md:table">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead>{t("metalColumn")}</TableHead>
+              <TableHead className="text-end">{t("gramsLabel")}</TableHead>
+              <TableHead className="text-end">{t("currentValue")}</TableHead>
+              <TableHead className="text-end">{t("costBasis")}</TableHead>
+              <TableHead className="text-end">{t("gainLoss")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {held.map((h) => (
+              <HoldingTableRow key={h.asset} holding={h} />
+            ))}
+          </TableBody>
+        </Table>
+        <div className="md:hidden">
+          {held.map((h) => (
+            <HoldingRow key={h.asset} holding={h} />
+          ))}
         </div>
-        {held.map((h) => (
-          <HoldingRow key={h.asset} holding={h} />
-        ))}
-      </section>
+      </Panel>
 
       <div className="flex flex-col gap-3.5 lg:col-span-4 lg:gap-4">
-        <div className="rounded-lg border border-border bg-card p-4 lg:p-5">
+        <Panel className="p-4 lg:p-5">
           <span className="text-[0.9375rem] leading-relaxed text-muted-foreground">
             {t("cashLabel")}
           </span>
@@ -173,7 +205,7 @@ export function PortfolioScreen() {
             <span className="tnum text-[1.625rem] font-semibold">{money(data.etbCents)}</span>
             <span className="text-[0.9375rem] text-muted-foreground">{tc("birr")}</span>
           </div>
-        </div>
+        </Panel>
         <Button size="cta" onClick={() => trade(largest.asset, "buy")}>
           {t("buyMore", {
             metal: largest.asset === "XAU" ? tc("gold") : tc("platinum"),
@@ -184,11 +216,83 @@ export function PortfolioScreen() {
         </Button>
       </div>
 
+      {/* The vault visual (spec F13): rendered volume ∝ actual held grams,
+          label fed from the same holdings values the table above shows. */}
+      <Panel className="lg:col-span-8">
+        <PanelHeader title={t("vaultVisualTitle")} hint={t("vaultVisualHint")} />
+        <PanelBody className={cn("grid gap-3", held.length > 1 && "sm:grid-cols-2")}>
+          {held.map((h) => (
+            <MetalMass
+              key={h.asset}
+              asset={h.asset}
+              gramsMg={h.gramsMg}
+              label={`${grams(h.gramsMg)} ${tc("g")} ${h.asset === "XAU" ? tc("gold") : tc("platinum")}`}
+            />
+          ))}
+        </PanelBody>
+      </Panel>
+
+      <BadgesRow badges={data.badges ?? []} className="lg:col-span-4" />
+
+      <DeliveryCard
+        eligible={data.tier.deliveryEligible}
+        holdings={held}
+        className="lg:col-span-12"
+      />
+
       <VaultStrip asset={largest.asset} className="lg:col-span-12" />
     </div>
   );
 }
 
+/** The wide composition: one aligned row per metal, money under money. */
+function HoldingTableRow({ holding }: { holding: HoldingDto }) {
+  const tc = useTranslations("common");
+  const isGold = holding.asset === "XAU";
+  const dir = direction(holding.gainLossCents);
+  const pct = pctMilli(holding.gainLossPctMilli);
+
+  return (
+    <TableRow>
+      <TableCell className="font-semibold">
+        <span className="flex items-center gap-2.5">
+          <span
+            aria-hidden="true"
+            className={cn("size-2.5 rounded-full", isGold ? "bg-gold-500" : "bg-platinum-400")}
+          />
+          {isGold ? tc("gold") : tc("platinum")}
+        </span>
+      </TableCell>
+      <TableCell className="tnum text-end">
+        {grams(holding.gramsMg)}
+        <span className="ms-1 font-sans text-muted-foreground">{tc("g")}</span>
+      </TableCell>
+      <TableCell
+        className={cn(
+          "tnum text-end font-semibold",
+          isGold ? "text-gold-400" : "text-platinum-400",
+        )}
+      >
+        {money(holding.valueCents)}
+      </TableCell>
+      <TableCell className="tnum text-end text-muted-foreground">
+        {money(holding.costBasisCents)}
+      </TableCell>
+      <TableCell className={cn("tnum whitespace-nowrap text-end font-semibold", deltaClass(dir))}>
+        {ARROW[dir]} {SIGN[dir]}
+        {signedMoney(holding.gainLossCents)}
+        {pct && (
+          <span className="ms-1.5 font-medium">
+            {SIGN[dir]}
+            {pct}%
+          </span>
+        )}
+      </TableCell>
+    </TableRow>
+  );
+}
+
+/** The phone composition — same figures, two lines. */
 function HoldingRow({ holding }: { holding: HoldingDto }) {
   const t = useTranslations("portfolio");
   const tc = useTranslations("common");

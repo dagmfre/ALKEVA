@@ -11,6 +11,7 @@ import {
 } from "@alkeva/db";
 import {
   METAL_ASSETS,
+  eatDayStartUtc,
   type MetalAsset,
   type TreasuryReserveDto,
   type TreasurySummaryResponse,
@@ -91,7 +92,7 @@ export class TreasuryService {
     return BigInt(rows[0]?.balance ?? "0");
   }
 
-  // TODO(phase-5): Africa/Addis_Ababa day boundary (matches OrdersService).
+  // "Today" = the Addis Ababa day (matches OrdersService.dailySellbackUsed).
   private async sellbackUsedToday(): Promise<bigint> {
     const rows = await this.db
       .select({ total: sql<string>`coalesce(sum(${quotes.totalCents}), 0)::bigint` })
@@ -101,7 +102,7 @@ export class TreasuryService {
         and(
           eq(orders.side, "sell"),
           eq(orders.status, "settled"),
-          sql`${orders.settledAt} >= date_trunc('day', now())`,
+          sql`${orders.settledAt} >= ${eatDayStartUtc().toISOString()}`,
         ),
       );
     return BigInt(rows[0]?.total ?? "0");

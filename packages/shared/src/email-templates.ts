@@ -1,8 +1,12 @@
+import { escapeHtml, renderEmailHtml } from "./email-layout.js";
+
 /**
- * Notification copy, both locales. Deterministic templates — the LLM never
- * writes a notification (design doc §8: "the LLM phrases; thresholds trigger"
- * applies to chat, and even there alerts are templated). Amharic drafted by
- * the developer; Dagmfre reviews per the translation working rule.
+ * Notification copy, both locales — the single source for the API and the
+ * worker (the worker used to carry its own duplicated alert copy).
+ * Deterministic templates — the LLM never writes a notification (design doc
+ * §8: "the LLM phrases; thresholds trigger" applies to chat, and even there
+ * alerts are templated). Amharic drafted by the developer; Dagmfre reviews
+ * per the translation working rule.
  */
 export type NotificationTemplate =
   | "deposit_credited"
@@ -14,13 +18,20 @@ export type NotificationTemplate =
   | "account_frozen"
   | "account_unfrozen"
   | "price_alert"
-  | "order_receipt";
+  | "order_receipt"
+  | "password_reset"
+  | "delivery_requested"
+  | "delivery_approved"
+  | "delivery_scheduled"
+  | "delivery_rejected";
 
 export type NotificationPayload = Record<string, string>;
 
-interface Rendered {
+export interface RenderedEmail {
   subject: string;
-  body: string;
+  /** Plain-text part — kept for deliverability alongside the branded HTML. */
+  text: string;
+  html: string;
 }
 
 /** "123456" cents → "1,234.56". Payloads carry raw cent strings. */
@@ -42,11 +53,18 @@ function fmtGrams(mg: string | undefined): string {
 const METAL_AM: Record<string, string> = { XAU: "ወርቅ", XPT: "ፕላቲነም" };
 const METAL_EN: Record<string, string> = { XAU: "gold", XPT: "platinum" };
 
-export function renderNotification(
+interface Copy {
+  subject: string;
+  body: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+}
+
+function copyFor(
   template: NotificationTemplate,
   locale: "am" | "en",
   p: NotificationPayload,
-): Rendered {
+): Copy {
   const am = locale === "am";
   switch (template) {
     case "deposit_credited":
@@ -128,5 +146,69 @@ export function renderNotification(
           : `${side}: ${fmtGrams(p.gramsMg)} g ${metal}, total ETB ${fmtEtb(p.totalCents)}. Receipt number: ${p.serial ?? ""}.`,
       };
     }
+    case "password_reset":
+      return {
+        subject: am ? "የይለፍ ቃል ዳግም ማስጀመሪያ — ALKEVA" : "Reset your password — ALKEVA",
+        body: am
+          ? "የይለፍ ቃልዎን ዳግም ለማስጀመር ከታች ያለውን አዝራር ይጫኑ። ማገናኛው ለ30 ደቂቃ ብቻ ይሰራል። ይህን ጥያቄ እርስዎ ካላቀረቡ ይህን መልእክት ችላ ይበሉ — ምንም አልተለወጠም።"
+          : "Use the button below to set a new password. The link works for 30 minutes only. If you did not request this, ignore this message — nothing has changed.",
+        ctaLabel: am ? "የይለፍ ቃል ዳግም አስጀምር" : "Reset password",
+        ctaUrl: p.resetUrl,
+      };
+    case "delivery_requested": {
+      const metal = am ? (METAL_AM[p.asset ?? ""] ?? p.asset) : (METAL_EN[p.asset ?? ""] ?? p.asset);
+      return {
+        subject: am ? "የአቅርቦት ጥያቄ ተመዝግቧል — ALKEVA" : "Delivery request received — ALKEVA",
+        body: am
+          ? `የ${fmtGrams(p.gramsMg)} ግ ${metal} አቅርቦት ጥያቄዎ ተመዝግቧል። ቡድናችን መርምሮ ያሳውቅዎታል።`
+          : `Your request for physical delivery of ${fmtGrams(p.gramsMg)} g of ${metal} has been recorded. Our team will review it and get back to you.`,
+      };
+    }
+    case "delivery_approved": {
+      const metal = am ? (METAL_AM[p.asset ?? ""] ?? p.asset) : (METAL_EN[p.asset ?? ""] ?? p.asset);
+      return {
+        subject: am ? "የአቅርቦት ጥያቄ ጸድቋል — ALKEVA" : "Delivery request approved — ALKEVA",
+        body: am
+          ? `የ${fmtGrams(p.gramsMg)} ግ ${metal} አቅርቦት ጥያቄዎ ጸድቋል። የመላኪያ ቀን ሲያዝ እናሳውቅዎታለን።`
+          : `Your delivery request for ${fmtGrams(p.gramsMg)} g of ${metal} was approved. We will notify you when a delivery date is scheduled.`,
+      };
+    }
+    case "delivery_scheduled": {
+      const metal = am ? (METAL_AM[p.asset ?? ""] ?? p.asset) : (METAL_EN[p.asset ?? ""] ?? p.asset);
+      return {
+        subject: am ? "አቅርቦት ቀን ተይዟል — ALKEVA" : "Delivery scheduled — ALKEVA",
+        body: am
+          ? `የ${fmtGrams(p.gramsMg)} ግ ${metal} አቅርቦትዎ ለ${p.scheduledFor ?? ""} ተይዟል።`
+          : `Your delivery of ${fmtGrams(p.gramsMg)} g of ${metal} is scheduled for ${p.scheduledFor ?? ""}.`,
+      };
+    }
+    case "delivery_rejected": {
+      const metal = am ? (METAL_AM[p.asset ?? ""] ?? p.asset) : (METAL_EN[p.asset ?? ""] ?? p.asset);
+      return {
+        subject: am ? "የአቅርቦት ጥያቄ ውድቅ ተደርጓል — ALKEVA" : "Delivery request declined — ALKEVA",
+        body: am
+          ? `የ${fmtGrams(p.gramsMg)} ግ ${metal} አቅርቦት ጥያቄዎ ውድቅ ተደርጓል።${p.note ? ` ምክንያት፦ ${p.note}` : ""}`
+          : `Your delivery request for ${fmtGrams(p.gramsMg)} g of ${metal} was declined.${p.note ? ` Reason: ${p.note}` : ""}`,
+      };
+    }
   }
+}
+
+export function renderNotification(
+  template: NotificationTemplate,
+  locale: "am" | "en",
+  p: NotificationPayload,
+): RenderedEmail {
+  const copy = copyFor(template, locale, p);
+  return {
+    subject: copy.subject,
+    text: copy.body + (copy.ctaUrl ? `\n\n${copy.ctaUrl}` : ""),
+    html: renderEmailHtml({
+      locale,
+      heading: copy.subject.replace(/\s+—\s+ALKEVA$/u, ""),
+      bodyHtml: `<p style="margin:0">${escapeHtml(copy.body)}</p>`,
+      ctaLabel: copy.ctaLabel,
+      ctaUrl: copy.ctaUrl,
+    }),
+  };
 }

@@ -10,7 +10,17 @@ import { useTranslations } from "next-intl";
  * not a route, and Receipts lives inside History). Both read from here so a
  * renamed destination can never drift between them.
  */
-export type NavKey = "home" | "trade" | "portfolio" | "history" | "receipts" | "account";
+export type NavKey =
+  | "home"
+  | "trade"
+  | "portfolio"
+  | "history"
+  | "receipts"
+  | "account"
+  | "deposit"
+  | "withdraw"
+  | "assistant"
+  | "kyc";
 
 export interface NavItem {
   key: NavKey;
@@ -18,18 +28,26 @@ export interface NavItem {
   label: string;
 }
 
-export function useNavItems(): { market: NavItem[]; account: NavItem[] } {
+export function useNavItems(): { market: NavItem[]; account: NavItem[]; money: NavItem[] } {
   const t = useTranslations("nav");
   return {
     market: [
       { key: "home", href: "/", label: t("home") },
       { key: "trade", href: "/trade", label: t("trade") },
+      { key: "assistant", href: "/assistant", label: t("assistant") },
     ],
     account: [
       { key: "portfolio", href: "/portfolio", label: t("portfolio") },
       { key: "history", href: "/history", label: t("history") },
       { key: "receipts", href: "/receipts", label: t("receipts") },
       { key: "account", href: "/account", label: t("account") },
+    ],
+    // Money doors used to live only behind the Account page and the dashboard
+    // buttons; on a desk they are destinations like any other.
+    money: [
+      { key: "deposit", href: "/deposit", label: t("deposit") },
+      { key: "withdraw", href: "/withdraw", label: t("withdraw") },
+      { key: "kyc", href: "/kyc", label: t("kyc") },
     ],
   };
 }
@@ -86,6 +104,34 @@ export function NavIcon({ name, size = 18 }: { name: NavKey; size?: number }) {
         <svg {...common} strokeWidth="1.6">
           <circle cx="9" cy="6.4" r="2.9" />
           <path d="M3.7 15.2c0-2.8 2.4-4.5 5.3-4.5s5.3 1.7 5.3 4.5" />
+        </svg>
+      );
+    case "deposit":
+      return (
+        <svg {...common} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 3.2v7.4M6 7.8 9 10.8l3-3" />
+          <path d="M3.4 12.6v1.2a1 1 0 0 0 1 1h9.2a1 1 0 0 0 1-1v-1.2" />
+        </svg>
+      );
+    case "withdraw":
+      return (
+        <svg {...common} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 10.8V3.4M6 6.4 9 3.4l3 3" />
+          <path d="M3.4 12.6v1.2a1 1 0 0 0 1 1h9.2a1 1 0 0 0 1-1v-1.2" />
+        </svg>
+      );
+    case "assistant":
+      return (
+        <svg {...common} strokeWidth="1.6" strokeLinejoin="round">
+          <path d="M3 5.2a1.6 1.6 0 0 1 1.6-1.6h8.8A1.6 1.6 0 0 1 15 5.2v5.2a1.6 1.6 0 0 1-1.6 1.6H7.4L4.2 14.6V12H4.6A1.6 1.6 0 0 1 3 10.4z" />
+        </svg>
+      );
+    case "kyc":
+      return (
+        <svg {...common} strokeWidth="1.6" strokeLinejoin="round">
+          <rect x="2.8" y="4" width="12.4" height="10" rx="1.6" />
+          <circle cx="7" cy="8.2" r="1.7" />
+          <path d="M4.4 12.2c.5-1.3 1.5-2 2.6-2s2.1.7 2.6 2M11 7.6h2.6M11 10.2h2.6" />
         </svg>
       );
   }

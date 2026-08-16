@@ -33,6 +33,7 @@ import type {
   ReceiptResponse,
   SystemAccountName,
 } from "@alkeva/shared";
+import { eatDayStartUtc } from "@alkeva/shared";
 import { DB, ENV } from "../core/core.module.js";
 import { LedgerService, type EntrySpec, type Tx } from "../ledger/ledger.service.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
@@ -596,7 +597,9 @@ export class OrdersService {
           and(
             eq(orders.userId, userId),
             eq(orders.status, "settled"),
-            sql`${orders.settledAt} >= date_trunc('day', now())`,
+            // "Today" is the Addis Ababa day, not the UTC day — caps reset at
+            // midnight EAT, the midnight the customer actually experiences.
+            sql`${orders.settledAt} >= ${eatDayStartUtc().toISOString()}`,
           ),
         );
       const usedToday = BigInt(rows[0]?.total ?? "0");
@@ -627,8 +630,7 @@ export class OrdersService {
     return row;
   }
 
-  /** Platform-wide sell-back total settled today (UTC day). */
-  // TODO(phase-5): Africa/Addis_Ababa day boundary
+  /** Platform-wide sell-back total settled today (Addis Ababa day). */
   private async dailySellbackUsed(tx: Tx): Promise<bigint> {
     const rows = await tx
       .select({ total: sql<string>`coalesce(sum(${quotes.totalCents}), 0)::bigint` })
@@ -638,7 +640,7 @@ export class OrdersService {
         and(
           eq(orders.side, "sell"),
           eq(orders.status, "settled"),
-          sql`${orders.settledAt} >= date_trunc('day', now())`,
+          sql`${orders.settledAt} >= ${eatDayStartUtc().toISOString()}`,
         ),
       );
     return BigInt(rows[0]?.total ?? "0");

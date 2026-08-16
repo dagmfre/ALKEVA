@@ -29,7 +29,6 @@ export const KNOWN_ERRORS = new Set([
   "sellback_ceiling",
   "tier_txn_cap",
   "tier_daily_cap",
-  "faucet_limit",
   "kyc_required",
   "amount_too_small",
   "validation_failed",
@@ -57,10 +56,8 @@ export interface UseTradeFormOptions {
   initialSide: OrderSide;
   /** Cache-busting revision from the trade context (bumps after settles). */
   revision: number;
-  /** Called whenever an order attempt finished (success or refusal) or the faucet paid. */
+  /** Called whenever an order attempt finished (success or refusal). */
   settled: () => void;
-  /** UI hook for the faucet success toast. */
-  onFaucetSuccess?: () => void;
 }
 
 /**
@@ -78,7 +75,6 @@ export function useTradeForm({
   initialSide,
   revision,
   settled,
-  onFaucetSuccess,
 }: UseTradeFormOptions) {
   const [asset, setAsset] = useState<MetalAsset>(initialAsset);
   const [side, setSide] = useState<OrderSide>(initialSide);
@@ -195,24 +191,6 @@ export function useTradeForm({
     }
   }
 
-  async function faucet() {
-    setErrorCode(null);
-    setBusy(true);
-    try {
-      await api("/faucet", {
-        method: "POST",
-        body: JSON.stringify({ amountCents: "20000000" }),
-      });
-      onFaucetSuccess?.();
-      balances.reload();
-      settled();
-    } catch (err) {
-      setErrorCode(codeFor(err));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   /** Fill the amount with the maximum the user can actually trade. */
   function setMax() {
     if (side === "sell") {
@@ -253,7 +231,6 @@ export function useTradeForm({
     heldMg,
     requestQuote,
     confirm,
-    faucet,
     setMax,
     backToAmount,
   };

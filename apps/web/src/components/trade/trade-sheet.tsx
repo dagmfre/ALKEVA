@@ -2,7 +2,6 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -33,7 +32,6 @@ export function TradeSheet() {
     initialSide,
     revision,
     settled,
-    onFaucetSuccess: () => toast.success(t("faucetOk")),
   });
   const {
     asset,
@@ -57,7 +55,6 @@ export function TradeSheet() {
     heldMg,
     requestQuote,
     confirm: confirmOrder,
-    faucet,
     setMax,
     backToAmount,
   } = form;
@@ -202,8 +199,19 @@ export function TradeSheet() {
               {t("atCurrentPrice")}
             </p>
 
-            <Button variant="demo" size="cta" className="mb-2.5" onClick={() => void faucet()} disabled={busy}>
-              {t("faucet")}
+            {/* Navigate first, then close — same Radix unmount race as the
+                receipt button below: an <a> inside the sheet gets unmounted
+                during the close animation before Next commits navigation. */}
+            <Button
+              variant="secondary"
+              size="cta"
+              className="mb-2.5"
+              onClick={() => {
+                router.push("/deposit");
+                close();
+              }}
+            >
+              {t("deposit")}
             </Button>
 
             <Button size="cta" onClick={() => void requestQuote()} disabled={busy}>

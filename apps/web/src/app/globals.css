@@ -2,58 +2,63 @@
 @import "tw-animate-css";
 
 /**
- * ALKEVA design tokens — approved comp "ALKEVA Screens" (claude.ai/design
- * project 9788efcb…), `design/design.md` §1–§3.
+ * ALKEVA design tokens — production-stage Gauld palette (2026-08-15 decision:
+ * "Full Gauld palette", `design/UI & UX ULTIMATE INSPIRATION.md` §2 of the
+ * coloring guide + `design/previews/goodl coloring….jpg`).
  *
- * Dark only: there is no light theme for the demo, so the palette is declared
- * once on :root rather than behind a media query.
+ * Dark only: the palette is declared once on :root, no media query.
  *
- * The surface ramp is warm (chroma 0.009–0.030 at hue 78–82) so gold sits in
- * the same world as its ground instead of floating on neutral grey. Four
- * levels, and the direction matters: the WELL is darker than the page, not
- * lighter — a fee breakdown or an amount field is sunk into the panel, not a
- * chip raised off it.
+ * The surface ramp is near-neutral charcoal (#0A0A0A → #252525 territory,
+ * chroma ≤ 0.003) — the reference's "deep graphite" ground, replacing the
+ * earlier warm-tinted ramp. Gold now supplies ALL the warmth. Direction still
+ * matters: the WELL is darker than the page, not lighter — a fee breakdown or
+ * an amount field is sunk into the panel, not a chip raised off it.
  *
- * Deliberately absent: any amber/yellow. It would collide with the brand gold
- * and dilute the one signal meaning "asset / action". Caution states are built
- * from the cool platinum family instead (see --caution).
+ * Caution states remain built from the cool platinum family (see --caution) —
+ * a separate amber caution color would collide with the one signal meaning
+ * "asset / action".
  */
 :root {
   /* Surface ladder: well (sunk) < background (ground) < card (panel) < popover
-     (raised). Every ratio below is measured, not estimated — `pnpm
-     verify:contrast` recomputes them from these exact values. */
-  --well: oklch(0.11 0.009 78);
-  --background: oklch(0.143 0.012 80);
-  --card: oklch(0.185 0.018 78);
-  --popover: oklch(0.225 0.02 78);
+     (raised) < control (input surface). Every ratio below is measured, not
+     estimated — `pnpm verify:contrast` recomputes them from these values. */
+  --well: oklch(0.145 0.002 85); /* ≈ #0a0a0a */
+  --background: oklch(0.173 0.002 85); /* ≈ #101010 */
+  --card: oklch(0.209 0.003 85); /* ≈ #181818 */
+  --popover: oklch(0.244 0.003 85); /* ≈ #202020 */
+  /* The control surface (#252525 in the reference): dropdowns, selects,
+     dark input fills that are NOT wells. */
+  --control: oklch(0.264 0.003 85); /* ≈ #252525 */
   --muted: var(--popover);
 
-  --foreground: oklch(0.968 0.004 90);
+  --foreground: oklch(0.961 0 0); /* ≈ #f2f2f2 */
   --card-foreground: var(--foreground);
   --popover-foreground: var(--foreground);
-  --muted-foreground: oklch(0.735 0.01 90);
+  --muted-foreground: oklch(0.735 0 0); /* ≈ #a8a8a8 */
   /* Timestamps only, ≥13px — nothing is quieter than this; low-contrast text
      is unreadable in the Ethiopian sun this app is used in. Quieter means
-     smaller or removed, never greyer. */
-  --subtle: oklch(0.62 0.01 90);
+     smaller or removed, never greyer. (The reference's #6F6F6F tertiary is
+     ~3.5:1 on card and fails WCAG — deliberately NOT adopted.) */
+  --subtle: oklch(0.64 0 0);
 
-  /* Borders carry real chroma so a hairline is visible on a warm panel
-     instead of dissolving into it. --input is the raised border, used on
-     anything interactive or sunk. */
-  --border: oklch(0.285 0.024 80);
-  --input: oklch(0.36 0.03 82);
+  /* Borders are alpha-white hairlines (the reference relies on contrast +
+     elevation, not outlines). --input is the raised/interactive border. */
+  --border: oklch(1 0 0 / 0.08);
+  --input: oklch(1 0 0 / 0.16);
+  --border-gold-active: oklch(0.868 0.175 96.5 / 0.3);
 
   /* Gold — XAU, primary action, current selection.
-     gold-500 and gold-600 are the client's brand colours EXACTLY: #d4a017 and
-     #b8860b converted to OKLCH and verified to round-trip. Do not eyeball
-     these two — they are the identity, not a palette choice.
+     The 300–500 steps are the Gauld luminous golds (#FFE45C / #FFD92E /
+     #F5D21A); 600/700 are the metallic deep golds (#D9A900 / #C99600). The
+     client's brand hexes #d4a017 / #b8860b stay anchored in the CTA gradient's
+     deep stops — the identity survives inside the brighter family.
      Gold as TEXT uses 400; gold as a FILL uses 500 with the dark ink on top.
-     White on gold is 2.4:1 and never ships. */
-  --gold-300: oklch(0.86 0.105 88);
-  --gold-400: oklch(0.79 0.142 85);
-  --gold-500: oklch(0.735 0.146 84.3);
-  --gold-600: oklch(0.652 0.132 81.6);
-  --gold-700: oklch(0.52 0.108 80);
+     White on gold never ships. All values round-trip verified to their hex. */
+  --gold-300: oklch(0.917 0.155 98); /* #ffe45c */
+  --gold-400: oklch(0.892 0.173 95.2); /* #ffd92e */
+  --gold-500: oklch(0.868 0.175 96.5); /* #f5d21a */
+  --gold-600: oklch(0.758 0.155 88.1); /* #d9a900 */
+  --gold-700: oklch(0.703 0.144 84.2); /* #c99600 */
 
   /* Platinum — XPT, and the silver half of the identity. Cool and low-chroma:
      a different metal, and deliberately not navy (navy-and-gold is the fintech
@@ -81,34 +86,35 @@
   /**
    * The one glossy surface in the product: the primary action.
    *
-   * Four stops, with the client's two brand hexes anchored at 72% and 100% so
-   * the identity is never diluted by the falloff. Dark ink clears 4.5:1 at
-   * every stop (14.2 · 10.7 · 8.2 · 6.0). Gloss is an INNER specular edge and
-   * an inner bottom shade — never an outer glow, which is the casino reflex
-   * this design refuses.
+   * Four stops — Gauld highlight → Gauld primary → the client's #d4a017 →
+   * the client's #b8860b. The brand hexes are anchored at 72% and 100% so the
+   * identity is never diluted by the brighter top. Dark ink clears 4.5:1 at
+   * every stop (verify:contrast asserts all four). Gloss is an INNER specular
+   * edge and an inner bottom shade. The one sanctioned OUTER glow in the
+   * system is `.glow-gold`, reserved for live indicators — never for buttons.
    */
   --gold-gradient: linear-gradient(
     180deg,
-    oklch(0.895 0.098 93) 0%,
-    oklch(0.81 0.134 87) 40%,
+    oklch(0.917 0.155 98) 0%,
+    oklch(0.868 0.175 96.5) 40%,
     oklch(0.735 0.146 84.3) 72%,
     oklch(0.652 0.132 81.6) 100%
   );
   --gold-gradient-hover: linear-gradient(
     180deg,
-    oklch(0.935 0.075 95) 0%,
-    oklch(0.855 0.118 89) 40%,
-    oklch(0.79 0.142 85) 72%,
-    oklch(0.71 0.14 83) 100%
+    oklch(0.94 0.13 99) 0%,
+    oklch(0.892 0.173 95.2) 40%,
+    oklch(0.77 0.15 86) 72%,
+    oklch(0.69 0.138 83) 100%
   );
   --gold-gradient-active: linear-gradient(
     180deg,
-    oklch(0.83 0.118 90) 0%,
-    oklch(0.755 0.144 85) 40%,
-    oklch(0.688 0.14 83) 72%,
-    oklch(0.6 0.12 80) 100%
+    oklch(0.868 0.155 96) 0%,
+    oklch(0.81 0.16 92) 40%,
+    oklch(0.7 0.14 84) 72%,
+    oklch(0.62 0.126 81) 100%
   );
-  --gloss: inset 0 1px 0 oklch(0.95 0.08 95 / 0.55), inset 0 -1px 0 oklch(0 0 0 / 0.3);
+  --gloss: inset 0 1px 0 oklch(0.97 0.09 100 / 0.55), inset 0 -1px 0 oklch(0 0 0 / 0.3);
   --sunk: inset 0 1px 2px oklch(0 0 0 / 0.4);
 
   --radius: 0.875rem;
@@ -127,6 +133,7 @@
   --color-subtle: var(--subtle);
   --color-border: var(--border);
   --color-input: var(--input);
+  --color-control: var(--control);
   --color-ring: var(--ring);
 
   --color-primary: var(--primary);
@@ -256,6 +263,49 @@
     background: var(--popover);
     box-shadow: inset 0 0 0 1px var(--gold-600);
     color: var(--gold-400);
+  }
+
+  /**
+   * The one sanctioned outer glow (2026-08-15 "Full Gauld palette" decision,
+   * revising the earlier blanket ban): LIVE indicators only — the SSE live
+   * dot and the chart's current-price tag/point. Never on buttons, cards,
+   * text, or anything the user acts on; those keep the flat/inner-gloss rule.
+   */
+  .glow-gold {
+    box-shadow: 0 0 8px oklch(0.868 0.175 96.5 / 0.35);
+  }
+
+  /**
+   * The landing page's one entrance move (the marketing surface is allowed a
+   * first-load; the app is not — a tool should already be there when you
+   * arrive).
+   *
+   * It is an `animation`, never a class toggled by JS: the element's default
+   * state is visible, so a headless renderer, a paused tab, or a reader with
+   * animations disabled all see the finished page rather than a blank one.
+   */
+  .rise {
+    animation: alkeva-rise 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .rise-late {
+    animation-delay: 140ms;
+  }
+
+  @keyframes alkeva-rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rise {
+      animation: none;
+    }
   }
 }
 

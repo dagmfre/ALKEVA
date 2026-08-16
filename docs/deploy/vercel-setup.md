@@ -112,3 +112,13 @@ Then the money-core regression through the new origin, exactly as in `docs/manua
 - **Each SSE viewer pins a function instance** for up to 300s, and each such instance holds its own Redis subscriber and Postgres pool. Fine for a demo; watch it if concurrent viewers grow.
 - **Vercel's Hobby plan prohibits commercial use.** ALKEVA is a client's commercial platform — move to Pro before this is anything but a demo/staging deployment.
 - **First request to a cold instance pays for the whole Nest bootstrap.** Warm instances reuse the container, so this is a first-hit cost, not a per-request one.
+
+## Go-live ops checklist (production stage, 2026-08-15)
+
+Before real users touch this deployment:
+
+1. **Vercel Pro** — Hobby prohibits commercial use; both `alkeva-web` and `alkeva-api` must move to a Pro team.
+2. **Node version alignment** — `.vercel/project.json` / the dashboard setting resolved Node **24.x** while the repo pins **22** (`.node-version`, `engines`). Set the Vercel project Node version to 22.x so all three runtimes match.
+3. **`SEED_ADMIN_PASSWORD`** — the schema default is gone. The worker (the only service that runs `db:seed`) must have it set in the Render dashboard, or no administrator is seeded/reset (the seed logs the skip).
+4. **`DEMO_FAUCET_ENABLED`** — now defaults to `false`. Leave it unset everywhere in production; only a sandbox environment should ever set it to `true`.
+5. **Uptime pinger** (unchanged, still required) — cron-job.org / UptimeRobot → `https://alkeva-worker.onrender.com/healthz` every 5 minutes, or the price loop sleeps.

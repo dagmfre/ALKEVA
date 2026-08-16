@@ -10,7 +10,7 @@ import { useResource } from "@/lib/use-resource";
 import { cn } from "@/lib/utils";
 
 /** The user's price alerts — armed ones can be removed, fired ones are records. */
-export function AlertsList() {
+export function AlertsList({ className }: { className?: string }) {
   const t = useTranslations("alerts");
   const tc = useTranslations("common");
   const { data, reload } = useResource<AlertsResponse>("/alerts");
@@ -27,7 +27,7 @@ export function AlertsList() {
   }
 
   return (
-    <Card className="mb-3.5 px-4 pb-1 pt-3">
+    <Card className={cn("px-4 pb-1 pt-3", className)}>
       <h2 className="mb-1 text-base font-semibold">{t("listTitle")}</h2>
       {alerts.map((a) => (
         <div

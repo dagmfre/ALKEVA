@@ -27,12 +27,15 @@ interface AdminNavItem {
  */
 const NAV: AdminNavItem[] = [
   { href: "/admin", key: "overview", roles: ["administrator", "compliance", "finance"] },
+  { href: "/admin/analytics", key: "analytics", roles: ["administrator", "compliance", "finance"] },
   { href: "/admin/users", key: "users", roles: ["administrator", "compliance"] },
   { href: "/admin/kyc", key: "kyc", roles: ["administrator", "compliance"] },
   { href: "/admin/reviews", key: "reviews", roles: ["administrator", "compliance"] },
   { href: "/admin/payouts", key: "payouts", roles: ["administrator", "finance"] },
   { href: "/admin/orders", key: "orders", roles: ["administrator", "compliance", "finance"] },
   { href: "/admin/treasury", key: "treasury", roles: ["administrator", "finance"] },
+  { href: "/admin/delivery", key: "delivery", roles: ["administrator", "compliance"] },
+  { href: "/admin/compliance", key: "compliance", roles: ["administrator", "compliance"] },
   { href: "/admin/audit", key: "audit", roles: ["administrator", "compliance"] },
 ];
 
