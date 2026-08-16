@@ -1,13 +1,15 @@
 import { z } from "zod";
 import { METAL_ASSETS, ORDER_SIDES } from "./constants.js";
 import type { Asset, MetalAsset, OrderSide, PriceRange, Role } from "./constants.js";
+import { DEFAULT_LOCALE, LOCALES } from "./locales.js";
+import type { Locale } from "./locales.js";
 
 // ── Auth ──────────────────────────────────────────────────────────
 export const registerDto = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(128),
   fullName: z.string().min(2).max(120),
-  locale: z.enum(["am", "en"]).default("am"),
+  locale: z.enum(LOCALES).default(DEFAULT_LOCALE),
   /** Terms+privacy consent is a hard gate: literal true, not a boolean —
       an unchecked box must fail validation, not save `false`. */
   acceptTerms: z.literal(true),
@@ -24,7 +26,7 @@ export interface MeResponse {
   id: string;
   email: string;
   fullName: string;
-  locale: "am" | "en";
+  locale: Locale;
   role: Role;
   status: "active" | "frozen";
   kycTier: number;

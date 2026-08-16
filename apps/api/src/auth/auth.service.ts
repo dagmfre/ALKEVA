@@ -11,8 +11,10 @@ import { createHash, randomBytes } from "node:crypto";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { auditLogs, passwordResetTokens, users, type Db } from "@alkeva/db";
 import {
+  emailLocaleFor,
   renderNotification,
   type Env,
+  type Locale,
   type LoginDto,
   type MeResponse,
   type RegisterDto,
@@ -139,6 +141,23 @@ export class AuthService {
   }
 
   /**
+   * Persist the language the user actually reads. The web app keeps the UI
+   * locale in a cookie (no URL prefixes), but the AI assistant and every
+   * transactional email read `user.locale` from the database — without this,
+   * switching to Tigrinya changed the screens and left the mail in the
+   * language chosen at registration.
+   */
+  async setLocale(userId: string, locale: Locale): Promise<MeResponse> {
+    const updated = await this.db
+      .update(users)
+      .set({ locale })
+      .where(eq(users.id, userId))
+      .returning();
+    if (!updated[0]) throw new UnauthorizedException();
+    return this.toMe(updated[0]);
+  }
+
+  /**
    * Issue a session for a user already authenticated by another proof —
    * a verified Google id_token or a WebAuthn assertion. The same cookie pair
    * password login produces; providers never get their own session shape.
@@ -182,7 +201,7 @@ export class AuthService {
     });
 
     const resetUrl = `${this.env.WEB_ORIGIN}/reset-password?token=${raw}`;
-    const { subject, text, html } = renderNotification("password_reset", user.locale, {
+    const { subject, text, html } = renderNotification("password_reset", emailLocaleFor(user.locale), {
       resetUrl,
     });
     const outcome = await this.mail.send(user.email, subject, html, text);

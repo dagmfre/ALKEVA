@@ -7,6 +7,7 @@ import { MailService } from "./mail.service.js";
 // Templates live in @alkeva/shared so the worker sends the identical copy —
 // it used to carry its own duplicated alert wording.
 import {
+  emailLocaleFor,
   renderNotification,
   type NotificationPayload,
   type NotificationTemplate,
@@ -45,7 +46,7 @@ export class NotificationsService {
         .returning({ id: notifications.id });
       const row = inserted[0];
 
-      const { subject, text, html } = renderNotification(template, user.locale, payload);
+      const { subject, text, html } = renderNotification(template, emailLocaleFor(user.locale), payload);
       const outcome = await this.mail.send(user.email, subject, html, text);
 
       // "skipped" (no SMTP configured) keeps status=queued: recorded, undelivered.

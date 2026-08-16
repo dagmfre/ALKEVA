@@ -194,14 +194,20 @@
 
   /* Ethiopic carries far more internal detail than Latin: it needs more
      leading, and it must never be letter-spaced. Ethiopic has no uppercase,
-     so no ALL-CAPS pattern exists anywhere in this app. */
-  :lang(am) {
+     so no ALL-CAPS pattern exists anywhere in this app. Amharic and Tigrinya
+     both use it; Afaan Oromoo and Somali are written in Latin and keep the
+     Latin metrics. */
+  :lang(am),
+  :lang(ti) {
     letter-spacing: 0 !important;
     line-height: 1.7;
   }
   :lang(am) h1,
   :lang(am) h2,
-  :lang(am) h3 {
+  :lang(am) h3,
+  :lang(ti) h1,
+  :lang(ti) h2,
+  :lang(ti) h3 {
     line-height: 1.45;
   }
 

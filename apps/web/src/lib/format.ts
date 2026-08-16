@@ -9,6 +9,7 @@
  * Money is never abbreviated — `112,629.25`, never `112.6k`. Abbreviating
  * someone's savings reads as evasive (`design/antipatterns.md` §3).
  */
+import { DEFAULT_LOCALE, LOCALE_META, isLocale } from "@alkeva/shared/locales";
 
 const GROUPED = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
@@ -90,9 +91,18 @@ export function signedMoney(cents: string): string {
   return money(v < 0n ? -v : v);
 }
 
+/**
+ * BCP-47 tag for Intl, from the app locale. Where the runtime's ICU data has
+ * no month names for a language (Afaan Oromoo is the likely gap), Intl falls
+ * back on its own — a Latin-script month name, never a crash.
+ */
+function intlTag(locale: string): string {
+  return isLocale(locale) ? LOCALE_META[locale].intl : LOCALE_META[DEFAULT_LOCALE].intl;
+}
+
 /** "14:32" in the viewer's timezone. */
 export function timeOfDay(iso: string, locale: string): string {
-  return new Date(iso).toLocaleTimeString(locale === "am" ? "am-ET" : "en-GB", {
+  return new Date(iso).toLocaleTimeString(intlTag(locale), {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -106,7 +116,7 @@ export function timeOfDay(iso: string, locale: string): string {
  * always matches the ledger timestamp it came from.
  */
 export function longDate(iso: string, locale: string): string {
-  return new Date(iso).toLocaleDateString(locale === "am" ? "am-ET" : "en-GB", {
+  return new Date(iso).toLocaleDateString(intlTag(locale), {
     year: "numeric",
     month: "long",
     day: "numeric",

@@ -51,5 +51,9 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  // Anything with a file extension is a static asset, never a route: the brand
+  // PNGs and the generated icon.png/apple-icon.png live at the app root, and
+  // without this a signed-out visitor's favicon request was answered with a
+  // 307 to /welcome. Routes in this app never contain a dot.
+  matcher: ["/((?!api|_next/static|_next/image|.*\\.).*)"],
 };

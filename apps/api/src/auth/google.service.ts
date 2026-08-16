@@ -8,7 +8,7 @@ import { JwtService } from "@nestjs/jwt";
 import { OAuth2Client } from "google-auth-library";
 import { eq, sql } from "drizzle-orm";
 import { auditLogs, authIdentities, users, type Db } from "@alkeva/db";
-import type { Env } from "@alkeva/shared";
+import { toLocale, type Env, type Locale } from "@alkeva/shared";
 import { DB, ENV } from "../core/core.module.js";
 
 /**
@@ -49,7 +49,7 @@ export class GoogleAuthService {
   }
 
   /** 302 target for GET /auth/google/start. */
-  async startUrl(intent: "login" | "register", locale: "am" | "en"): Promise<string> {
+  async startUrl(intent: "login" | "register", locale: Locale): Promise<string> {
     this.guard();
     const state = await this.jwt.signAsync(
       { nonce: crypto.randomUUID(), intent, locale, type: "google_state" },
@@ -77,7 +77,7 @@ export class GoogleAuthService {
       throw new UnauthorizedException("google_state_invalid");
     }
     if (parsed.type !== "google_state") throw new UnauthorizedException("google_state_invalid");
-    const locale = parsed.locale === "en" ? "en" : "am";
+    const locale = toLocale(parsed.locale);
 
     const client = this.client();
     let idToken: string | undefined;

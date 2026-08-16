@@ -15,6 +15,12 @@
     "db:migrate": "pnpm --filter @alkeva/db migrate",
     "db:seed": "pnpm --filter @alkeva/db seed",
     "typecheck": "pnpm -r typecheck",
-    "verify:contrast": "node scripts/verify-contrast.mjs"
+    "verify:contrast": "node scripts/verify-contrast.mjs",
+    "i18n:report": "node scripts/i18n-report.mjs",
+    "brand:assets": "node scripts/build-logo-assets.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.62.1",
+    "sharp": "^0.35.3"
   }
 }

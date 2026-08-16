@@ -1,7 +1,7 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { notifications, priceAlerts, users, type Db } from "@alkeva/db";
-import { renderNotification, type Env, type MetalAsset } from "@alkeva/shared";
+import { emailLocaleFor, renderNotification, type Env, type MetalAsset } from "@alkeva/shared";
 
 /**
  * The deterministic half of price alerts (F24): thresholds trigger here, in
@@ -62,7 +62,7 @@ export async function checkAlerts(
       thresholdCentsPerGram: alert.threshold.toString(),
       priceCentsPerGram: priceCentsPerGram.toString(),
     };
-    const { subject, text, html } = renderNotification("price_alert", alert.locale, payload);
+    const { subject, text, html } = renderNotification("price_alert", emailLocaleFor(alert.locale), payload);
 
     let status: "queued" | "sent" | "failed" = "queued";
     if (env.SMTP_HOST) {

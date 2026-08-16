@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   Inject,
+  Patch,
   Post,
   Req,
   Res,
@@ -13,7 +14,16 @@ import {
 import { Throttle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { loginDto, registerDto, type Env, type LoginDto, type RegisterDto } from "@alkeva/shared";
+import {
+  DEFAULT_LOCALE,
+  LOCALES,
+  loginDto,
+  registerDto,
+  type Env,
+  type Locale,
+  type LoginDto,
+  type RegisterDto,
+} from "@alkeva/shared";
 import { ENV } from "../core/core.module.js";
 import { ZodPipe } from "../core/zod.pipe.js";
 import {
@@ -26,10 +36,11 @@ import { AuthService, type AccessPayload, type TokenPair } from "./auth.service.
 import { GoogleAuthService } from "./google.service.js";
 
 const recoveryDto = z.object({ email: z.string().email() });
+const localeDto = z.object({ locale: z.enum(LOCALES) });
 const resetDto = z.object({ token: z.string().min(16), password: z.string().min(8) });
 const googleStartDto = z.object({
   intent: z.enum(["login", "register"]).default("login"),
-  locale: z.enum(["am", "en"]).default("am"),
+  locale: z.enum(LOCALES).default(DEFAULT_LOCALE),
 });
 const googleCallbackDto = z.object({ code: z.string().min(1), state: z.string().min(1) });
 
@@ -61,7 +72,9 @@ export class AuthController {
       intent: req.query.intent,
       locale: req.query.locale,
     });
-    const parsed = attempt.success ? attempt.data : { intent: "login" as const, locale: "am" as const };
+    const parsed = attempt.success
+      ? attempt.data
+      : { intent: "login" as const, locale: DEFAULT_LOCALE };
     const url = await this.google.startUrl(parsed.intent, parsed.locale);
     res.redirect(url);
   }
@@ -130,6 +143,15 @@ export class AuthController {
   @UseGuards(AuthGuard)
   async me(@Auth() auth: AccessPayload) {
     return this.auth.me(auth.sub);
+  }
+
+  @Patch("me/locale")
+  @UseGuards(AuthGuard)
+  async setLocale(
+    @Auth() auth: AccessPayload,
+    @Body(new ZodPipe(localeDto)) dto: { locale: Locale },
+  ) {
+    return this.auth.setLocale(auth.sub, dto.locale);
   }
 
   @Post("recover")

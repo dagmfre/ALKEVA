@@ -13,6 +13,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { Locale } from "@alkeva/shared";
 
 /** drizzle has no built-in bytea; KYC documents are stored in-row (≤2 MB). */
 const bytea = customType<{ data: Buffer }>({
@@ -32,7 +33,14 @@ const bytea = customType<{ data: Buffer }>({
 export const assetEnum = pgEnum("asset", ["ETB", "XAU", "XPT"]);
 export const roleEnum = pgEnum("role", ["user", "administrator", "compliance", "finance"]);
 export const userStatusEnum = pgEnum("user_status", ["active", "frozen"]);
-export const localeEnum = pgEnum("locale", ["am", "en"]);
+/**
+ * Locale is plain text, not a pgEnum (migration 0009). Ethiopia has many
+ * working languages and the product intends to keep adding them; widening a
+ * Postgres enum needs a migration per language and `ALTER TYPE … ADD VALUE`
+ * cannot be used in the same transaction that writes it. The allowed set lives
+ * in `@alkeva/shared` LOCALES and is enforced by zod at the API boundary, so a
+ * new language is a translation file and nothing else.
+ */
 export const ownerTypeEnum = pgEnum("owner_type", ["user", "system"]);
 export const txnKindEnum = pgEnum("txn_kind", [
   "deposit",
@@ -98,7 +106,7 @@ export const users = pgTable(
     passwordHash: text("password_hash"),
     fullName: text("full_name").notNull(),
     phone: text("phone"),
-    locale: localeEnum("locale").notNull().default("am"),
+    locale: text("locale").notNull().default("am").$type<Locale>(),
     role: roleEnum("role").notNull().default("user"),
     status: userStatusEnum("status").notNull().default("active"),
     kycTier: integer("kyc_tier").notNull().default(0),

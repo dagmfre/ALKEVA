@@ -15,6 +15,7 @@ import type {
   Env,
   MetalAsset,
   PriceRange,
+  Locale,
 } from "@alkeva/shared";
 import { DB, ENV } from "../core/core.module.js";
 import { OrdersService } from "../orders/orders.service.js";
@@ -379,7 +380,7 @@ export class AiService {
   private async runTurn(
     userId: string,
     history: HistoryStep[],
-    user: { fullName: string; locale: "am" | "en" },
+    user: { fullName: string; locale: Locale },
     frozen: { reason: string; since: string } | null,
   ): Promise<TurnOutcome> {
     const turnSteps: HistoryStep[] = [];

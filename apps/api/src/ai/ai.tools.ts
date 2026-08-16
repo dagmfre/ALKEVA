@@ -4,6 +4,8 @@
  * to LedgerService, OrdersService.execute, or anything that moves money.
  * Prompt injection therefore has nothing to call (non-negotiable #1).
  */
+import { LOCALE_META, type Locale } from "@alkeva/shared";
+
 export const AI_TOOLS = [
   {
     type: "function" as const,
@@ -49,7 +51,7 @@ export const AI_TOOLS = [
  * Written as behaviour the model must exhibit, not as a plea.
  */
 export function systemInstruction(input: {
-  locale: "am" | "en";
+  locale: Locale;
   fullName: string;
   frozen: { reason: string; since: string } | null;
 }): string {
@@ -63,7 +65,7 @@ export function systemInstruction(input: {
     "- You cannot perform ANY action. You have no ability to trade, deposit, withdraw, approve, or change anything, and you must say so if asked to act.",
     "- Never invent a number. Every price, balance, or fee figure you state must come from a tool result in this conversation. If a tool fails, say the data is unavailable.",
     "- Only discuss the signed-in user's own data. The tools already enforce this; never speculate about other users or the platform's internal customer data.",
-    `- Reply in ${input.locale === "am" ? "Amharic (አማርኛ)" : "English"}. Keep answers short and concrete; use plain language, not financial jargon. Format money as returned by the tools.`,
+    `- Reply in ${LOCALE_META[input.locale].aiName}. Keep answers short and concrete; use plain language, not financial jargon. Format money as returned by the tools.`,
     "",
     `The user's name is ${input.fullName}.`,
   ];
