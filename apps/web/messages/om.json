@@ -141,7 +141,8 @@
     "receiptUnitLabel": "Gatii giraama tokkoo",
     "receiptFeeLabel": "Komishinii",
     "receiptTotalLabel": "Ida'ama kaffalame",
-    "receiptSourceLabel": "Madda gatii"
+    "receiptSourceLabel": "Madda gatii",
+    "copyrightCta": "Galmee mirga qophii ilaali"
   },
   "nav": {
     "home": "Fuula duraa",
@@ -787,5 +788,28 @@
       "file_required": "Duraan dursii faayilii waraqaa filadhu.",
       "generic": "Rakkoon uumameera. Maaloo irra deebi'ii yaali."
     }
+  },
+  "credential": {
+    "eyebrow": "Hojii galmaaye",
+    "title": "ALKEVA Itoophiyaa keessatti hojii mirgi qophii isaa galmaayedha",
+    "body": "Abbaan Taayitaa Qabeenya Sammuu Itoophiyaa ALKEVA akka sagantaa kompiyuutaraa eegumsa qabuutti galmeesseera. Ragaan galmee guutuun isaa gadiitti dhiyaateera, lakkoofsonni galmees cinaa isaatti barreeffameera.",
+    "registryHeading": "Galmee ragaa",
+    "factAuthority": "Abbaa taayitaa kenne",
+    "factAuthorityValue": "Abbaa Taayitaa Qabeenya Sammuu Itoophiyaa",
+    "factTitle": "Mata duree hojii",
+    "factRegNo": "Lakkoofsa galmee",
+    "factAppNo": "Lakkoofsa iyyannoo",
+    "factClass": "Ramaddii",
+    "factClassValue": "Sagantaa kompiyuutaraa — apilikeeshinii mobaayilaa",
+    "factScope": "Balina mirgaa",
+    "factScopeValue": "Mirgoota barreessitummaa Labsii Lak. 410/1996 keessatti tarreeffaman hunda",
+    "transcriptNote": "Ragaa galmee irraa garagalfame. Suurri gadii ragaa dha; barreeffamni kun lakkoofsonni akka filataman, barbaadamanii fi dubbifaman taasisa.",
+    "openFullSize": "Ragaa galmee guutuu banii ilaali",
+    "certificateAlt": "Ragaa mirga qophii fi mirgoota walqabatan hojii ALKEVA Abbaa Taayitaa Qabeenya Sammuu Itoophiyaatiin kenname",
+    "caption": "Ragaa mirga qophii fi mirgoota walqabatanii, Abbaa Taayitaa Qabeenya Sammuu Itoophiyaatiin kenname.",
+    "footerNote": "Galmeen mirga qophii hojicha mataa isaa eega. Hayyama faayinaansii miti, kanaaf hayyama seeraa daldalaaf barbaachisu irraa adda.",
+    "termsLink": "Haalota",
+    "privacyLink": "Dhuunfaa",
+    "backToSite": "Gara marsariitii deebii"
   }
 }

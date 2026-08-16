@@ -11,6 +11,7 @@ const PUBLIC_PATHS = [
   "/welcome",
   "/terms",
   "/privacy",
+  "/copyright",
   "/auth/google/callback",
 ];
 

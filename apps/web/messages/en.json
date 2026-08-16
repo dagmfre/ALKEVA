@@ -141,7 +141,8 @@
     "receiptUnitLabel": "Price per gram",
     "receiptFeeLabel": "Commission",
     "receiptTotalLabel": "Total paid",
-    "receiptSourceLabel": "Price source"
+    "receiptSourceLabel": "Price source",
+    "copyrightCta": "View copyright registration"
   },
   "nav": {
     "home": "Home",
@@ -787,5 +788,28 @@
       "file_required": "Choose a document file first.",
       "generic": "Something went wrong. Please try again."
     }
+  },
+  "credential": {
+    "eyebrow": "Registered work",
+    "title": "ALKEVA is a copyright-registered work in Ethiopia",
+    "body": "The Ethiopian Intellectual Property Authority has registered ALKEVA as a protected computer program. The certificate is reproduced in full below, with its registry figures transcribed beside it, so anything claimed here can be checked against the document itself.",
+    "registryHeading": "Registry record",
+    "factAuthority": "Issuing authority",
+    "factAuthorityValue": "Ethiopian Intellectual Property Authority",
+    "factTitle": "Title of the work",
+    "factRegNo": "Registration number",
+    "factAppNo": "Application number",
+    "factClass": "Class",
+    "factClassValue": "Computer program — mobile application",
+    "factScope": "Scope of right",
+    "factScopeValue": "All copyrights listed in Decree No. 410/1996 for the protection of authorship rights",
+    "transcriptNote": "Transcribed from the certificate. The scan is the record; this text exists so the figures can be selected, searched and read aloud.",
+    "openFullSize": "Open the certificate full size",
+    "certificateAlt": "Certificate of Copyrights and Related Rights issued by the Ethiopian Intellectual Property Authority for the work ALKEVA",
+    "caption": "Certificate of Copyrights and Related Rights, issued by the Ethiopian Intellectual Property Authority.",
+    "footerNote": "Copyright registration protects the work itself. It is not a financial licence, and it is separate from the regulatory approvals a trading platform requires.",
+    "termsLink": "Terms",
+    "privacyLink": "Privacy",
+    "backToSite": "Back to site"
   }
 }

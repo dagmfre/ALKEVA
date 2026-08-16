@@ -319,9 +319,18 @@ export default async function WelcomePage() {
               {t("ctaBody")}
             </p>
           </div>
-          <Button size="cta" className="lg:w-auto lg:min-w-[16rem] lg:px-8" asChild>
-            <Link href="/register">{t("heroCta")}</Link>
-          </Button>
+          <div className="flex w-full flex-col gap-3 lg:w-auto lg:min-w-[16rem]">
+            <Button size="cta" className="lg:px-8" asChild>
+              <Link href="/register">{t("heroCta")}</Link>
+            </Button>
+            {/* The registration is evidence, so it sits beside the primary
+                action rather than being buried in the footer — but it stays
+                the quieter of the two: a visitor came here to hold gold, not
+                to read a certificate. */}
+            <Button variant="outline" size="pill" asChild>
+              <Link href="/copyright">{t("copyrightCta")}</Link>
+            </Button>
+          </div>
         </div>
       </section>
 

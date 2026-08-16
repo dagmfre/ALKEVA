@@ -141,7 +141,8 @@
     "receiptUnitLabel": "Qiimaha garaamkiiba",
     "receiptFeeLabel": "Komishan",
     "receiptTotalLabel": "Wadarta la bixiyay",
-    "receiptSourceLabel": "Isha qiimaha"
+    "receiptSourceLabel": "Isha qiimaha",
+    "copyrightCta": "Eeg diiwaangelinta xuquuqda daabacaadda"
   },
   "nav": {
     "home": "Bogga hore",
@@ -787,5 +788,28 @@
       "file_required": "Marka hore dooro faylka dukumentiga.",
       "generic": "Khalad ayaa dhacay. Fadlan mar kale isku day."
     }
+  },
+  "credential": {
+    "eyebrow": "Shaqo diiwaangashan",
+    "title": "ALKEVA waa shaqo xuquuqda daabacaadda lagu diiwaangeliyay Itoobiya",
+    "body": "Hayadda Hantida Maskaxeed ee Itoobiya waxay ALKEVA u diiwaangelisay barnaamij kombuyuutar oo la ilaaliyo. Shahaadada oo dhammaystiran ayaa hoos lagu soo bandhigay, tirooyinka diiwaangelintana dhinaceeda ayaa lagu qoray.",
+    "registryHeading": "Diiwaanka",
+    "factAuthority": "Hayadda bixisay",
+    "factAuthorityValue": "Hayadda Hantida Maskaxeed ee Itoobiya",
+    "factTitle": "Cinwaanka shaqada",
+    "factRegNo": "Lambarka diiwaangelinta",
+    "factAppNo": "Lambarka codsiga",
+    "factClass": "Qaybta",
+    "factClassValue": "Barnaamij kombuyuutar — abka mobilka",
+    "factScope": "Baaxadda xuquuqda",
+    "factScopeValue": "Dhammaan xuquuqaha daabacaadda ee lagu taxay Xeerka Lr. 410/1996 ee ilaalinta xuquuqda qorista",
+    "transcriptNote": "Laga soo guuriyay shahaadada. Sawirka hoose waa caddaynta; qoraalkani wuxuu u oggolaanayaa in tirooyinka la doorto, la raadiyo oo cod lagu akhriyo.",
+    "openFullSize": "Fur shahaadada oo buuxda",
+    "certificateAlt": "Shahaadada Xuquuqda Daabacaadda iyo Xuquuqaha la xiriira ee shaqada ALKEVA oo ay bixisay Hayadda Hantida Maskaxeed ee Itoobiya",
+    "caption": "Shahaadada Xuquuqda Daabacaadda iyo Xuquuqaha la xiriira, oo ay bixisay Hayadda Hantida Maskaxeed ee Itoobiya.",
+    "footerNote": "Diiwaangelinta xuquuqda daabacaadda waxay ilaalisaa shaqada lafteeda. Ma aha ruqsad maaliyadeed, waana ka duwan tahay oggolaanshaha sharciga ee madal ganacsi loo baahan yahay.",
+    "termsLink": "Shuruudaha",
+    "privacyLink": "Asturnaanta",
+    "backToSite": "Ku noqo bogga"
   }
 }
