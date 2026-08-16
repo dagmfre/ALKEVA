@@ -29,6 +29,7 @@ ZONE=europe-west1-b
 PROJECT=alkeva
 VM_HOST=23.251.133.30
 VM_USER=hp
+SITE=https://23-251-133-30.sslip.io
 REMOTE=/opt/alkeva
 COMPOSE="docker compose -f deploy/docker-compose.prod.yml"
 SSH_KEY="${HOME}/.ssh/google_compute_engine"
@@ -107,11 +108,34 @@ ssh_vm "docker image prune -f > /dev/null 2>&1 || true
 
 step "Health"
 ssh_vm "cd ${REMOTE}/app && ${COMPOSE} ps --format '{{.Service}} {{.State}}'"
-for path in /welcome /api/healthz; do
-  code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 25 \
-    "https://23-251-133-30.sslip.io${path}" || echo "---")
-  printf "  %s %s\n" "$code" "$path"
+
+# Nest takes a few seconds to bind after the container starts, so a single
+# immediate probe reports 502 on a perfectly good deploy. Retry before
+# believing it — but do NOT print success on a failing check, which is the
+# whole point of having one.
+FAILED=0
+for path in /welcome /api/healthz /api/prices/latest; do
+  code=000
+  for _ in 1 2 3 4 5 6; do
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+      "${SITE}${path}" || echo 000)
+    [ "$code" = "200" ] && break
+    sleep 5
+  done
+  if [ "$code" = "200" ]; then
+    printf "  \033[32m%s\033[0m %s\n" "$code" "$path"
+  else
+    printf "  \033[31m%s\033[0m %s\n" "$code" "$path"
+    FAILED=1
+  fi
 done
+
+if [ "$FAILED" -eq 1 ]; then
+  printf "\n\033[31m✗ deploy finished but health checks failed\033[0m\n"
+  printf "   ssh -i %s %s@%s\n" "$SSH_KEY" "$VM_USER" "$VM_HOST"
+  printf "   cd %s/app && %s logs --tail=50 api web\n" "$REMOTE" "$COMPOSE"
+  exit 1
+fi
 
 if [ "$TAIL_LOGS" -eq 1 ]; then
   step "Logs (ctrl-c to stop)"
@@ -119,4 +143,4 @@ if [ "$TAIL_LOGS" -eq 1 ]; then
     "${VM_USER}@${VM_HOST}" "cd ${REMOTE}/app && ${COMPOSE} logs -f --tail=40 api web worker"
 fi
 
-printf "\n\033[1m✓ shipped\033[0m  https://23-251-133-30.sslip.io\n"
+printf "\n\033[1m✓ shipped\033[0m  %s\n" "$SITE"
