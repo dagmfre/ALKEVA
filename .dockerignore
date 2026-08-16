@@ -11,9 +11,15 @@ node_modules
 **/.claude
 
 # Secrets never enter the build context — the VM injects them via env_file.
-.env
-.env.*
-!.env.example
+#
+# The `**/` prefix is load-bearing: .dockerignore patterns are anchored at the
+# context root, so a bare `.env.*` misses apps/web/.env.local and
+# apps/api/.env.local entirely. Without it `next build` reads the developer's
+# local .env.local, which bakes local secrets into the image and inlines any
+# NEXT_PUBLIC_* value into the client bundle.
+**/.env
+**/.env.*
+!**/.env.example
 
 docs
 design
