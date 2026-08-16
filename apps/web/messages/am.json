@@ -52,7 +52,9 @@
     "googleSigningIn": "በGoogle መግባት በመጠናቀቅ ላይ…",
     "googleFailed": "በGoogle መግባት አልተጠናቀቀም። እባክዎ እንደገና ይሞክሩ።",
     "passkeyButton": "በይለፍ ቁልፍ ይግቡ",
-    "passkeyFailed": "በይለፍ ቁልፍ መግባት አልተጠናቀቀም።"
+    "passkeyFailed": "በይለፍ ቁልፍ መግባት አልተጠናቀቀም።",
+    "showPassword": "የይለፍ ቃል አሳይ",
+    "hidePassword": "የይለፍ ቃል ደብቅ"
   },
   "public": {
     "signIn": "ግባ",

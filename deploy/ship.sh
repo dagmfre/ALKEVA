@@ -46,10 +46,14 @@ done
 # gcloud's `compute ssh` shells out to PuTTY/plink on Windows, which dropped
 # connections repeatedly mid-deploy. OpenSSH against the key gcloud already
 # generated is the same credential over a stabler client.
+#
+# The banner filter is `sed`, not `grep -v`: grep exits 1 when it emits no
+# lines, and under `set -euo pipefail` that silently aborted the whole deploy
+# the moment a step produced no output.
 ssh_vm() { ssh -n -i "$SSH_KEY" -o StrictHostKeyChecking=no \
   -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 \
   -o ServerAliveInterval=20 -o ServerAliveCountMax=6 \
-  "${VM_USER}@${VM_HOST}" "$@" 2>&1 | grep -v "^Warning: Permanently added"; }
+  "${VM_USER}@${VM_HOST}" "$@" 2>&1 | sed '/^Warning: Permanently added/d'; }
 
 step() { printf "\n\033[1m→ %s\033[0m\n" "$1"; }
 

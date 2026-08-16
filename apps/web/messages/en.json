@@ -52,7 +52,9 @@
     "googleSigningIn": "Finishing sign-in with Google…",
     "googleFailed": "Google sign-in did not complete. Please try again.",
     "passkeyButton": "Sign in with a passkey",
-    "passkeyFailed": "Passkey sign-in did not complete."
+    "passkeyFailed": "Passkey sign-in did not complete.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "public": {
     "signIn": "Sign in",

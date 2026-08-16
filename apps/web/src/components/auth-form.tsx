@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Wordmark } from "@/components/brand/mark";
 import { LocaleToggle } from "@/components/shell/locale-toggle";
+import { Field } from "@/components/auth/field";
 import { PasskeyLoginButton } from "@/components/auth/passkey-login-button";
 import { SystemBanner } from "@/components/system/banner";
 import { api, ApiError } from "@/lib/api";
@@ -232,19 +233,3 @@ function GoogleMark() {
   );
 }
 
-function Field({
-  label,
-  name,
-  ...props
-}: { label: string; name: string } & React.ComponentProps<"input">) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[0.9375rem] font-medium">{label}</span>
-      <input
-        name={name}
-        {...props}
-        className="well min-h-12 rounded-md border-input px-3.5 text-base outline-none transition-colors focus:border-gold-400"
-      />
-    </label>
-  );
-}

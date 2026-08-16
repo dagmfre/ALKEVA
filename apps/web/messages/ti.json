@@ -52,7 +52,9 @@
     "googleSigningIn": "ብGoogle ምእታው ይዛዘም ኣሎ…",
     "googleFailed": "ብGoogle ምእታው ኣይተዛዘመን። በጃኻ እንደገና ፈትን።",
     "passkeyButton": "ብpasskey እቶ",
-    "passkeyFailed": "ብpasskey ምእታው ኣይተዛዘመን።"
+    "passkeyFailed": "ብpasskey ምእታው ኣይተዛዘመን።",
+    "showPassword": "ናይ መሕለፊ ቃል ኣርኢ",
+    "hidePassword": "ናይ መሕለፊ ቃል ሓብእ"
   },
   "public": {
     "signIn": "እቶ",

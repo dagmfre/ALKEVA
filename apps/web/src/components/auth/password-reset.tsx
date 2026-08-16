@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/auth/field";
 import { Wordmark } from "@/components/brand/mark";
 import { LocaleToggle } from "@/components/shell/locale-toggle";
 import { SystemBanner } from "@/components/system/banner";
@@ -154,19 +155,3 @@ function AuthPanel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Field({
-  label,
-  name,
-  ...props
-}: { label: string; name: string } & React.ComponentProps<"input">) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[0.9375rem] font-medium">{label}</span>
-      <input
-        name={name}
-        {...props}
-        className="well min-h-12 rounded-md border-input px-3.5 text-base outline-none transition-colors focus:border-gold-400"
-      />
-    </label>
-  );
-}

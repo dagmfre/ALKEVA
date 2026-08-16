@@ -52,7 +52,9 @@
     "googleSigningIn": "Google'n seenuu xumuraa jira…",
     "googleFailed": "Google'n seenuun hin xumuramne. Maaloo irra deebi'ii yaali.",
     "passkeyButton": "Passkey'n seeni",
-    "passkeyFailed": "Passkey'n seenuun hin xumuramne."
+    "passkeyFailed": "Passkey'n seenuun hin xumuramne.",
+    "showPassword": "Jecha darbii agarsiisi",
+    "hidePassword": "Jecha darbii dhoksi"
   },
   "public": {
     "signIn": "Seeni",

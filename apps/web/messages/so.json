@@ -52,7 +52,9 @@
     "googleSigningIn": "Gelitaanka Google waa la dhammaynayaa…",
     "googleFailed": "Gelitaanka Google ma dhammaystirmin. Fadlan mar kale isku day.",
     "passkeyButton": "Ku gal passkey",
-    "passkeyFailed": "Gelitaanka passkey ma dhammaystirmin."
+    "passkeyFailed": "Gelitaanka passkey ma dhammaystirmin.",
+    "showPassword": "Muuji furaha sirta",
+    "hidePassword": "Qari furaha sirta"
   },
   "public": {
     "signIn": "Gal",
