@@ -56,10 +56,19 @@ done
 # The banner filter is `sed`, not `grep -v`: grep exits 1 when it emits no
 # lines, and under `set -euo pipefail` that silently aborted the whole deploy
 # the moment a step produced no output.
-ssh_vm() { ssh -n -i "$SSH_KEY" -o StrictHostKeyChecking=no \
-  -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 \
-  -o ServerAliveInterval=20 -o ServerAliveCountMax=6 \
-  "${VM_USER}@${VM_HOST}" "$@" 2>&1 | sed '/^Warning: Permanently added/d'; }
+#
+# The `| sed` also swallowed ssh's exit status — the pipeline's status is
+# sed's, which is always 0 — so `set -e` never saw a remote failure and every
+# step "succeeded" no matter what happened on the VM. PIPESTATUS restores it.
+ssh_vm() {
+  local status
+  ssh -n -i "$SSH_KEY" -o StrictHostKeyChecking=no \
+    -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 \
+    -o ServerAliveInterval=20 -o ServerAliveCountMax=6 \
+    "${VM_USER}@${VM_HOST}" "$@" 2>&1 | sed '/^Warning: Permanently added/d'
+  status=${PIPESTATUS[0]}
+  return "$status"
+}
 
 step() { printf "\n\033[1m→ %s\033[0m\n" "$1"; }
 
@@ -107,17 +116,42 @@ ssh_vm "set -e
   mv ${REMOTE}/app.new ${REMOTE}/app
   rm -f ~/alkeva-src.tar.gz"
 
+step "Reclaiming disk before the build"
+# This used to run only AFTER the build, which is too late to help the build
+# that needs the space. A full `next build` plus the image export wants several
+# GB of headroom on a 20 GB disk, and a stale build cache had eaten it: the web
+# layer failed to export with "no space left on device" mid-deploy. Pruning
+# first costs a slower rebuild occasionally and prevents that outright. The
+# running image is in use, so `docker image prune` never touches it.
+ssh_vm "docker image prune -f > /dev/null 2>&1 || true
+  docker builder prune -af > /dev/null 2>&1 || true
+  df -h / | tail -1"
+
+# Run the noisy commands into a log and show the tail only on success; on
+# failure show enough of it to diagnose without a second SSH round trip.
+# `| tail -4` inline would have made the pipeline's status tail's own, which is
+# how a failed build previously sailed through to a "✓ shipped".
+run_step() {
+  local title="$1" cmd="$2" ok_lines="$3"
+  ssh_vm "cd ${REMOTE}/app && { ${cmd}; } > /tmp/alkeva-step.log 2>&1 || {
+      echo '--- failed, last 30 lines ---'; tail -30 /tmp/alkeva-step.log; exit 1; }
+    tail -${ok_lines} /tmp/alkeva-step.log" \
+    || { printf "\n\033[31m✗ %s failed — production left on the previous image\033[0m\n" "$title"; exit 1; }
+}
+
 step "Building image (cached layers reused)"
-ssh_vm "cd ${REMOTE}/app && ${COMPOSE} build 2>&1 | tail -4"
+run_step "build" "${COMPOSE} build" 4
 
 step "Applying migrations and restarting apps"
 # `up -d` runs the one-shot migrate container first (compose waits for it to
 # exit 0) and recreates only services whose image changed.
-ssh_vm "cd ${REMOTE}/app && ${COMPOSE} up -d 2>&1 | tail -6"
+run_step "migrate + restart" "${COMPOSE} up -d" 6
 
-step "Reclaiming disk"
+step "Reclaiming disk after the build"
+# The orphaned image from this build. The cache is left alone here — the
+# pre-build prune above is what guarantees headroom, and keeping this run's
+# cache makes the next deploy's unchanged layers fast.
 ssh_vm "docker image prune -f > /dev/null 2>&1 || true
-  docker builder prune -f --filter until=72h > /dev/null 2>&1 || true
   df -h / | tail -1"
 
 step "Health"
