@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@alkeva/db": "workspace:*",
+    "@alkeva/risk": "workspace:*",
     "@alkeva/shared": "workspace:*",
     "@google/genai": "^2.16.0",
     "@nestjs/common": "^10.4.15",

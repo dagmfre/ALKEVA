@@ -20,6 +20,9 @@ importers:
       '@alkeva/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@alkeva/risk':
+        specifier: workspace:*
+        version: link:../../packages/risk
       '@alkeva/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -196,6 +199,9 @@ importers:
       '@alkeva/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@alkeva/risk':
+        specifier: workspace:*
+        version: link:../../packages/risk
       '@alkeva/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -246,6 +252,25 @@ importers:
       tsx:
         specifier: ^4.19.2
         version: 4.23.8
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
+  packages/risk:
+    dependencies:
+      '@alkeva/db':
+        specifier: workspace:*
+        version: link:../db
+      '@alkeva/shared':
+        specifier: workspace:*
+        version: link:../shared
+      drizzle-orm:
+        specifier: ^0.38.3
+        version: 0.38.4(@types/react@19.2.18)(postgres@3.4.9)(react@19.2.8)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.6
+        version: 22.20.1
       typescript:
         specifier: ^5.7.3
         version: 5.9.3

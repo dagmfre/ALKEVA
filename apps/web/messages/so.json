@@ -198,6 +198,25 @@
     "buyShort": "Iibso",
     "sellShort": "Iibi"
   },
+  "attribution": {
+    "title": "Maxay u dhaqaaqday?",
+    "hint": "Qiimaha macdanta iyo sicirka Birrka",
+    "notEnough": "Taariikh qiimo oo ku filan lama hayo in dhaqdhaqaaqan la kala saaro.",
+    "totalLabel": "{metal} Birrka",
+    "metalLabel": "Qiimaha adduunka ee {metal}",
+    "currencyLabel": "Birrka oo ka soo horjeeda doolarka",
+    "dominant": {
+      "metal": "Inta badan macdanta.",
+      "currency": "Inta badan lacagta.",
+      "both": "Labaduba way dhaqaaqeen, si isku dhow."
+    },
+    "birrWeaker": "Muddadan Birrku wuu ka daciifay doolarka, taasoo keligeed kor u qaadaysa qiimaha Birrka.",
+    "birrStronger": "Muddadan Birrku wuu ka xoogaystay doolarka, taasoo keligeed hoos u dhigaysa qiimaha Birrka.",
+    "birrFlat": "Muddadan sicirka Birrku ma dhaqaaqin.",
+    "interaction": "Isdhexgalka iyo soo koobiddu waxay qabtaan {value}.",
+    "window": "{from} → {to}",
+    "sources": "Ilaha: {metal} · {fx}"
+  },
   "trade": {
     "title": "Ganacsi",
     "buy": "Iibso",
@@ -413,7 +432,28 @@
     "countNote": "{count} rasiid",
     "searchSerial": "Raadi lambarka",
     "noMatch": "Ma jiro rasiid u dhigma lambarkaas.",
-    "clearSearch": "Raadinta tirtir"
+    "clearSearch": "Raadinta tirtir",
+    "proof": {
+      "title": "Caddayn",
+      "hint": "Diiwaanka ka danbeeya rasiidkan",
+      "intro": "Tanu ma aha soo koobid. Kuwani waa qorshayaasha xisaabeed ee macaamilkani qoray — labada dhinac ee dhaqdhaqaaq kasta.",
+      "accountCol": "Akoonka",
+      "amountCol": "Qadarka",
+      "you": "Akoonkaaga",
+      "accounts": {
+        "cash": "Lacagta ALKEVA",
+        "fees": "Komishanka ALKEVA",
+        "tax": "Canshuur la aruuriyay",
+        "reforestation": "Deeqda dhirta lagu beero",
+        "vault": "Khasnadda {metal}"
+      },
+      "checkLabel": "Qorshayaasha {asset} wadarkoodu waa",
+      "balancedYes": "Hanti kastaa waxay noqotaa eber sax ah — waxba lama abuurin, waxbana lama lumin.",
+      "balancedNo": "Qorshayaashani eber ma noqonayaan. Fadlan noo soo sheeg.",
+      "quoteLock": "Qiimaha la xidhay",
+      "provenance": "Isha qiimaha",
+      "askAi": "Luqaddayda igu sharax"
+    }
   },
   "account": {
     "title": "Akoon",
@@ -559,7 +599,11 @@
     "deleteConfirmTitle": "Ma tirtirayaa wada hadalkan?",
     "deleteConfirmBody": "Fariimihiisa si joogto ah ayaa loo tirtirayaa. Dalabyadaada iyo rasiidyadaada waxba kama dhacayaan.",
     "cancel": "Jooji",
-    "today": "Maanta"
+    "today": "Maanta",
+    "exampleWhyMoved": "Maxay dahabku maanta u dhaqaaqay?",
+    "exampleProve": "Caddee macaamilkaygii ugu dambeeyay",
+    "languageNote": "Wuxuu kugu jawaabaa luqadda aad ALKEVA u dooratay.",
+    "proveQuestion": "Caddee macaamilka {serial}. I tus qorshayaasha diiwaanka."
   },
   "notifications": {
     "title": "Ogeysiisyo",
@@ -617,7 +661,9 @@
       "treasury": "Khasnad",
       "compliance": "Baaris",
       "audit": "Diiwaanka hubinta",
-      "delivery": "Qaadis"
+      "delivery": "Qaadis",
+      "revenue": "Dakhliga",
+      "cases": "Kiisaska khatarta"
     },
     "analytics": {
       "days7": "7-dii maalmood ee u dambeeyay",
@@ -644,7 +690,10 @@
       "exportBody": "Dhacdo kasta oo baaris — baarista xadka, go'aannadooda, iyo caddaymaha la duubay — oo CSV ah oo loogu talagalay hay'adda sharciga ama bangiga la shaqeeya.",
       "exportButton": "CSV soo dejiso",
       "rulesTitle": "Xeerarka firfircoon",
-      "rulesBody": "Dalabyada gaaraya ama ka sarreeya xadka baarista waxay sugayaan go'aan baaris ka hor inta aan la dhammaystirin; akoonnada gacan ayaa lagu xannibi karaa lagana furi karaa, sababna waa qasab. Ficil kasta wuxuu galaa diiwaan aan la tirtiri karin."
+      "rulesBody": "Dalabyada gaaraya ama ka sarreeya xadka baarista waxay sugayaan go'aan baaris ka hor inta aan la dhammaystirin; akoonnada gacan ayaa lagu xannibi karaa lagana furi karaa, sababna waa qasab. Ficil kasta wuxuu galaa diiwaan aan la tirtiri karin.",
+      "queueTitle": "Safka kiisaska khatarta",
+      "queueBody": "Xeerar go'an ayaa baaraya dhaqdhaqaaqa dhammaystiran, waxayna furaan kiis uu qof akhriyo. Waxba si otomaatig ah looma xayiro, akoonka la calaamadiyayna looma sheego.",
+      "queueButton": "Fur safka kiisaska"
     },
     "overview": {
       "pendingKyc": "KYC sugaya",
@@ -706,6 +755,17 @@
         "passport": "Baasaboor",
         "driving_licence": "Shatiga darawalnimada",
         "kebele_id": "Aqoonsiga kebele"
+      },
+      "declaredVsRead": "La sheegay / la akhriyay",
+      "readAs": "la akhriyay:",
+      "fullName": "Magac",
+      "docNumber": "Lambar",
+      "expiry": "Dhicitaan",
+      "noDetails": "Faahfaahin lama gudbin",
+      "confidence": {
+        "high": "Dukumeentiga si cad ayaa loo akhriyay",
+        "medium": "Dukumeentiga qayb ahaan waa la akhrin karaa",
+        "low": "Dukumeentiga way adag tahay in la akhriyo"
       }
     },
     "reviews": {
@@ -763,6 +823,114 @@
       "target": "Bartilmaameed",
       "exportCsv": "Soo saar CSV AML",
       "loadMore": "Wax dheeraad ah tus"
+    },
+    "revenue": {
+      "subtitle": "Komishanka la kasbaday, iyo inta aad dhab ahaan ka bixin karto",
+      "allTime": "Komishanka guud ee la kasbaday",
+      "allTimeFoot": "Birr kasta oo madashu komishan ahaan u ururisay — diiwaanka laga akhriyay, ma aha qiyaas.",
+      "windowEarned": "Muddadan",
+      "vsPrev": "marka la barbardhigo muddadii hore",
+      "newActivity": "dhaqdhaqaaqii ugu horreeyay",
+      "today": "Maanta",
+      "monthToDate": "Bishan ilaa maanta",
+      "chartTitle": "Komishanka maalin kasta",
+      "byMetal": "Halka uu ka yimid",
+      "ordersCount": "{count} dalab",
+      "shareOfCommission": "{pct}% komishanka muddadan",
+      "rateTitle": "Qiimaha shaqaynaya",
+      "commissionRate": "Komishan",
+      "perSide": "iibsi iyo iib kasta",
+      "effectiveRate": "Qiimaha dhabta ah",
+      "effectiveFoot": "komishan ÷ ganacsi",
+      "serviceFee": "Khidmadda adeegga",
+      "perOrder": "go'an, dalab kasta",
+      "collectedTitle": "Kuwa dadka kale loo ururiyay",
+      "collectedNote": "Canshuurta iyo lacagta dib-u-dhirta waxaa lagu ururiyaa madasha oo dhinac kale loo gudbiyaa. Dakhligaaga ma aha, lagamana tirinayo lacagta la bixin karo.",
+      "tax": "Canshuur",
+      "reforestation": "Dib-u-dhirid",
+      "positionTitle": "Waxa aad bixin karto",
+      "chapaAvailable": "Haraaga ganacsiga Chapa",
+      "chapaUnavailable": "Ma xidhiidhsana",
+      "customerLiability": "Haraaga macaamiisha",
+      "customerLiabilityHint": "Birr-ka macaamiishaadu ku hayaan madasha. In kastoo isku xisaab ku jiraan, waa lacagtooda.",
+      "payoutHold": "Lacag-bixinta socota",
+      "payoutHoldHint": "Waxaa loo hayaa lacag-bixin la codsaday oo aan weli dhammaan.",
+      "haltBuffer": "Kayd hawleed",
+      "haltBufferHint": "Xadka lacagta ee hoostiisa madashu joojiso soo-iibsiga birta. Waxaa lagu dhigaa qaabaynta khasnadda.",
+      "safeToSweep": "Si ammaan ah loo bixin karo",
+      "safeToSweepNote": "Haraaga ganacsiga oo laga jaray lacagta macaamiisha, lacag-bixinta socota iyo kaydka hawleed. Weligeed taban ma noqoto — dhimashadu waxay u muuqataa eber.",
+      "positionNote": "Lacagta waxaa laga bixiyaa dashboodhka Chapa, halkan lagama bixiyo. Madashani ma laha wado ay lacag diiwaanka ka geeyso qof — si ula kac ah.",
+      "exposureTitle": "Xaaladda birta ee furan",
+      "issued": "macaamiisha la iibiyay",
+      "exposureNote": "Birta ay macaamiishu hayaan oo madashu ku leedahay, lagu qiimeeyay qiimaha hadda. Haddii qiimuhu kaco, deyntuna way kacaysaa — waxaa daboolaya khasnadda.",
+      "contributorsTitle": "Macaamiisha komishanka ugu badan",
+      "customer": "Macmiil",
+      "ordersCol": "Dalabyo",
+      "commission": "Komishan (Birr)",
+      "noContributors": "Muddadan ganacsi la dhammeeyay ma jiro.",
+      "footnote": "Komishanku waa dakhliga kaliya ee madasha. Tirooyinka halkan ku jira dhammaantood waxay ka yimaadeen dalabyo la dhammeeyay iyo diiwaanka labo-geesoodka ah; boggani ma bedeli karo haraa.",
+      "windowVolume": "Xajmiga ganacsiga"
+    },
+    "cases": {
+      "explain": "Xeerarku waxay ku shaqeeyaan jadwal iyo dalab labadaba. Kiis kastaa waa qaab u baahan in qof eego — ma aha go'aan. Xayiraadda akoonku waa fal gooni ah oo si ula kac ah looga sameeyo diiwaanka isticmaalaha.",
+      "runScan": "Hadda baar",
+      "scanning": "Waa la baarayaa…",
+      "scanResult": "Baaritaanku waa dhammaaday: {found} wax la helay, {opened} kiis cusub oo la furay.",
+      "empty": "Halkan kiis kuma jiro.",
+      "resolve": "Xalli",
+      "resolvedBy": "Waxaa xalliyay {email}",
+      "explainAction": "Kiiskan sharax",
+      "explaining": "Waa la qorayaa…",
+      "frozen": "Akoonka waa la xayiray",
+      "tab": {
+        "open": "Furan",
+        "resolved": "La xalliyay"
+      },
+      "col": {
+        "rule": "Xeer",
+        "account": "Akoon",
+        "evidence": "Caddayn",
+        "opened": "La furay"
+      },
+      "severity": {
+        "high": "Sare",
+        "medium": "Dhexe",
+        "low": "Hooseeya"
+      },
+      "rule": {
+        "structuring_near_threshold": "Macaamil hoos yaal xariiqda dib u eegista",
+        "velocity_spike": "Kor u kac lama filaan ah oo ganacsi",
+        "rapid_in_out": "La geliyay dabadeedna la saaray",
+        "new_account_volume": "Xaddi weyn oo akoon cusub",
+        "dormant_reactivation": "Akoon hurday oo dib u kacay",
+        "repeated_refusals": "Dalabyo si isdaba joog ah loo diiday",
+        "txn_over_500k": "Dalab ka sarreeya xariiqda dib u eegista"
+      },
+      "evidence": {
+        "orderCount": "Dalabyo",
+        "combinedCents": "Wadar",
+        "smallestCents": "Ugu yar",
+        "reviewThresholdCents": "Xariiqda dib u eegista",
+        "nearThresholdFloorCents": "Laga tiriyay",
+        "ordersToday": "Dalabyada maanta",
+        "ordersInLookback": "Dalabyadii hore",
+        "lookbackDays": "Maalmaha aasaaska",
+        "dailyAverage": "Celceliska maalintii",
+        "depositedCents": "La geliyay",
+        "withdrawnCents": "La saaray",
+        "returnedPct": "Dib loo celiyay (%)",
+        "windowHours": "Muddo (saacado)",
+        "volumeCents": "Xaddi",
+        "accountAgeDays": "Da'da akoonka (maalmo)",
+        "quietDays": "Maalmo aamusnaa",
+        "lastActivityAt": "Dhaqdhaqaaqii ugu dambeeyay",
+        "refusalCount": "Diidmooyin",
+        "reasons": "Sababo",
+        "side": "Dhinaca",
+        "orderId": "Dalab",
+        "quoteId": "Qiime",
+        "totalCents": "Wadar"
+      }
     }
   },
   "kyc": {
@@ -789,7 +957,14 @@
       "kyc_pending_exists": "Waxaad leedahay gudbin baaris ku jirta.",
       "file_required": "Marka hore dooro faylka dukumentiga.",
       "generic": "Khalad ayaa dhacay. Fadlan mar kale isku day."
-    }
+    },
+    "reading": "Dukumeentiga waa la akhrinayaa…",
+    "readFailed": "Dukumeentiga si otomaatig ah looma akhriyi karin. Fadlan adigu qor faahfaahinta.",
+    "detailsLegend": "Faahfaahintaada",
+    "detailsHint": "Waxaa laga buuxiyay dukumeentigaaga inta suurtagal ah. Ka hor intaadan gudbin hubi goob kasta oo saxo wixii khaldan — kuwani waa faahfaahintaada, ma aha tayada.",
+    "fullNameLabel": "Magaca oo buuxa sida loo daabacay",
+    "docNumberLabel": "Lambarka dukumeentiga",
+    "expiryLabel": "Taariikhda dhicitaanka sida loo daabacay"
   },
   "credential": {
     "eyebrow": "Shaqo diiwaangashan",
@@ -813,5 +988,18 @@
     "termsLink": "Shuruudaha",
     "privacyLink": "Asturnaanta",
     "backToSite": "Ku noqo bogga"
+  },
+  "whatIf": {
+    "title": "Maxaa dhacaya haddii qaybintu duwanaato?",
+    "hint": "Xisaab ku saleysan qiimaha maanta — talo maaha",
+    "noHoldings": "Weli macdan ma haysatid, sidaas darteed waxba lama qaybinayo.",
+    "sliderLabel": "Qaybta dahabka lagu hayo",
+    "atCurrent": "Tanu waa qaybintaada maanta — dahab {pct}%. Dhaqaaji gacanta si aad u aragto waxa qaybin kale u baahan tahay.",
+    "buy": "Iibso {metal}",
+    "sell": "Iibi {metal}",
+    "estimatedFees": "Komishan lagu qiyaasay ({pct}%)",
+    "disclaimer": "Tirooyinkani waxay isticmaalaan qiimaha hadda iyo komishanka shaqeynaya. Waa qiyaas ee ma aha dalab — qiimuhu wuxuu xidhmaa 30 ilbiriqsi, oo kaliya qiimaha aad xaqiijiso ayaa ku qasbaya. ALKEVA ma talin qaybin kasta.",
+    "goToTrade": "Aad ganacsiga",
+    "reset": "Ku noqo qaybintayda"
   }
 }

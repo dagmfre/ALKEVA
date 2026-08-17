@@ -35,6 +35,11 @@ COPY apps/api/package.json      apps/api/package.json
 COPY apps/worker/package.json   apps/worker/package.json
 COPY packages/db/package.json   packages/db/package.json
 COPY packages/shared/package.json packages/shared/package.json
+# Every workspace manifest must be listed here: pnpm resolves the lockfile
+# against the workspace it can see, so a package present in pnpm-lock.yaml but
+# missing from this stage fails `--frozen-lockfile` — and it fails on the VM,
+# not locally, where node_modules is already linked.
+COPY packages/risk/package.json packages/risk/package.json
 # ~660 packages resolve here, several of them large native binaries (next-swc,
 # @swc/core, sharp-libvips). pnpm's defaults gave up on a socket timeout partway
 # through on a slow link; these make the install survive a bad connection rather

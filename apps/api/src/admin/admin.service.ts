@@ -5,17 +5,22 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { and, desc, eq, ilike, isNull, lt, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, isNull, lt, or, sql, type SQL } from "drizzle-orm";
 import { Redis } from "ioredis";
 import {
+  accounts,
   auditLogs,
   complianceEvents,
+  feeConfig,
   freezes,
   kycSubmissions,
+  ledgerEntries,
   orders,
   payments,
   payouts,
+  priceTicks,
   quotes,
+  treasuryConfig,
   users,
   type Db,
 } from "@alkeva/db";
@@ -27,6 +32,8 @@ import type {
   AdminOrderSearchItem,
   AdminOverviewResponse,
   AdminReviewItem,
+  AdminRevenuePointDto,
+  AdminRevenueResponse,
   AdminSearchDto,
   AdminTreasuryResponse,
   AdminUserDetailResponse,
@@ -35,6 +42,7 @@ import type {
   OrderSide,
   OrderStatus,
 } from "@alkeva/shared";
+import { METAL_ASSETS, eatDayStartUtc } from "@alkeva/shared";
 import { DB, REDIS } from "../core/core.module.js";
 import { ChapaService } from "../chapa/chapa.service.js";
 import { LedgerService } from "../ledger/ledger.service.js";
@@ -208,6 +216,268 @@ export class AdminService {
     };
   }
 
+  /**
+   * The owner's revenue view (Decision: administrator = owner).
+   *
+   * Commission is the platform's only income and it already lives in one
+   * place — the `system:fees` account — so the all-time figure is a ledger
+   * balance, not an estimate. The windowed figures re-derive the same money
+   * from the quotes behind settled orders, which is why the two agree.
+   *
+   * Three things are deliberately kept apart on this endpoint:
+   *   income      — commission the owner earned;
+   *   collected   — tax + reforestation, owed to third parties;
+   *   liability   — customer balances, which are NOT earnings and must be
+   *                 subtracted before anything is called withdrawable.
+   */
+  async revenue(days: number): Promise<AdminRevenueResponse> {
+    const span = Math.min(Math.max(days, 7), 365);
+    const since = new Date(Date.now() - span * 24 * 3600 * 1000);
+    since.setUTCHours(0, 0, 0, 0);
+    const prevSince = new Date(since.getTime() - span * 24 * 3600 * 1000);
+    // postgres.js binds raw-sql params as strings — a Date object would throw.
+    const sinceIso = since.toISOString();
+    const prevSinceIso = prevSince.toISOString();
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+    const settled = eq(orders.status, "settled");
+
+    const [
+      cfgRows,
+      tcfgRows,
+      dayRows,
+      assetRows,
+      contributorRows,
+      prevRow,
+      todayRow,
+      monthRow,
+      feesAllTime,
+      taxAllTime,
+      reforestAllTime,
+      payoutHold,
+      systemCash,
+      liabilityRow,
+      priceRows,
+      vaultBalances,
+    ] = await Promise.all([
+      this.db.select().from(feeConfig).where(eq(feeConfig.id, 1)).limit(1),
+      this.db.select().from(treasuryConfig).where(eq(treasuryConfig.id, 1)).limit(1),
+      this.db
+        .select({
+          day: sql<string>`to_char(${orders.settledAt}, 'YYYY-MM-DD')`,
+          side: orders.side,
+          fee: sql<string>`coalesce(sum(${quotes.feeCents}), 0)::text`,
+          volume: sql<string>`coalesce(sum(${quotes.totalCents}), 0)::text`,
+          n: sql<number>`count(*)::int`,
+        })
+        .from(orders)
+        .innerJoin(quotes, eq(orders.quoteId, quotes.id))
+        .where(and(settled, sql`${orders.settledAt} >= ${sinceIso}`))
+        .groupBy(sql`1`, orders.side),
+      this.db
+        .select({
+          asset: orders.asset,
+          fee: sql<string>`coalesce(sum(${quotes.feeCents}), 0)::text`,
+          volume: sql<string>`coalesce(sum(${quotes.totalCents}), 0)::text`,
+          n: sql<number>`count(*)::int`,
+        })
+        .from(orders)
+        .innerJoin(quotes, eq(orders.quoteId, quotes.id))
+        .where(and(settled, sql`${orders.settledAt} >= ${sinceIso}`))
+        .groupBy(orders.asset),
+      this.db
+        .select({
+          userId: orders.userId,
+          email: users.email,
+          fullName: users.fullName,
+          fee: sql<string>`coalesce(sum(${quotes.feeCents}), 0)::text`,
+          n: sql<number>`count(*)::int`,
+        })
+        .from(orders)
+        .innerJoin(quotes, eq(orders.quoteId, quotes.id))
+        .innerJoin(users, eq(orders.userId, users.id))
+        .where(and(settled, sql`${orders.settledAt} >= ${sinceIso}`))
+        .groupBy(orders.userId, users.email, users.fullName)
+        .orderBy(sql`sum(${quotes.feeCents}) desc`)
+        .limit(5),
+      this.sumFees(sql`${orders.settledAt} >= ${prevSinceIso} and ${orders.settledAt} < ${sinceIso}`),
+      this.sumFees(sql`${orders.settledAt} >= ${eatDayStartUtc().toISOString()}`),
+      this.sumFees(sql`${orders.settledAt} >= ${monthStart.toISOString()}`),
+      this.systemBalance("system:fees"),
+      this.systemBalance("system:tax"),
+      this.systemBalance("system:reforestation"),
+      this.systemBalance("system:payout_hold"),
+      this.systemBalance("system:cash"),
+      // Everything held in customer accounts — the platform's ETB liability.
+      this.db
+        .select({ cents: sql<string>`coalesce(sum(${ledgerEntries.amount}), 0)::text` })
+        .from(ledgerEntries)
+        .innerJoin(accounts, eq(accounts.id, ledgerEntries.accountId))
+        .where(and(isNull(accounts.systemName), eq(ledgerEntries.asset, "ETB"))),
+      // Latest tick per metal, for the exposure valuation.
+      this.db
+        .select({ asset: priceTicks.asset, price: priceTicks.etbCentsPerGram, at: priceTicks.at })
+        .from(priceTicks)
+        .where(sql`${priceTicks.at} >= now() - interval '2 days'`)
+        .orderBy(desc(priceTicks.at))
+        .limit(200),
+      Promise.all(
+        METAL_ASSETS.map(async (asset) => ({
+          asset,
+          balance: await this.systemBalance(`system:vault:${asset}`),
+        })),
+      ),
+    ]);
+
+    const cfg = cfgRows[0];
+    const tcfg = tcfgRows[0];
+    if (!cfg || !tcfg) throw new NotFoundException("config_missing");
+
+    // Zero-filled day axis through today — a day with no trades earned 0, and
+    // that is a fact worth drawing rather than a gap to interpolate over.
+    const dayCount = Math.floor((Date.now() - since.getTime()) / 86_400_000) + 1;
+    const byDay = new Map<string, AdminRevenuePointDto>();
+    for (let i = 0; i < dayCount; i++) {
+      const key = new Date(since.getTime() + i * 86_400_000).toISOString().slice(0, 10);
+      byDay.set(key, { day: key, buyFeeCents: "0", sellFeeCents: "0", volumeCents: "0", orders: 0 });
+    }
+    for (const r of dayRows) {
+      const p = byDay.get(r.day);
+      if (!p) continue;
+      if (r.side === "buy") p.buyFeeCents = r.fee;
+      else p.sellFeeCents = r.fee;
+      p.volumeCents = (BigInt(p.volumeCents) + BigInt(r.volume)).toString();
+      p.orders += r.n;
+    }
+    const points = [...byDay.values()];
+
+    const windowCents = points.reduce(
+      (acc, p) => acc + BigInt(p.buyFeeCents) + BigInt(p.sellFeeCents),
+      0n,
+    );
+    const windowVolume = points.reduce((acc, p) => acc + BigInt(p.volumeCents), 0n);
+    const windowOrders = points.reduce((acc, p) => acc + p.orders, 0);
+
+    // First price seen per asset — the query is newest-first, so that is the
+    // latest tick.
+    const latestPrice = new Map<string, bigint>();
+    for (const row of priceRows) {
+      if (!latestPrice.has(row.asset)) latestPrice.set(row.asset, row.price);
+    }
+    const exposure = vaultBalances.map(({ asset, balance }) => {
+      // A negative vault balance is metal issued to customers.
+      const issuedMg = balance < 0n ? -balance : 0n;
+      const price = latestPrice.get(asset) ?? 0n;
+      return {
+        asset,
+        issuedMg: issuedMg.toString(),
+        unitPriceCents: price.toString(),
+        valueCents: ((issuedMg * price) / 1000n).toString(),
+      };
+    });
+
+    const liability = BigInt(liabilityRow[0]?.cents ?? "0");
+    const chapaAvailable = await this.chapaAvailableCents();
+    const safeToSweep =
+      chapaAvailable === null
+        ? null
+        : chapaAvailable - liability - payoutHold - tcfg.haltThresholdCents;
+
+    return {
+      days: span,
+      rate: {
+        commissionPctMilli: cfg.commissionPctMilli,
+        serviceFeeCents: cfg.serviceFeeCents.toString(),
+        taxPctMilli: cfg.taxPctMilli,
+        reforestPctMilli: cfg.reforestPctMilli,
+      },
+      earnings: {
+        allTimeCents: feesAllTime.toString(),
+        windowCents: windowCents.toString(),
+        prevWindowCents: prevRow.toString(),
+        todayCents: todayRow.toString(),
+        monthToDateCents: monthRow.toString(),
+        windowVolumeCents: windowVolume.toString(),
+        windowOrders,
+        effectiveRatePctMilli:
+          windowVolume === 0n ? null : ((windowCents * 100_000n) / windowVolume).toString(),
+        taxAllTimeCents: taxAllTime.toString(),
+        reforestAllTimeCents: reforestAllTime.toString(),
+      },
+      points,
+      byAsset: assetRows.map((r) => ({
+        asset: r.asset as MetalAsset,
+        feeCents: r.fee,
+        volumeCents: r.volume,
+        orders: r.n,
+      })),
+      topContributors: contributorRows.map((r) => ({
+        userId: r.userId,
+        email: r.email,
+        fullName: r.fullName,
+        feeCents: r.fee,
+        orders: r.n,
+      })),
+      position: {
+        userEtbLiabilityCents: liability.toString(),
+        payoutHoldCents: payoutHold.toString(),
+        systemCashCents: systemCash.toString(),
+        haltThresholdCents: tcfg.haltThresholdCents.toString(),
+        chapaAvailableCents: chapaAvailable === null ? null : chapaAvailable.toString(),
+        safeToSweepCents:
+          safeToSweep === null ? null : (safeToSweep > 0n ? safeToSweep : 0n).toString(),
+      },
+      exposure,
+      asOf: new Date().toISOString(),
+    };
+  }
+
+  /** Commission summed over settled orders matching an extra time predicate. */
+  private async sumFees(where: SQL): Promise<bigint> {
+    const rows = await this.db
+      .select({ cents: sql<string>`coalesce(sum(${quotes.feeCents}), 0)::text` })
+      .from(orders)
+      .innerJoin(quotes, eq(orders.quoteId, quotes.id))
+      .where(and(eq(orders.status, "settled"), where));
+    return BigInt(rows[0]?.cents ?? "0");
+  }
+
+  private async systemBalance(systemName: string): Promise<bigint> {
+    const rows = await this.db
+      .select({ cents: sql<string>`coalesce(sum(${ledgerEntries.amount}), 0)::text` })
+      .from(accounts)
+      .leftJoin(ledgerEntries, eq(ledgerEntries.accountId, accounts.id))
+      .where(eq(accounts.systemName, systemName));
+    return BigInt(rows[0]?.cents ?? "0");
+  }
+
+  /**
+   * Merchant ETB balance in cents, or null when Chapa is unconfigured or
+   * unreachable. Never throws — an unavailable payment provider must not take
+   * the revenue page down with it; the panel says so instead.
+   */
+  private async chapaAvailableCents(): Promise<bigint | null> {
+    if (!this.chapa.configured) return null;
+    try {
+      const cached = await this.redis.get(CHAPA_BALANCE_CACHE_KEY);
+      const balances = cached
+        ? (JSON.parse(cached) as { currency: string; availableBalance: number }[])
+        : (await this.chapa.balances()).map((b) => ({
+            currency: b.currency,
+            availableBalance: b.available_balance,
+            ledgerBalance: b.ledger_balance,
+          }));
+      if (!cached) {
+        await this.redis.set(CHAPA_BALANCE_CACHE_KEY, JSON.stringify(balances), "EX", 60);
+      }
+      const etb = balances.find((b) => b.currency === "ETB");
+      return etb ? BigInt(Math.round(etb.availableBalance * 100)) : null;
+    } catch {
+      return null;
+    }
+  }
+
   async listUsers(dto: AdminSearchDto): Promise<{ users: AdminUserItem[] }> {
     const where = dto.q
       ? or(ilike(users.email, `%${dto.q}%`), ilike(users.fullName, `%${dto.q}%`))
@@ -355,6 +625,13 @@ export class AdminService {
         status: r.submission.status,
         fileName: r.submission.fileRef,
         createdAt: r.submission.createdAt.toISOString(),
+        declaredFullName: r.submission.declaredFullName,
+        declaredDocNumber: r.submission.declaredDocNumber,
+        declaredExpiry: r.submission.declaredExpiry,
+        extractedFullName: r.submission.extractedFullName,
+        extractedDocNumber: r.submission.extractedDocNumber,
+        extractedExpiry: r.submission.extractedExpiry,
+        extractedConfidence: r.submission.extractedConfidence,
       })),
     };
   }

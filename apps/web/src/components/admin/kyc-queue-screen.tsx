@@ -60,12 +60,22 @@ export function AdminKycScreen() {
         <p className="text-[0.9375rem] text-muted-foreground">{t("kyc.empty")}</p>
       ) : (
         <AdminTable
-          headers={[t("users.email"), t("kyc.docType"), t("kyc.document"), t("orders.when"), ""]}
+          headers={[
+            t("users.email"),
+            t("kyc.docType"),
+            t("kyc.declaredVsRead"),
+            t("kyc.document"),
+            t("orders.when"),
+            "",
+          ]}
         >
           {(data?.submissions ?? []).map((s) => (
             <tr key={s.id}>
               <Td className="font-latin">{s.userEmail}</Td>
               <Td>{t(`kyc.docTypes.${s.docType}` as never)}</Td>
+              <Td className="max-w-[22rem]">
+                <IdentityCompare item={s} />
+              </Td>
               <Td>
                 {/* The proxy path keeps the auth cookie first-party. */}
                 <a
@@ -105,5 +115,58 @@ export function AdminKycScreen() {
         </AdminTable>
       )}
     </div>
+  );
+}
+
+/**
+ * What the user declared, beside what was read off the image.
+ *
+ * The reading is a transcription — it verifies nothing, and a disagreement is
+ * not evidence of fraud. It is a reason to look at the document, which is the
+ * one thing this column is for. Both values are always shown; the extraction
+ * never replaces or corrects the user's own claim.
+ */
+function IdentityCompare({ item }: { item: AdminKycItem }) {
+  const t = useTranslations("admin");
+  const rows: { label: string; declared: string | null; read: string | null }[] = [
+    { label: t("kyc.fullName"), declared: item.declaredFullName, read: item.extractedFullName },
+    { label: t("kyc.docNumber"), declared: item.declaredDocNumber, read: item.extractedDocNumber },
+    { label: t("kyc.expiry"), declared: item.declaredExpiry, read: item.extractedExpiry },
+  ];
+  const any = rows.some((r) => r.declared || r.read);
+  if (!any) {
+    return <span className="text-[0.8125rem] text-subtle">{t("kyc.noDetails")}</span>;
+  }
+
+  const norm = (v: string | null) => (v ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+
+  return (
+    <span className="flex flex-col gap-1">
+      {rows.map((r) => {
+        // Only a disagreement between two present values is worth marking.
+        // A blank on either side means "not read", which is not a mismatch.
+        const mismatch = Boolean(r.declared && r.read && norm(r.declared) !== norm(r.read));
+        return (
+          <span key={r.label} className="text-[0.8125rem] leading-snug">
+            <span className="text-subtle">{r.label}: </span>
+            <span className={mismatch ? "text-loss" : "text-foreground"}>
+              {r.declared ?? "—"}
+            </span>
+            {r.read && r.read !== r.declared && (
+              <span className={mismatch ? "text-loss" : "text-muted-foreground"}>
+                {" "}
+                / {t("kyc.readAs")} {r.read}
+              </span>
+            )}
+            {mismatch && <span className="ms-1 text-loss">⚠</span>}
+          </span>
+        );
+      })}
+      {item.extractedConfidence && (
+        <span className="text-[0.75rem] text-subtle">
+          {t(`kyc.confidence.${item.extractedConfidence}` as never)}
+        </span>
+      )}
+    </span>
   );
 }

@@ -7,6 +7,7 @@ import type { ReceiptResponse } from "@alkeva/shared";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Mark } from "@/components/brand/mark";
+import { ProofPanel } from "@/components/receipt/proof-panel";
 import { eatStamp, grams, money } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
 
@@ -174,6 +175,8 @@ export function ReceiptScreen({ orderId }: { orderId: string }) {
           </footer>
         </article>
       )}
+
+      {data && <ProofPanel orderId={orderId} className="mx-auto mt-4 w-full max-w-[40rem]" />}
     </div>
   );
 }

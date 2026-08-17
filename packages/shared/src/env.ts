@@ -93,6 +93,16 @@ export const envSchema = z.object({
   // review instead of settling. Resolution UI arrives in Phase 5.
   COMPLIANCE_REVIEW_THRESHOLD_CENTS: z.coerce.bigint().positive().default(50_000_000n),
 
+  // Phase 8 — the AML rules engine (spec F20/F22). Advisory only: the scan
+  // opens cases for a human, it never freezes an account or blocks a trade.
+  // 0 disables the worker's periodic pass; the admin "Run scan now" button
+  // keeps working either way.
+  RISK_SCAN_INTERVAL_SECONDS: z.coerce.number().int().min(0).default(300),
+  // "Just under the review line", as a percentage of it — the structuring rule.
+  RISK_NEAR_THRESHOLD_PCT: z.coerce.number().int().min(1).max(100).default(80),
+  // Trailing window for per-account baselines (the velocity rule).
+  RISK_LOOKBACK_DAYS: z.coerce.number().int().min(1).max(365).default(30),
+
   SEED_ADMIN_EMAIL: z.string().email().default("admin@alkeva.local"),
   // No default password since the production stage: empty = the seed skips
   // creating/resetting the administrator and logs the skip loudly. A known

@@ -17,11 +17,13 @@ import type {
   PriceRange,
   Locale,
 } from "@alkeva/shared";
+import { LOCALE_META } from "@alkeva/shared";
 import { DB, ENV } from "../core/core.module.js";
 import { OrdersService } from "../orders/orders.service.js";
 import { PortfolioService } from "../portfolio/portfolio.service.js";
 import { PricesService } from "../prices/prices.service.js";
-import { AI_TOOLS, systemInstruction } from "./ai.tools.js";
+import { AI_TOOLS, FALLBACK_REPLY, systemInstruction } from "./ai.tools.js";
+import { classifyGeminiError, retryAfterSecondsFrom, toApiError } from "./gemini-errors.js";
 
 /** Interactions API step shapes we touch (SDK ≥2.x, stateless mode). */
 interface FunctionCallStep {
@@ -51,35 +53,6 @@ const STEPS_WINDOW = 6;
 const MAX_CONTEXT_CHARS = 50_000;
 /** One in-request retry for transient network/5xx failures. */
 const TRANSIENT_RETRY_DELAY_MS = 1_500;
-const DEFAULT_RETRY_AFTER_SECONDS = 30;
-
-type GeminiErrorKind = "rate_limited" | "invalid_history" | "transient" | "unknown";
-
-/**
- * Sort a Gemini failure into what the caller should do about it. Everything
- * used to funnel into one 503 "busy" — a quota hit, a poisoned history row and
- * a Render cold-start all looked identical and none recovered.
- */
-function classifyGeminiError(err: unknown): GeminiErrorKind {
-  const status =
-    typeof (err as { status?: unknown }).status === "number"
-      ? (err as { status: number }).status
-      : typeof (err as { code?: unknown }).code === "number"
-        ? (err as { code: number }).code
-        : null;
-  const msg = err instanceof Error ? `${err.name} ${err.message}` : String(err);
-  if (status === 429 || /RESOURCE_EXHAUSTED|\b429\b|quota/i.test(msg)) return "rate_limited";
-  if (status === 400 || /INVALID_ARGUMENT|\b400\b|signature/i.test(msg)) return "invalid_history";
-  if (
-    (status !== null && status >= 500) ||
-    /UNAVAILABLE|DEADLINE|INTERNAL|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|fetch failed|network|socket|abort/i.test(
-      msg,
-    )
-  ) {
-    return "transient";
-  }
-  return "unknown";
-}
 
 /**
  * Shape-check stored steps before replaying them. Returns null when the row is
@@ -102,16 +75,6 @@ function sanitizeSteps(steps: HistoryStep[]): HistoryStep[] | null {
   return steps;
 }
 
-/** Best effort at the provider's suggested backoff (RetryInfo / Retry-After style hints). */
-function retryAfterSecondsFrom(err: unknown): number {
-  const msg = err instanceof Error ? err.message : String(err);
-  const m = /retry(?:-|\s)?(?:after|delay)['":\s]*(\d+)/i.exec(msg);
-  const parsed = m ? Number(m[1]) : NaN;
-  return Number.isFinite(parsed) && parsed > 0 && parsed <= 300
-    ? parsed
-    : DEFAULT_RETRY_AFTER_SECONDS;
-}
-
 function fmtEtb(cents: bigint | string): string {
   const v = typeof cents === "bigint" ? cents : BigInt(cents || "0");
   const sign = v < 0n ? "-" : "";
@@ -124,6 +87,13 @@ function fmtEtb(cents: bigint | string): string {
 function fmtGrams(mg: bigint | string): string {
   const v = typeof mg === "bigint" ? mg : BigInt(mg || "0");
   return `${v / 1000n}.${(v % 1000n).toString().padStart(3, "0")} g`;
+}
+
+/** Milli-percent → a signed display string the model quotes verbatim. */
+function fmtPct(milli: string | null): string | null {
+  if (milli === null) return null;
+  const v = Number(milli) / 1000;
+  return `${v > 0 ? "+" : ""}${v.toFixed(2)}%`;
 }
 
 /**
@@ -227,10 +197,7 @@ export class AiService {
     const { turnSteps, tokensIn, tokensOut, toolCallLog } = outcome;
 
     if (!reply) {
-      reply =
-        user.locale === "am"
-          ? "ይቅርታ፣ ለዚህ ጥያቄ መልስ ማዘጋጀት አልቻልኩም። እባክዎ እንደገና ይሞክሩ።"
-          : "Sorry — I could not put together an answer for that. Please try again.";
+      reply = FALLBACK_REPLY[user.locale] ?? FALLBACK_REPLY.en;
     }
 
     await this.db.insert(aiMessages).values([
@@ -519,6 +486,74 @@ export class AiService {
   }
 
   /**
+   * Write a compliance officer's case summary in their own language.
+   *
+   * Deliberately unlike chat(): no tools are passed, no conversation is stored,
+   * and no user data is fetched. The model receives only the evidence a
+   * deterministic rule already produced, and its job is to put it in a
+   * sentence. It is never asked whether the finding is real — that question was
+   * answered by the rule, and the decision that follows belongs to the officer,
+   * whose action is separately audited.
+   */
+  async narrateCase(input: {
+    locale: Locale;
+    ruleKey: string;
+    severity: string | null;
+    score: number | null;
+    openedAt: string;
+    windowStart: string | null;
+    evidence: Record<string, unknown>;
+  }): Promise<string> {
+    if (!this.env.GEMINI_API_KEY) throw new ServiceUnavailableException("ai_unconfigured");
+    this.client ??= new GoogleGenAI({ apiKey: this.env.GEMINI_API_KEY });
+
+    const system = [
+      "You write case notes for an anti-money-laundering officer at ALKEVA, a gold and platinum custody platform in Ethiopia. Money is Ethiopian birr (ETB); metal amounts are in grams.",
+      "",
+      `Write in ${LOCALE_META[input.locale].aiName}. Copy every figure exactly as given, in Western digits — never restate a number in another numeral system and never re-round one.`,
+      "",
+      "Write 2-4 short sentences, in this order: what the rule detected, the specific figures that triggered it, and what a reviewer should check next.",
+      "",
+      "Hard rules:",
+      "- Use ONLY the evidence given. Never invent a figure, a date, a name, or a motive.",
+      "- Never state or imply that the account holder is guilty, is laundering money, or has committed a crime. The finding is a pattern worth review, nothing more.",
+      "- Never recommend freezing, blocking, or any action on the account. You are describing evidence for a person who decides.",
+      "- No greeting, no sign-off, no headings. Plain sentences.",
+    ].join("\n");
+
+    const facts = JSON.stringify(
+      {
+        rule: input.ruleKey,
+        severity: input.severity,
+        score: input.score,
+        openedAt: input.openedAt,
+        coversPeriodFrom: input.windowStart,
+        evidence: input.evidence,
+      },
+      null,
+      1,
+    );
+
+    let interaction: unknown;
+    try {
+      interaction = await this.client.interactions.create({
+        model: this.env.GEMINI_MODEL,
+        store: false,
+        input: [{ type: "user_input", content: [{ type: "text", text: facts }] }],
+        system_instruction: system,
+      } as never);
+    } catch (err) {
+      // Google's quota wording carries billing URLs and project ids — logged,
+      // never handed to the officer, who just needs to know to try later.
+      throw toApiError(err, "compliance case narrative");
+    }
+
+    const text = (interaction as { output_text?: string | null }).output_text ?? "";
+    if (!text.trim()) throw new ServiceUnavailableException("ai_unavailable");
+    return text.trim();
+  }
+
+  /**
    * Tool dispatch. userId comes from the JWT, full stop. Results carry
    * pre-formatted display strings so the model quotes, never computes.
    */
@@ -582,6 +617,88 @@ export class AiService {
             // For 24h the canonical figure above IS the range change — sending
             // a second, bucket-derived number made the model quote both.
             changeOverRangePct: range === "24h" ? undefined : changePct,
+          };
+        }
+        case "explain_price_move": {
+          const asset = args.asset === "XPT" ? "XPT" : "XAU";
+          const range = (["24h", "7d", "30d", "1y"] as const).includes(args.range as PriceRange)
+            ? (args.range as PriceRange)
+            : "24h";
+          const a = await this.prices.attribution(asset as MetalAsset, range);
+          if (a.totalPctMilli === null) {
+            return {
+              metal: asset === "XAU" ? "gold" : "platinum",
+              range,
+              error: "not_enough_history",
+              note: "There is not enough price history yet to split this move.",
+            };
+          }
+          return {
+            metal: asset === "XAU" ? "gold" : "platinum",
+            range,
+            priceNow: fmtEtb(a.to.etbCentsPerGram),
+            priceThen: fmtEtb(a.from.etbCentsPerGram),
+            // The whole move, then the two halves it is made of. They
+            // reconcile exactly: total = metal + currency + interaction.
+            totalChangePct: fmtPct(a.totalPctMilli),
+            metalPriceChangePct: fmtPct(a.metalPctMilli),
+            birrRateChangePct: fmtPct(a.fxPctMilli),
+            interactionAndRoundingPct: fmtPct(a.crossPctMilli),
+            biggerCause: a.dominant,
+            birrDirection:
+              a.fxPctMilli === null
+                ? null
+                : BigInt(a.fxPctMilli) > 0n
+                  ? "the birr weakened against the dollar"
+                  : BigInt(a.fxPctMilli) < 0n
+                    ? "the birr strengthened against the dollar"
+                    : "the birr rate was unchanged",
+            from: a.from.at,
+            to: a.to.at,
+            source: a.source,
+            fxSource: a.fxSource,
+          };
+        }
+        case "get_transaction_proof": {
+          const serial = typeof args.serial === "string" ? args.serial.trim() : "";
+          const orderId = serial
+            ? await this.orders.findBySerial(userId, serial)
+            : await this.orders.latestSettledId(userId);
+          if (!orderId) {
+            return {
+              error: serial ? "receipt_not_found" : "no_settled_orders",
+              note: serial
+                ? "No settled transaction of theirs carries that receipt number."
+                : "They have no settled transactions yet.",
+            };
+          }
+          const p = await this.orders.proof(userId, orderId);
+          return {
+            receiptSerial: p.serial,
+            what: `${p.side} ${p.asset === "XAU" ? "gold" : "platinum"}`,
+            amount: fmtGrams(p.gramsMg),
+            settledAt: p.settledAt,
+            total: fmtEtb(p.quote.totalCents),
+            fee: fmtEtb(p.quote.feeCents),
+            priceLockedAt: fmtEtb(p.quote.unitEtbCentsPerGram),
+            quoteIssuedAt: p.quote.createdAt,
+            quoteExpiredAt: p.quote.expiresAt,
+            // Every entry, both sides. The user's own account reads "you".
+            ledgerEntries: p.legs.map((l) => ({
+              account: l.account,
+              amount: l.asset === "ETB" ? fmtEtb(l.amount) : fmtGrams(l.amount),
+            })),
+            // The check, stated as a result rather than left to be computed.
+            zeroSumCheck: p.checks.map((c) => ({
+              asset: c.asset,
+              total: c.asset === "ETB" ? fmtEtb(c.sum) : fmtGrams(c.sum),
+              balanced: c.balanced,
+            })),
+            allEntriesBalance: p.balanced,
+            priceSource: p.price.source,
+            fxSource: p.price.fxSource,
+            priceTakenAt: p.price.at,
+            ledgerTransactionId: p.ledgerTransactionId,
           };
         }
         case "get_my_history": {

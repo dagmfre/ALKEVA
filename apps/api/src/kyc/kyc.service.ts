@@ -7,8 +7,16 @@ import {
 } from "@nestjs/common";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { auditLogs, kycSubmissions, users, type Db } from "@alkeva/db";
-import type { KycDocType, KycMeResponse, KycStatus } from "@alkeva/shared";
-import { DB } from "../core/core.module.js";
+import type {
+  Env,
+  KycDeclaredDto,
+  KycDocType,
+  KycExtractionDto,
+  KycMeResponse,
+  KycStatus,
+} from "@alkeva/shared";
+import { VisionService } from "../ai/vision.service.js";
+import { DB, ENV } from "../core/core.module.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
@@ -30,10 +38,33 @@ export interface UploadedDoc {
 export class KycService {
   constructor(
     @Inject(DB) private readonly db: Db,
+    @Inject(ENV) private readonly env: Env,
     private readonly notifications: NotificationsService,
+    private readonly vision: VisionService,
   ) {}
 
-  async submit(userId: string, docType: KycDocType, file: UploadedDoc): Promise<KycMeResponse> {
+  /**
+   * Preview extraction: read the document and hand the fields back so the user
+   * can correct them before submitting. Stores nothing — the authoritative
+   * extraction is re-run server-side at submit, against the bytes we actually
+   * keep, so a client cannot substitute a transcription of its own.
+   */
+  async preview(file: UploadedDoc): Promise<{ extraction: KycExtractionDto | null }> {
+    if (!ALLOWED_MIMES.has(file.mimetype)) {
+      throw new BadRequestException("unsupported_file_type");
+    }
+    if (file.size > MAX_FILE_BYTES || file.buffer.length > MAX_FILE_BYTES) {
+      throw new BadRequestException("file_too_large");
+    }
+    return { extraction: await this.vision.extractIdFields(file.buffer, file.mimetype) };
+  }
+
+  async submit(
+    userId: string,
+    docType: KycDocType,
+    file: UploadedDoc,
+    declared: KycDeclaredDto = {},
+  ): Promise<KycMeResponse> {
     if (!ALLOWED_MIMES.has(file.mimetype)) {
       throw new BadRequestException("unsupported_file_type");
     }
@@ -48,6 +79,16 @@ export class KycService {
       .limit(1);
     if (pending.length > 0) throw new ConflictException("kyc_pending_exists");
 
+    // Read the stored bytes ourselves rather than trusting anything the client
+    // sent. Extraction failing must never cost the user their submission — the
+    // document is what matters, the transcription is a convenience.
+    let extraction: KycExtractionDto | null = null;
+    try {
+      extraction = await this.vision.extractIdFields(file.buffer, file.mimetype);
+    } catch (err) {
+      console.error(`kyc extraction failed: ${(err as Error).message}`);
+    }
+
     const inserted = await this.db
       .insert(kycSubmissions)
       .values({
@@ -56,6 +97,15 @@ export class KycService {
         fileRef: file.originalname.slice(0, 200),
         fileData: file.buffer,
         fileMime: file.mimetype,
+        declaredFullName: declared.fullName?.trim() || null,
+        declaredDocNumber: declared.docNumber?.trim() || null,
+        declaredExpiry: declared.expiry?.trim() || null,
+        extractedFullName: extraction?.fullName ?? null,
+        extractedDocNumber: extraction?.docNumber ?? null,
+        extractedExpiry: extraction?.expiry ?? null,
+        extractedConfidence: extraction?.confidence ?? null,
+        extractedAt: extraction ? new Date() : null,
+        extractionModel: extraction ? this.env.GEMINI_MODEL : null,
       })
       .returning({ id: kycSubmissions.id });
 
@@ -88,6 +138,9 @@ export class KycService {
         reviewNote: kycSubmissions.reviewNote,
         createdAt: kycSubmissions.createdAt,
         reviewedAt: kycSubmissions.reviewedAt,
+        declaredFullName: kycSubmissions.declaredFullName,
+        declaredDocNumber: kycSubmissions.declaredDocNumber,
+        declaredExpiry: kycSubmissions.declaredExpiry,
       })
       .from(kycSubmissions)
       .where(eq(kycSubmissions.userId, userId))
@@ -105,6 +158,9 @@ export class KycService {
             reviewNote: latest.reviewNote,
             createdAt: latest.createdAt.toISOString(),
             reviewedAt: latest.reviewedAt ? latest.reviewedAt.toISOString() : null,
+            declaredFullName: latest.declaredFullName,
+            declaredDocNumber: latest.declaredDocNumber,
+            declaredExpiry: latest.declaredExpiry,
           }
         : null,
     };

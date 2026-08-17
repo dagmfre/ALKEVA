@@ -14,6 +14,7 @@ import {
   type CreateOrderDto,
   type ListOrdersDto,
   type OrderListResponse,
+  type OrderProofResponse,
   type OrderResponse,
   type ReceiptResponse,
 } from "@alkeva/shared";
@@ -60,5 +61,15 @@ export class OrdersController {
     @Param("id", ParseUUIDPipe) id: string,
   ): Promise<ReceiptResponse> {
     return this.orders.receipt(auth.sub, id);
+  }
+
+  /** The ledger record behind the receipt — the entries, not a description of them. */
+  @Get(":id/proof")
+  @UseGuards(AuthGuard)
+  proof(
+    @Auth() auth: AccessPayload,
+    @Param("id", ParseUUIDPipe) id: string,
+  ): Promise<OrderProofResponse> {
+    return this.orders.proof(auth.sub, id);
   }
 }

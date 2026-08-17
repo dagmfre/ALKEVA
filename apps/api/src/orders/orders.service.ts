@@ -8,10 +8,12 @@ import {
 } from "@nestjs/common";
 import { and, desc, eq, lt, sql } from "drizzle-orm";
 import {
+  accounts,
   auditLogs,
   complianceEvents,
   feeConfig,
   holdingTierConfig,
+  ledgerEntries,
   orders,
   priceTicks,
   quotes,
@@ -21,12 +23,16 @@ import {
   type Db,
 } from "@alkeva/db";
 import type {
+  Asset,
   CreateOrderDto,
   Env,
+  LedgerBalanceCheckDto,
+  LedgerLegDto,
   ListOrdersDto,
   MetalAsset,
   OrderListItem,
   OrderListResponse,
+  OrderProofResponse,
   OrderResponse,
   OrderSide,
   OrderStatus,
@@ -754,6 +760,138 @@ export class OrdersService {
         at: row.tick.at.toISOString(),
       },
     };
+  }
+
+  /**
+   * Proof mode: the ledger record behind one settled order, assembled from the
+   * rows themselves rather than described.
+   *
+   * This lives in OrdersService, not LedgerService, on purpose. The AI module
+   * imports OrdersModule but deliberately not LedgerModule (ai.module.ts) — a
+   * read method here keeps that boundary exactly where it is documented while
+   * still letting the assistant show its work.
+   *
+   * The zero-sum figures are computed FROM the returned legs, so what the
+   * reader is told and what they are shown cannot disagree.
+   */
+  async proof(userId: string, orderId: string): Promise<OrderProofResponse> {
+    const rows = await this.db
+      .select({ order: orders, quote: quotes, tick: priceTicks })
+      .from(orders)
+      .innerJoin(quotes, eq(orders.quoteId, quotes.id))
+      .innerJoin(priceTicks, eq(quotes.priceTickId, priceTicks.id))
+      .where(and(eq(orders.id, orderId), eq(orders.userId, userId)))
+      .limit(1);
+
+    const row = rows[0];
+    if (!row) throw new NotFoundException("order_not_found");
+    if (row.order.status !== "settled" || row.order.receiptSerial === null) {
+      throw new NotFoundException("receipt_not_available");
+    }
+
+    const txnId = row.order.ledgerTransactionId;
+    const entryRows = txnId
+      ? await this.db
+          .select({
+            amount: ledgerEntries.amount,
+            asset: ledgerEntries.asset,
+            ownerType: accounts.ownerType,
+            systemName: accounts.systemName,
+            accountUserId: accounts.userId,
+          })
+          .from(ledgerEntries)
+          .innerJoin(accounts, eq(ledgerEntries.accountId, accounts.id))
+          .where(eq(ledgerEntries.transactionId, txnId))
+          .orderBy(ledgerEntries.asset, desc(ledgerEntries.amount))
+      : [];
+
+    const legs: LedgerLegDto[] = entryRows.map((e) => ({
+      // Other users' accounts can never appear here — a trade touches only the
+      // trader's own accounts and the platform's — but the label is derived
+      // rather than assumed, so a surprise would read as "system", not as a
+      // leaked identity.
+      account: e.ownerType === "user" && e.accountUserId === userId ? "you" : (e.systemName ?? "system"),
+      owner: e.ownerType === "user" && e.accountUserId === userId ? "user" : "system",
+      asset: e.asset as Asset,
+      amount: e.amount.toString(),
+    }));
+
+    const sums = new Map<string, bigint>();
+    for (const e of entryRows) {
+      sums.set(e.asset, (sums.get(e.asset) ?? BigInt(0)) + e.amount);
+    }
+    const checks: LedgerBalanceCheckDto[] = [...sums.entries()].map(([asset, sum]) => ({
+      asset: asset as Asset,
+      sum: sum.toString(),
+      balanced: sum === 0n,
+    }));
+
+    const settledAt = row.order.settledAt ?? row.order.createdAt;
+    return {
+      orderId: row.order.id,
+      serial: `ALK-${settledAt.getUTCFullYear()}-${row.order.receiptSerial.toString().padStart(6, "0")}`,
+      side: row.order.side as OrderSide,
+      asset: row.order.asset as MetalAsset,
+      gramsMg: row.quote.gramsMg.toString(),
+      settledAt: settledAt.toISOString(),
+      ledgerTransactionId: txnId,
+      legs,
+      checks,
+      // An empty ledger is not "balanced" — a settled order with no legs would
+      // be a defect, and must not render as a passing proof.
+      balanced: checks.length > 0 && checks.every((c) => c.balanced),
+      quote: {
+        id: row.quote.id,
+        unitEtbCentsPerGram: row.quote.unitEtbCentsPerGram.toString(),
+        subtotalCents: row.quote.subtotalCents.toString(),
+        feeCents: row.quote.feeCents.toString(),
+        taxCents: row.quote.taxCents.toString(),
+        reforestCents: row.quote.reforestCents.toString(),
+        totalCents: row.quote.totalCents.toString(),
+        createdAt: row.quote.createdAt.toISOString(),
+        expiresAt: row.quote.expiresAt.toISOString(),
+      },
+      price: {
+        source: row.tick.source,
+        fxSource: row.tick.fxSource,
+        usdPerOzMicro: row.tick.usdPerOzMicro.toString(),
+        etbRateMicro: row.tick.etbRateMicro.toString(),
+        at: row.tick.at.toISOString(),
+      },
+    };
+  }
+
+  /**
+   * Resolve a user-facing receipt serial ("ALK-2026-000148" or "148") to one of
+   * the caller's own orders. Scoped to the caller: someone else's serial is
+   * order_not_found, never a 403 — a 403 would confirm the serial exists.
+   */
+  async findBySerial(userId: string, serial: string): Promise<string | null> {
+    const digits = serial.replace(/\D/g, "").replace(/^0+/, "");
+    if (!digits) return null;
+    const [row] = await this.db
+      .select({ id: orders.id })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.userId, userId),
+          eq(orders.receiptSerial, BigInt(digits)),
+          eq(orders.status, "settled"),
+        ),
+      )
+      .limit(1);
+    return row?.id ?? null;
+  }
+
+  /** The caller's most recent settled order — what "prove my last trade" means. */
+  async latestSettledId(userId: string): Promise<string | null> {
+    const [row] = await this.db
+      .select({ id: orders.id })
+      .from(orders)
+      .where(and(eq(orders.userId, userId), eq(orders.status, "settled")))
+      .orderBy(desc(orders.settledAt))
+      .limit(1);
+    return row?.id ?? null;
   }
 
   private isPgError(err: unknown, code: string): boolean {

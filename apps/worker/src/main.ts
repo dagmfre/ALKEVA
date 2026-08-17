@@ -1,6 +1,7 @@
 import http from "node:http";
 import { Redis } from "ioredis";
 import { createDb, priceTicks } from "@alkeva/db";
+import { runRiskScan } from "@alkeva/risk";
 import {
   loadDotenvUpwards,
   loadEnv,
@@ -28,6 +29,9 @@ const redis = new Redis(env.REDIS_URL);
 // second instance now idles instead of writing.
 const lockConn = createDb(env.DATABASE_URL, { max: 1 }).client;
 const LOCK_KEY = [0x414c4b, 0x707774] as const; // "ALK", "pwt" — price-worker tick lock
+
+/** Epoch ms of the last AML pass. 0 = run one on the first tick after boot. */
+let lastRiskScanAt = 0;
 
 async function acquireSingleWriterLock(): Promise<boolean> {
   const [row] = await lockConn`
@@ -141,9 +145,46 @@ async function tick(): Promise<void> {
   }
 }
 
+/**
+ * The AML pass, on its own cadence inside the price loop's process.
+ *
+ * It rides here rather than in its own service because this process already
+ * holds the single-writer advisory lock — two instances scanning would race to
+ * open the same case, and the lock makes that impossible for free. A scan
+ * failure is contained exactly like an alert failure: logged, never fatal to
+ * the price loop, because a missed scan is recoverable and a missed tick is
+ * the platform's whole price story.
+ */
+async function riskPass(): Promise<void> {
+  if (env.RISK_SCAN_INTERVAL_SECONDS <= 0) return;
+  if (Date.now() - lastRiskScanAt < env.RISK_SCAN_INTERVAL_SECONDS * 1000) return;
+  lastRiskScanAt = Date.now();
+  try {
+    const result = await runRiskScan(db, {
+      thresholdCents: env.COMPLIANCE_REVIEW_THRESHOLD_CENTS,
+      nearThresholdPct: env.RISK_NEAR_THRESHOLD_PCT,
+      lookbackDays: env.RISK_LOOKBACK_DAYS,
+    });
+    if (result.opened > 0) {
+      console.log(
+        `risk scan: ${result.opened} case(s) opened — ${Object.entries(result.byRule)
+          .map(([k, n]) => `${k}×${n}`)
+          .join(", ")}`,
+      );
+    }
+  } catch (err) {
+    console.error(`risk scan failed: ${(err as Error).message}`);
+  }
+}
+
 async function loop(): Promise<void> {
   console.log(
     `ALKEVA price worker: every ${env.PRICE_TICK_SECONDS}s, primary=${env.PRICE_FALLBACK_URL} (swissquote), backup=${env.PRICE_PRIMARY_URL}`,
+  );
+  console.log(
+    env.RISK_SCAN_INTERVAL_SECONDS > 0
+      ? `AML risk scan: every ${env.RISK_SCAN_INTERVAL_SECONDS}s (advisory — opens cases, never freezes)`
+      : "AML risk scan: disabled (RISK_SCAN_INTERVAL_SECONDS=0)",
   );
   while (running) {
     const started = Date.now();
@@ -153,6 +194,7 @@ async function loop(): Promise<void> {
       // FX failure lands here — skip the whole tick, never write a made-up rate.
       console.error(`tick failed: ${(err as Error).message}`);
     }
+    await riskPass();
     const elapsed = Date.now() - started;
     const waitMs = Math.max(0, env.PRICE_TICK_SECONDS * 1000 - elapsed);
     await new Promise((resolve) => setTimeout(resolve, waitMs));

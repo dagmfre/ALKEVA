@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type {
   AiChatResponse,
@@ -93,14 +93,37 @@ export function AssistantScreen() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [bootstrapped, setBootstrapped] = useState(false);
 
+  // "Prove this transaction" hand-off from a receipt. Read from the URL on the
+  // first client render rather than via useSearchParams, which would force the
+  // whole route dynamic for a parameter only these effects ever look at.
+  const [proveSerial] = useState(() =>
+    typeof window === "undefined"
+      ? null
+      : new URLSearchParams(window.location.search).get("prove"),
+  );
+  const proveSent = useRef(false);
+
   // First load: land on the most recent thread — the "it remembers me" moment.
   useEffect(() => {
     if (bootstrapped || !threads.data) return;
     setBootstrapped(true);
+    // A proof hand-off opens its own thread: the question is about one
+    // transaction, and burying that answer under an older conversation makes
+    // it harder to read back.
+    if (proveSerial) return;
     const latest = threads.data.conversations[0];
     if (latest) void openThread(latest.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [threads.data, bootstrapped]);
+  }, [threads.data, bootstrapped, proveSerial]);
+
+  useEffect(() => {
+    if (!proveSerial || proveSent.current || !bootstrapped) return;
+    proveSent.current = true;
+    // Drop the parameter so a refresh doesn't ask the same question twice.
+    window.history.replaceState(null, "", window.location.pathname);
+    send(t("proveQuestion", { serial: proveSerial }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proveSerial, bootstrapped]);
 
   async function openThread(id: string) {
     if (busy) return;
@@ -297,7 +320,10 @@ export function AssistantScreen() {
                 <Skeleton className="h-16 rounded-lg" />
               </div>
             ) : messages.length === 0 ? (
-              <ConversationEmptyState title={t("emptyTitle")} description={t("emptyBody")} />
+              <ConversationEmptyState
+                title={t("emptyTitle")}
+                description={`${t("emptyBody")} ${t("languageNote")}`}
+              />
             ) : (
               messages.map((m) => (
                 <div key={m.id} className="flex flex-col gap-1.5">
@@ -354,7 +380,15 @@ export function AssistantScreen() {
 
         {messages.length === 0 && !transcriptLoading && (
           <Suggestions className="pt-3">
-            {(["examplePrice", "examplePortfolio", "exampleFees"] as const).map((key) => (
+            {(
+              [
+                "examplePrice",
+                "exampleWhyMoved",
+                "exampleProve",
+                "examplePortfolio",
+                "exampleFees",
+              ] as const
+            ).map((key) => (
               <Suggestion key={key} suggestion={t(key)} onClick={(s) => send(s)} />
             ))}
           </Suggestions>

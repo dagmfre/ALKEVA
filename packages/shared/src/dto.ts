@@ -58,6 +58,15 @@ export interface PriceSnapshotResponse {
   at: string; // server time the snapshot was assembled
 }
 
+/** The rate card in force. Never a price — a quote is the only binding figure. */
+export interface FeeRatesResponse {
+  /** Commission in milli-percent: 2% → 2000. */
+  commissionPctMilli: number;
+  serviceFeeCents: string;
+  taxPctMilli: number;
+  reforestPctMilli: number;
+}
+
 export interface PricePointDto {
   at: string;
   etbCentsPerGram: string;
@@ -67,6 +76,99 @@ export interface PriceHistoryResponse {
   asset: Asset;
   range: PriceRange;
   points: PricePointDto[];
+}
+
+/** One end of an attribution window — a raw tick, never a bucket average. */
+export interface PriceAttributionPointDto {
+  at: string;
+  etbCentsPerGram: string;
+  usdPerOzMicro: string;
+  fxRateMicro: string;
+}
+
+/**
+ * Why the birr price moved. A price in ETB/gram is the metal's dollar price
+ * times the birr's dollar rate, so a move in birr is always two moves at once:
+ * the world metal price, and the currency. Both halves are stored on every
+ * price_tick, so this is arithmetic on our own data — not a model's opinion.
+ */
+export interface PriceAttributionResponse {
+  asset: Asset;
+  range: PriceRange;
+  from: PriceAttributionPointDto;
+  to: PriceAttributionPointDto;
+  /** Total ETB/gram move, milli-percent. Null when there is no distinct reference tick. */
+  totalPctMilli: string | null;
+  /** The metal's own move in USD/oz, milli-percent. */
+  metalPctMilli: string | null;
+  /** USD→ETB move, milli-percent. Positive = the birr weakened against the dollar. */
+  fxPctMilli: string | null;
+  /**
+   * total − metal − fx: the interaction of the two moves plus the cents
+   * rounding. Reported rather than folded silently into the other two, so the
+   * three figures always reconcile to the total exactly.
+   */
+  crossPctMilli: string | null;
+  /** Which half did more of the work; null when neither moved meaningfully. */
+  dominant: "metal" | "currency" | "both" | null;
+  source: string;
+  fxSource: string;
+}
+
+/** One leg of the double-entry pair behind an order. */
+export interface LedgerLegDto {
+  /** "you" for the signed-in user's own account, else the system account name. */
+  account: string;
+  owner: "user" | "system";
+  asset: Asset;
+  /** Signed integer: ETB in cents, metals in milligrams. */
+  amount: string;
+}
+
+/** Per-asset zero-sum: every asset touched must net to exactly zero. */
+export interface LedgerBalanceCheckDto {
+  asset: Asset;
+  sum: string;
+  balanced: boolean;
+}
+
+/**
+ * The record behind one settled order, assembled from the rows themselves —
+ * the ledger legs, the quote that locked the price, and the tick the quote was
+ * struck against. Nothing here is a summary of policy; it is the evidence.
+ */
+export interface OrderProofResponse {
+  orderId: string;
+  serial: string;
+  side: OrderSide;
+  asset: MetalAsset;
+  gramsMg: string;
+  settledAt: string;
+  ledgerTransactionId: string | null;
+  /** Legs vary in count: zero-amount entries are never posted, so a zero-tax
+      buy has fewer legs than one carrying tax and reforestation. */
+  legs: LedgerLegDto[];
+  checks: LedgerBalanceCheckDto[];
+  /** True only when every asset touched nets to zero. */
+  balanced: boolean;
+  quote: {
+    id: string;
+    unitEtbCentsPerGram: string;
+    subtotalCents: string;
+    feeCents: string;
+    taxCents: string;
+    reforestCents: string;
+    totalCents: string;
+    createdAt: string;
+    expiresAt: string;
+  };
+  price: {
+    source: string;
+    fxSource: string;
+    usdPerOzMicro: string;
+    etbRateMicro: string;
+    at: string;
+  };
 }
 
 // ── Health ────────────────────────────────────────────────────────
@@ -371,6 +473,25 @@ export const KYC_DOC_TYPES = ["fayda", "passport", "driving_licence", "kebele_id
 export type KycDocType = (typeof KYC_DOC_TYPES)[number];
 export type KycStatus = "pending" | "approved" | "rejected";
 
+/**
+ * What a model read off an uploaded document. A transcription, not a check:
+ * nothing here verifies that the document is genuine, valid, or unexpired.
+ */
+export interface KycExtractionDto {
+  fullName: string | null;
+  docNumber: string | null;
+  expiry: string | null;
+  confidence: "high" | "medium" | "low";
+}
+
+/** The user's own declared identity fields, submitted with the document. */
+export const kycDeclaredDto = z.object({
+  fullName: z.string().max(200).optional(),
+  docNumber: z.string().max(200).optional(),
+  expiry: z.string().max(200).optional(),
+});
+export type KycDeclaredDto = z.infer<typeof kycDeclaredDto>;
+
 export interface KycMeResponse {
   kycTier: number;
   /** Latest submission, if any. */
@@ -381,6 +502,9 @@ export interface KycMeResponse {
     reviewNote: string | null;
     createdAt: string;
     reviewedAt: string | null;
+    declaredFullName: string | null;
+    declaredDocNumber: string | null;
+    declaredExpiry: string | null;
   } | null;
 }
 
@@ -478,6 +602,92 @@ export interface AdminAnalyticsResponse {
   };
 }
 
+// ── Revenue (the owner's P&L) ─────────────────────────────────────
+//
+// The platform earns exactly one thing: commission, which lands in
+// `system:fees` on every settled order. Tax and reforestation are collected
+// into their own accounts and are NOT the owner's money — they are reported
+// separately so the two can never be read as one number.
+
+/** One day of commission, split by the side that produced it. */
+export interface AdminRevenuePointDto {
+  day: string; // YYYY-MM-DD
+  buyFeeCents: string;
+  sellFeeCents: string;
+  /** Settled trade value that day — the base the commission came from. */
+  volumeCents: string;
+  orders: number;
+}
+
+export interface AdminRevenueAssetDto {
+  asset: MetalAsset;
+  feeCents: string;
+  volumeCents: string;
+  orders: number;
+}
+
+export interface AdminRevenueContributorDto {
+  userId: string;
+  email: string;
+  fullName: string;
+  feeCents: string;
+  orders: number;
+}
+
+/** Metal sold to customers and not yet bought back — the dealer's price risk. */
+export interface AdminRevenueExposureDto {
+  asset: MetalAsset;
+  issuedMg: string;
+  unitPriceCents: string;
+  valueCents: string;
+}
+
+export interface AdminRevenueResponse {
+  days: number;
+  /** The rate in force right now, straight from fee_config. */
+  rate: {
+    commissionPctMilli: number;
+    serviceFeeCents: string;
+    taxPctMilli: number;
+    reforestPctMilli: number;
+  };
+  earnings: {
+    /** The `system:fees` balance — every birr of commission ever taken. */
+    allTimeCents: string;
+    windowCents: string;
+    /** The equally-long window before this one, for an honest comparison. */
+    prevWindowCents: string;
+    todayCents: string;
+    monthToDateCents: string;
+    windowVolumeCents: string;
+    windowOrders: number;
+    /** window commission ÷ window volume, pct-milli. null when no volume. */
+    effectiveRatePctMilli: string | null;
+    /** Collected for third parties — never the owner's to withdraw. */
+    taxAllTimeCents: string;
+    reforestAllTimeCents: string;
+  };
+  points: AdminRevenuePointDto[];
+  byAsset: AdminRevenueAssetDto[];
+  topContributors: AdminRevenueContributorDto[];
+  /**
+   * What is genuinely withdrawable. Customer balances are a liability, not
+   * income: sweeping them would be spending money the platform owes.
+   */
+  position: {
+    userEtbLiabilityCents: string;
+    payoutHoldCents: string;
+    systemCashCents: string;
+    haltThresholdCents: string;
+    /** Chapa merchant available balance, cents. null when unconfigured. */
+    chapaAvailableCents: string | null;
+    /** max(0, chapa − liability − hold − halt). null when chapa is null. */
+    safeToSweepCents: string | null;
+  };
+  exposure: AdminRevenueExposureDto[];
+  asOf: string;
+}
+
 export const adminSearchDto = z.object({
   q: z.string().max(200).optional(),
   status: z.string().max(30).optional(),
@@ -531,6 +741,16 @@ export interface AdminKycItem {
   status: KycStatus;
   fileName: string;
   createdAt: string;
+  /** What the user typed. */
+  declaredFullName: string | null;
+  declaredDocNumber: string | null;
+  declaredExpiry: string | null;
+  /** What was read off the image — shown beside the declared values so the
+      reviewer can see any disagreement. Never a verdict on the document. */
+  extractedFullName: string | null;
+  extractedDocNumber: string | null;
+  extractedExpiry: string | null;
+  extractedConfidence: string | null;
 }
 
 export interface AdminReviewItem {
@@ -546,6 +766,45 @@ export interface AdminReviewItem {
 
 export interface AdminOrderSearchItem extends OrderListItem {
   userEmail: string;
+}
+
+// ── AML risk cases (spec F20/F22) ─────────────────────────────────
+export type RiskCaseStatus = "open" | "resolved";
+
+/**
+ * A finding from the deterministic rules engine, awaiting a person.
+ * `narrative` is assistant-written display text — advisory, never an input to
+ * any decision; the officer's own action is what the audit log records.
+ */
+export interface AdminRiskCaseItem {
+  id: string;
+  userId: string | null;
+  userEmail: string | null;
+  userStatus: "active" | "frozen" | null;
+  ruleKey: string;
+  severity: string | null;
+  score: number | null;
+  evidence: Record<string, string> | null;
+  windowStart: string | null;
+  narrative: string | null;
+  narrativeLocale: string | null;
+  resolvedAt: string | null;
+  resolvedByEmail: string | null;
+  resolutionNote: string | null;
+  createdAt: string;
+}
+
+export interface AdminRiskCasesResponse {
+  cases: AdminRiskCaseItem[];
+  openCount: number;
+}
+
+export interface AdminRiskScanResponse {
+  scannedAt: string;
+  windowStart: string;
+  found: number;
+  opened: number;
+  byRule: Record<string, number>;
 }
 
 export interface AdminAuditItem {

@@ -17,6 +17,7 @@ import {
   freezeDto,
   type AdminAnalyticsResponse,
   type AdminOverviewResponse,
+  type AdminRevenueResponse,
   type AdminSearchDto,
   type AdminTreasuryResponse,
   type AdminUserDetailResponse,
@@ -62,6 +63,19 @@ export class AdminController {
   analytics(@Query("days") days?: string): Promise<AdminAnalyticsResponse> {
     const parsed = Number(days);
     return this.admin.analytics(Number.isFinite(parsed) && parsed > 0 ? parsed : 30);
+  }
+
+  /**
+   * The owner's revenue view. Administrator only, on purpose: commission
+   * earnings, customer liability and the sweepable figure are the owner's
+   * business, not an operational queue. (Decision 16 Aug 2026 — administrator
+   * IS the owner; no separate owner role exists.)
+   */
+  @Get("revenue")
+  @RequireRoles("administrator")
+  revenue(@Query("days") days?: string): Promise<AdminRevenueResponse> {
+    const parsed = Number(days);
+    return this.admin.revenue(Number.isFinite(parsed) && parsed > 0 ? parsed : 30);
   }
 
   // ── users ───────────────────────────────────────────────────────

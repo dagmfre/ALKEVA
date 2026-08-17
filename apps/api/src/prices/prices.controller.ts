@@ -12,6 +12,12 @@ function parseAsset(value: string | undefined): MetalAsset {
   return asset as MetalAsset;
 }
 
+function parseRange(value: string | undefined): PriceRange {
+  const range = (value ?? "24h") as PriceRange;
+  if (!PRICE_RANGES.includes(range)) throw new BadRequestException("invalid_range");
+  return range;
+}
+
 @Controller("prices")
 export class PricesController {
   constructor(
@@ -39,8 +45,12 @@ export class PricesController {
 
   @Get("history")
   history(@Query("asset") asset?: string, @Query("range") range?: string) {
-    const r = (range ?? "24h") as PriceRange;
-    if (!PRICE_RANGES.includes(r)) throw new BadRequestException("invalid_range");
-    return this.prices.history(parseAsset(asset), r);
+    return this.prices.history(parseAsset(asset), parseRange(range));
+  }
+
+  /** Was it the metal, or was it the birr? Both halves live on every tick. */
+  @Get("attribution")
+  attribution(@Query("asset") asset?: string, @Query("range") range?: string) {
+    return this.prices.attribution(parseAsset(asset), parseRange(range));
   }
 }

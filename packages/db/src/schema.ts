@@ -202,6 +202,22 @@ export const kycSubmissions = pgTable(
     /** The document itself, in-row (migration 0004); ≤2 MB enforced at the API. */
     fileData: bytea("file_data"),
     fileMime: text("file_mime"),
+    /** What the USER typed and submitted — their own claim about themselves. */
+    declaredFullName: text("declared_full_name"),
+    declaredDocNumber: text("declared_doc_number"),
+    declaredExpiry: text("declared_expiry"),
+    /**
+     * What a model transcribed off the image. A transcription, never a
+     * verification: it checks no hologram, no chip and no registry, and it
+     * approves nothing. Held apart from the declared values on purpose — the
+     * disagreement between the two is the signal a reviewer wants.
+     */
+    extractedFullName: text("extracted_full_name"),
+    extractedDocNumber: text("extracted_doc_number"),
+    extractedExpiry: text("extracted_expiry"),
+    extractedConfidence: text("extracted_confidence"),
+    extractedAt: timestamp("extracted_at", { withTimezone: true }),
+    extractionModel: text("extraction_model"),
     status: kycStatusEnum("status").notNull().default("pending"),
     reviewerId: uuid("reviewer_id").references(() => users.id),
     reviewNote: text("review_note"),
@@ -455,11 +471,36 @@ export const complianceEvents = pgTable(
     ruleKey: text("rule_key").notNull(),
     evidence: jsonb("evidence"),
     action: complianceActionEnum("action").notNull(),
+    /** 0–100, higher is more concerning. Advisory only — nothing gates on it. */
+    score: integer("score"),
+    /** low | high | medium. Text, not an enum: adding a band must not be a
+        schema migration (the same reasoning that took locale off pgEnum). */
+    severity: text("severity"),
+    /**
+     * The window the finding covers — midnight EAT for daily rules. Combined
+     * with (user, rule) it names one finding exactly once, so re-running the
+     * scan is a no-op rather than a queue full of duplicates. Nullable because
+     * the original inline txn_over_500k rule has no window.
+     */
+    windowStart: timestamp("window_start", { withTimezone: true }),
+    /** Plain-language summary for the reviewing officer, written by the
+        assistant. Display text: nothing reads it back, no action keys off it. */
+    narrative: text("narrative"),
+    narrativeAt: timestamp("narrative_at", { withTimezone: true }),
+    narrativeLocale: text("narrative_locale"),
+    resolutionNote: text("resolution_note"),
     resolvedBy: uuid("resolved_by").references(() => users.id),
     resolvedAt: timestamp("resolved_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("ce_user_idx").on(t.userId), index("ce_rule_idx").on(t.ruleKey)],
+  (t) => [
+    index("ce_user_idx").on(t.userId),
+    index("ce_rule_idx").on(t.ruleKey),
+    index("ce_resolved_idx").on(t.resolvedAt),
+    uniqueIndex("ce_user_rule_window_uq")
+      .on(t.userId, t.ruleKey, t.windowStart)
+      .where(sql`${t.windowStart} is not null`),
+  ],
 );
 
 export const freezes = pgTable(

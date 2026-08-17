@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Panel, PanelBody, PanelHeader, Stat } from "@/components/ui/panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PriceAlertButton } from "@/components/market/price-alert-dialog";
+import { MoveAttribution } from "@/components/market/move-attribution";
 import { PriceChart } from "@/components/market/price-chart";
 import { useAssetPrice, usePrices, type LivePrice } from "@/components/market/price-provider";
 import { TrustPanel } from "@/components/market/trust-panel";
@@ -222,6 +223,10 @@ export function HomeScreen() {
           {selected === "XAU" ? t("buyGoldCta") : t("buyPlatCta")}
         </Button>
       </div>
+
+      {/* Full width: at col-span-8 the row's remaining four columns sat empty,
+          since the next panel is itself eight wide and cannot fit beside it. */}
+      <MoveAttribution asset={selected} className="lg:col-span-12" />
 
       <RecentActivity className="lg:col-span-8" revision={revision} />
 

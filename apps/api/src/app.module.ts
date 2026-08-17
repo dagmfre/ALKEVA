@@ -5,9 +5,11 @@ import { AdminModule } from "./admin/admin.module.js";
 import { AiModule } from "./ai/ai.module.js";
 import { AlertsModule } from "./alerts/alerts.module.js";
 import { AuthModule } from "./auth/auth.module.js";
+import { ComplianceModule } from "./compliance/compliance.module.js";
 import { CoreModule } from "./core/core.module.js";
 import { DeliveryModule } from "./delivery/delivery.module.js";
 import { FaucetModule } from "./faucet/faucet.module.js";
+import { FeesModule } from "./fees/fees.module.js";
 import { HealthController } from "./health/health.controller.js";
 import { KycModule } from "./kyc/kyc.module.js";
 import { LedgerModule } from "./ledger/ledger.module.js";
@@ -30,6 +32,7 @@ import { WebhooksModule } from "./webhooks/webhooks.module.js";
     PricesModule,
     LedgerModule,
     FaucetModule,
+    FeesModule,
     QuotesModule,
     OrdersModule,
     PortfolioModule,
@@ -41,6 +44,7 @@ import { WebhooksModule } from "./webhooks/webhooks.module.js";
     WebhooksModule,
     AdminModule,
     AiModule,
+    ComplianceModule,
     AlertsModule,
     DeliveryModule,
   ],

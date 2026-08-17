@@ -198,6 +198,25 @@
     "buyShort": "ግዛእ",
     "sellShort": "ሽጥ"
   },
+  "attribution": {
+    "title": "ስለምንታይ ተቐዪሩ?",
+    "hint": "ዋጋ ብረት ምስ ምንዛረ ብር",
+    "notEnough": "ነዚ ለውጢ ንምክፍፋል እኹል ታሪኽ ዋጋ የልቦን።",
+    "totalLabel": "{metal} ብብር",
+    "metalLabel": "ዓለምለኸ ዋጋ {metal}",
+    "currencyLabel": "ብር ኣንጻር ዶላር",
+    "dominant": {
+      "metal": "ብዝበዝሐ እቲ ብረት እዩ።",
+      "currency": "ብዝበዝሐ እቲ ምንዛረ እዩ።",
+      "both": "ክልቲኦም ማዕረ ማለት ተቐዪሮም።"
+    },
+    "birrWeaker": "በዚ እዋን ብር ኣንጻር ዶላር ተዳኺሙ፤ እዚ ንባዕሉ ዋጋ ብር የልዕል።",
+    "birrStronger": "በዚ እዋን ብር ኣንጻር ዶላር ሓያል ኮይኑ፤ እዚ ንባዕሉ ዋጋ ብር የጉድል።",
+    "birrFlat": "በዚ እዋን ምንዛረ ብር ኣይተቐየረን።",
+    "interaction": "ምትእስሳርን ምጥቕላልን {value} ይሕዙ።",
+    "window": "{from} → {to}",
+    "sources": "ምንጭታት፦ {metal} · {fx}"
+  },
   "trade": {
     "title": "ንግዲ",
     "buy": "ግዛእ",
@@ -413,7 +432,28 @@
     "countNote": "{count} ደረሰኛት",
     "searchSerial": "ቁጽሪ ደረሰኝ ድለ",
     "noMatch": "በዚ ቁጽሪ ዝሳነ ደረሰኝ የልቦን።",
-    "clearSearch": "ምድላይ ኣጽሪ"
+    "clearSearch": "ምድላይ ኣጽሪ",
+    "proof": {
+      "title": "መረጋገጺ",
+      "hint": "ኣብ ድሕሪ እዚ ቅብሊት ዘለዉ መዝገብ ኣታዊታት",
+      "intro": "እዚ ጽማቕ ኣይኮነን። እዚኦም እቲ ንግዲ ዝጸሓፎም ናይ ሒሳብ ኣታዊታት እዮም — ክልቲኡ ጎድኒ ናይ ነፍሲ ወከፍ ምንቅስቓስ።",
+      "accountCol": "ሒሳብ",
+      "amountCol": "መጠን",
+      "you": "ናትካ ሒሳብ",
+      "accounts": {
+        "cash": "ጥረ ገንዘብ ALKEVA",
+        "fees": "ኮሚሽን ALKEVA",
+        "tax": "እተኣከበ ግብሪ",
+        "reforestation": "መዋጽኦ ልምዓት ጫካ",
+        "vault": "ግምጃ ቤት {metal}"
+      },
+      "checkLabel": "ድምር ኣታዊታት {asset}",
+      "balancedYes": "ነፍሲ ወከፍ ንብረት ልክዕ ዜሮ ይኸውን — ዝተፈጥረ ወይ ዝጠፍአ የለን።",
+      "balancedNo": "እዞም ኣታዊታት ዜሮ ኣይኮኑን። በጃኻ ሓብረና።",
+      "quoteLock": "ዋጋ እተዓጽወሉ",
+      "provenance": "ምንጪ ዋጋ",
+      "askAi": "ብቋንቋይ ኣብርሃለይ"
+    }
   },
   "account": {
     "title": "ሕሳብ",
@@ -559,7 +599,11 @@
     "deleteConfirmTitle": "እዚ ዝርርብ ይሰረዝ?",
     "deleteConfirmBody": "መልእኽታቱ ንሓዋሩ ይወገዱ። ትእዛዛትካን ደረሰኛትካን ኣይትንከፉን።",
     "cancel": "ሰርዝ",
-    "today": "ሎሚ"
+    "today": "ሎሚ",
+    "exampleWhyMoved": "ሎሚ ወርቂ ስለምንታይ ተቐዪሩ?",
+    "exampleProve": "ናይ መወዳእታ ንግደይ ኣረጋግጸለይ",
+    "languageNote": "ንALKEVA ብዝመረጽካዮ ቋንቋ ይምልስ።",
+    "proveQuestion": "ንግዲ {serial} ኣረጋግጸለይ። መዝገብ ኣታዊታቱ ኣርእየኒ።"
   },
   "notifications": {
     "title": "መልእኽትታት",
@@ -617,7 +661,9 @@
       "treasury": "ግምጃ",
       "compliance": "ተኸታታሊ ምርመራ",
       "audit": "መዝገብ ምርመራ",
-      "delivery": "ምርካባት"
+      "delivery": "ምርካባት",
+      "revenue": "እቶት",
+      "cases": "መዛግብቲ ሓደጋ"
     },
     "analytics": {
       "days7": "ናይ መወዳእታ 7 መዓልታት",
@@ -644,7 +690,10 @@
       "exportBody": "ነፍሲ ወከፍ ናይ ተኸታታሊ ምርመራ ፍጻመ — ናይ ደረት ምርመራታት፣ ውሳነታቶምን ምስኦም ዝተመዝገበ መርትዖን — ንተቖጻጻሪ ወይ ንመሻርኽቲ ባንክ ከም CSV።",
       "exportButton": "CSV ኣውርድ",
       "rulesTitle": "ንጡፋት ሕግታት",
-      "rulesBody": "ካብ ናይ ምርመራ ደረት ንላዕሊ ዝኾኑ ትእዛዛት ቅድሚ ምዝዛሞም ውሳነ ተኸታታሊ ምርመራ ይጽበዩ፤ ሕሳባት ብኢድ ክዕገቱን ክፍትሑን ይኽእሉ፣ ምኽንያት ግድን እዩ። ነፍሲ ወከፍ ተግባር ኣብ ዘይሰርዝ መዝገብ ይጸሓፍ።"
+      "rulesBody": "ካብ ናይ ምርመራ ደረት ንላዕሊ ዝኾኑ ትእዛዛት ቅድሚ ምዝዛሞም ውሳነ ተኸታታሊ ምርመራ ይጽበዩ፤ ሕሳባት ብኢድ ክዕገቱን ክፍትሑን ይኽእሉ፣ ምኽንያት ግድን እዩ። ነፍሲ ወከፍ ተግባር ኣብ ዘይሰርዝ መዝገብ ይጸሓፍ።",
+      "queueTitle": "ተርታ መዛግብቲ ሓደጋ",
+      "queueBody": "ቀዋሚ ሕግታት ዝተዛዘሙ ንጥፈታት ይምርምሩ፣ ሰብ ከንብቦ መዝገብ ይኸፍቱ። ብዜካ ባዕሉ ዝእገድ የለን፣ እቲ ዝተጠቕሰ ሒሳብ እውን ኣይንገሮን።",
+      "queueButton": "ተርታ መዛግብቲ ክፈት"
     },
     "overview": {
       "pendingKyc": "ኣብ ትጽቢት ዘሎ KYC",
@@ -706,6 +755,17 @@
         "passport": "ፓስፖርት",
         "driving_licence": "መዘወሪ ፍቓድ",
         "kebele_id": "ናይ ቀበሌ መንነት"
+      },
+      "declaredVsRead": "ዝተገልጸ / ዝተነበበ",
+      "readAs": "ተነቢቡ፦",
+      "fullName": "ስም",
+      "docNumber": "ቁጽሪ",
+      "expiry": "ምውዳእ",
+      "noDetails": "ዝርዝር ኣይቀረበን",
+      "confidence": {
+        "high": "እቲ ሰነድ ብንጹር ተነቢቡ",
+        "medium": "እቲ ሰነድ ብኸፊል ይንበብ",
+        "low": "እቲ ሰነድ ንምንባብ ኣጸጋሚ እዩ"
       }
     },
     "reviews": {
@@ -763,6 +823,114 @@
       "target": "ዕላማ",
       "exportCsv": "ናይ AML CSV ኣውጽእ",
       "loadMore": "ተወሳኺ ኣርኢ"
+    },
+    "revenue": {
+      "subtitle": "ዝተረኽበ ኮሚሽን፡ ካብኡ ብሓቂ ከተውጽኦ እትኽእል",
+      "allTime": "ጠቕላላ ዝተረኽበ ኮሚሽን",
+      "allTimeFoot": "እቲ መድረኽ ብኮሚሽን ዝኣከቦ ነፍሲ ወከፍ ብር — ካብ መዝገብ ዝተነበበ፡ ግምት ኣይኮነን።",
+      "windowEarned": "ኣብዚ ግዜ",
+      "vsPrev": "ምስ ዝሓለፈ ግዜ",
+      "newActivity": "ናይ መጀመርታ ንጥፈት",
+      "today": "ሎሚ",
+      "monthToDate": "ካብ መጀመርታ ወርሒ",
+      "chartTitle": "መዓልታዊ ኮሚሽን",
+      "byMetal": "ካበይ ከም ዝመጸ",
+      "ordersCount": "{count} ትእዛዛት",
+      "shareOfCommission": "ኣብዚ ግዜ ካብ ኮሚሽን {pct}%",
+      "rateTitle": "ኣብ ስራሕ ዘሎ ተመን",
+      "commissionRate": "ኮሚሽን",
+      "perSide": "ኣብ ዕድግን መሸጣን",
+      "effectiveRate": "ውጽኢታዊ ተመን",
+      "effectiveFoot": "ኮሚሽን ÷ ንግዲ",
+      "serviceFee": "ናይ ኣገልግሎት ክፍሊት",
+      "perOrder": "ቀዋሚ፡ ኣብ ነፍሲ ወከፍ ትእዛዝ",
+      "collectedTitle": "ንኻልኦት ዝተኣከበ",
+      "collectedNote": "ግብርን ናይ ደን ልምዓትን ብመድረኽ ተኣኪቦም ናብ ካልእ ኣካል ዝመሓላለፉ እዮም። እቶትካ ኣይኮኑን፡ ኣብቲ ዝወጽእ ገንዘብ'ውን ኣይቁጸሩን።",
+      "tax": "ግብሪ",
+      "reforestation": "ደን ልምዓት",
+      "positionTitle": "ከተውጽኦ እትኽእል",
+      "chapaAvailable": "ናይ ቻፓ ነጋዳይ ተረፍ",
+      "chapaUnavailable": "ኣይተራኸበን",
+      "customerLiability": "ናይ ዓማዊል ተረፍ",
+      "customerLiabilityHint": "ዓማዊልካ ኣብ መድረኽ ዝሓዝዎ ብር። ኣብ ሓደ ሕሳብ እኳ እንተሃለወ ናቶም ገንዘብ እዩ።",
+      "payoutHold": "ኣብ መስርሕ ዘለዉ ወጻኢታት",
+      "payoutHoldHint": "ተሓቲቶም ገና ንዘይተዛዘሙ ክፍሊታት ዝተትሓዘ።",
+      "haltBuffer": "ናይ ስራሕ መጠባበቒ",
+      "haltBufferHint": "እቲ መድረኽ ብረት ምምላስ ዝዓግተሉ ናይ ገንዘብ ደረት። ኣብ ግምጃ ቤት ውቅር ይቕመጥ።",
+      "safeToSweep": "ብድሕንነት ክውጽእ ዝኽእል",
+      "safeToSweepNote": "ናይ ነጋዳይ ተረፍ ተቐኒሱ ናይ ዓማዊል ገንዘብ፡ ኣብ መስርሕ ዘለዉ ወጻኢታትን ናይ ስራሕ መጠባበቒን። ኣሉታዊ ኣይኸውንን — ጉድለት ከም ዜሮ ይረአ።",
+      "positionNote": "ገንዘብ ካብ ቻፓ ዳሽቦርድ እዩ ዝወጽእ እምበር ካብዚ ኣይኮነን። እዚ መድረኽ ካብ መዝገብ ናብ ውልቀሰብ ገንዘብ ዘንቀሳቕሰሉ መገዲ የብሉን — ሆን ተባሂሉ።",
+      "exposureTitle": "ክፉት ናይ ብረት ኩነታት",
+      "issued": "ንዓማዊል ዝተሸጠ",
+      "exposureNote": "ዓማዊል ዝሓዝዎን መድረኽ ዘረክቦምን ብረት፡ ብህሉው ዋጋ ተቖጺሩ። ዋጋ ክውስኽ እንከሎ እዚ ዕዳ ኣብኡ ይውስኽ — ዝሽፍኖ ግምጃ ቤት እዩ።",
+      "contributorsTitle": "ብኮሚሽን ቀዳሞት ዓማዊል",
+      "customer": "ዓሚል",
+      "ordersCol": "ትእዛዛት",
+      "commission": "ኮሚሽን (ብር)",
+      "noContributors": "ኣብዚ ግዜ ዝተዛዘመ ንግዲ የለን።",
+      "footnote": "ኮሚሽን እንኮ እቶት እቲ መድረኽ እዩ። ኩሎም እዞም ኣሃዛት ካብ ዝተዛዘሙ ትእዛዛትን ካብ ድርብ መዝገብን ዝወጹ እዮም፤ እዚ ገጽ ተረፍ ሕሳብ ክቕይር ኣይክእልን።",
+      "windowVolume": "መጠን ንግዲ"
+    },
+    "cases": {
+      "explain": "ሕግታት ብግዜ ሰሌዳን ብሕቶን ይሰርሑ። ነፍሲ ወከፍ መዝገብ ብሰብ ክርአ ዘለዎ ንድፊ እዩ — መደምደምታ ኣይኮነን። ሒሳብ ምእጋድ ኣብ መዝገብ ተጠቃሚ ዝፍጸም ፍሉይ ሆነ ኢልካ ዝግበር ተግባር እዩ።",
+      "runScan": "ሕጂ ምርምር",
+      "scanning": "ኣብ ምምርማር…",
+      "scanResult": "ምርምር ተዛዚሙ፦ {found} ርኽበት፣ {opened} ሓድሽ መዝገብ ተኸፊቱ።",
+      "empty": "ኣብዚ መዝገብ የለን።",
+      "resolve": "ፍታሕ",
+      "resolvedBy": "ብ{email} ተፈቲሑ",
+      "explainAction": "ነዚ መዝገብ ኣብርህ",
+      "explaining": "ኣብ ምጽሓፍ…",
+      "frozen": "ሒሳብ ተኣጊዱ",
+      "tab": {
+        "open": "ክፉት",
+        "resolved": "ዝተፈትሐ"
+      },
+      "col": {
+        "rule": "ሕጊ",
+        "account": "ሒሳብ",
+        "evidence": "መረዳእታ",
+        "opened": "እተኸፍተሉ"
+      },
+      "severity": {
+        "high": "ላዕለዋይ",
+        "medium": "ማእከላይ",
+        "low": "ትሑት"
+      },
+      "rule": {
+        "structuring_near_threshold": "ትሕቲ መስመር ገምጋም ዝቖሙ ንግድታት",
+        "velocity_spike": "ሃንደበታዊ ውሰኸት ንግዲ",
+        "rapid_in_out": "ኣትዩ ብቕልጡፍ ወጺኡ",
+        "new_account_volume": "ኣብ ሓድሽ ሒሳብ ዓቢ መጠን",
+        "dormant_reactivation": "ደው ዝበለ ሒሳብ ተበራቢሩ",
+        "repeated_refusals": "ተደጋጋሚ ዝተነጽገ ትእዛዛት",
+        "txn_over_500k": "ልዕሊ መስመር ገምጋም ትእዛዝ"
+      },
+      "evidence": {
+        "orderCount": "ትእዛዛት",
+        "combinedCents": "ጠቕላላ",
+        "smallestCents": "እቲ ንኡስ",
+        "reviewThresholdCents": "መስመር ገምጋም",
+        "nearThresholdFloorCents": "ዝተቖጽረ ካብ",
+        "ordersToday": "ትእዛዛት ሎሚ",
+        "ordersInLookback": "ቅድሚኡ ትእዛዛት",
+        "lookbackDays": "መበገሲ መዓልትታት",
+        "dailyAverage": "መዓልታዊ ማእከላይ",
+        "depositedCents": "ኣታዊ",
+        "withdrawnCents": "ወጻኢ",
+        "returnedPct": "ዝተመልሰ (%)",
+        "windowHours": "ግዜ (ሰዓታት)",
+        "volumeCents": "መጠን",
+        "accountAgeDays": "ዕድመ ሒሳብ (መዓልትታት)",
+        "quietDays": "ጸጥ ዝበሉ መዓልትታት",
+        "lastActivityAt": "ናይ መወዳእታ ንጥፈት",
+        "refusalCount": "ነጸጋታት",
+        "reasons": "ምኽንያታት",
+        "side": "ኣንፈት",
+        "orderId": "ትእዛዝ",
+        "quoteId": "ዋጋ",
+        "totalCents": "ጠቕላላ"
+      }
     }
   },
   "kyc": {
@@ -789,7 +957,14 @@
       "kyc_pending_exists": "ኣብ ምርመራ ዘሎ ምቕራብ ኣሎካ።",
       "file_required": "ቅድም ናይ ሰነድ ፋይል ምረጽ።",
       "generic": "ጸገም ኣጋጢሙ። በጃኻ እንደገና ፈትን።"
-    }
+    },
+    "reading": "እቲ ሰነድ ኣብ ምንባብ…",
+    "readFailed": "እቲ ሰነድ ብኣውቶማቲክ ክንበብ ኣይከኣለን። በጃኻ ነቲ ዝርዝራት ባዕልኻ ጽሓፎ።",
+    "detailsLegend": "ናትካ ዝርዝራት",
+    "detailsHint": "ክሳብ ዝከኣል ካብ ሰነድካ ተመሊኡ። ቅድሚ ምስዳድካ ንነፍሲ ወከፍ ሜዳ ኣረጋግጽ እሞ ጌጋ እንተሎ ኣተዓራርዮ — እዚኦም ናትካ ዝርዝራት እዮም፣ ናትና ኣይኮኑን።",
+    "fullNameLabel": "ምሉእ ስም ከምዝተጻሕፈ",
+    "docNumberLabel": "ቁጽሪ ሰነድ",
+    "expiryLabel": "ዕለት ምውዳእ ከምዝተጻሕፈ"
   },
   "credential": {
     "eyebrow": "ዝተመዝገበ ስራሕ",
@@ -813,5 +988,18 @@
     "termsLink": "ውዕላት",
     "privacyLink": "ውልቃውነት",
     "backToSite": "ናብ መርበብ ተመለስ"
+  },
+  "whatIf": {
+    "title": "እቲ ምክፍፋል እንተ ተቐዪሩ እንታይ ይኸውን?",
+    "hint": "ኣብ ዋጋ ሎሚ ዝተሰረተ ሒሳብ — ምኽሪ ኣይኮነን",
+    "noHoldings": "ክሳብ ሕጂ ብረት የብልካን፣ ስለዚ ዝክፈል የለን።",
+    "sliderLabel": "ብወርቂ ዝተታሕዘ ብጽሒት",
+    "atCurrent": "እዚ ናይ ሎሚ ምክፍፋልካ እዩ — {pct}% ወርቂ። ካልእ ምክፍፋል እንታይ ከም ዝሓትት ንምርኣይ እቲ መትሓዚ ኣንቀሳቕሶ።",
+    "buy": "{metal} ዓድግ",
+    "sell": "{metal} ሽጥ",
+    "estimatedFees": "ዝተገመተ ኮሚሽን ({pct}%)",
+    "disclaimer": "እዞም ቁጽርታት ናይ ሕጂ ዋጋን ኣብ ስራሕ ዘሎ ኮሚሽንን ይጥቀሙ። ግምት እምበር ቅናሽ ኣይኮኑን — ዋጋ ን30 ካልኢት ይዕጾ፣ እትረጋግጾ ዋጋ ጥራይ እዩ ኣገዳዲ። ALKEVA ዝኾነ ምክፍፋል ኣይመክርን።",
+    "goToTrade": "ናብ ንግዲ ኪድ",
+    "reset": "ናብ ምክፍፋለይ ተመለስ"
   }
 }

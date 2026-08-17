@@ -198,6 +198,25 @@
     "buyShort": "ግዛ",
     "sellShort": "ሽጥ"
   },
+  "attribution": {
+    "title": "ለምን ተለወጠ?",
+    "hint": "የብረት ዋጋ ከብር ምንዛሬ ጋር",
+    "notEnough": "ይህን ለውጥ ለመክፈል በቂ የዋጋ ታሪክ የለም።",
+    "totalLabel": "{metal} በብር",
+    "metalLabel": "የዓለም {metal} ዋጋ",
+    "currencyLabel": "ብር ከዶላር አንጻር",
+    "dominant": {
+      "metal": "በአብዛኛው ብረቱ ነው።",
+      "currency": "በአብዛኛው ምንዛሬው ነው።",
+      "both": "ሁለቱም በተመሳሳይ መጠን ተለውጠዋል።"
+    },
+    "birrWeaker": "በዚህ ጊዜ ውስጥ ብር ከዶላር አንጻር ተዳክሟል፤ ይህ ብቻውን የብር ዋጋን ከፍ ያደርጋል።",
+    "birrStronger": "በዚህ ጊዜ ውስጥ ብር ከዶላር አንጻር ጠንክሯል፤ ይህ ብቻውን የብር ዋጋን ዝቅ ያደርጋል።",
+    "birrFlat": "በዚህ ጊዜ ውስጥ የብር ምንዛሬ አልተለወጠም።",
+    "interaction": "መስተጋብርና ማጠጋጋት {value} ይይዛሉ።",
+    "window": "{from} → {to}",
+    "sources": "ምንጮች፦ {metal} · {fx}"
+  },
   "trade": {
     "title": "ግብይት",
     "buy": "ግዛ",
@@ -413,7 +432,28 @@
     "countNote": "{count} ደረሰኞች",
     "searchSerial": "ቁጥር ፈልግ",
     "noMatch": "በዚህ ቁጥር ደረሰኝ አልተገኘም።",
-    "clearSearch": "ፍለጋን አጽዳ"
+    "clearSearch": "ፍለጋን አጽዳ",
+    "proof": {
+      "title": "ማረጋገጫ",
+      "hint": "ከዚህ ደረሰኝ ጀርባ ያሉት የመዝገብ ግቤቶች",
+      "intro": "ይህ ማጠቃለያ አይደለም። እነዚህ ይህ ግብይት የጻፋቸው የሂሳብ ግቤቶች ናቸው — የእያንዳንዱ እንቅስቃሴ ሁለቱም ጎኖች።",
+      "accountCol": "ሂሳብ",
+      "amountCol": "መጠን",
+      "you": "የእርስዎ ሂሳብ",
+      "accounts": {
+        "cash": "የALKEVA ጥሬ ገንዘብ",
+        "fees": "የALKEVA ኮሚሽን",
+        "tax": "የተሰበሰበ ግብር",
+        "reforestation": "የደን ልማት መዋጮ",
+        "vault": "የ{metal} ግምጃ ቤት"
+      },
+      "checkLabel": "የ{asset} ግቤቶች ድምር",
+      "balancedYes": "እያንዳንዱ ንብረት በትክክል ዜሮ ይሆናል — ምንም አልተፈጠረም፣ ምንም አልጠፋም።",
+      "balancedNo": "እነዚህ ግቤቶች ዜሮ አይሆኑም። እባክዎ ያሳውቁን።",
+      "quoteLock": "ዋጋ የተቆለፈበት",
+      "provenance": "የዋጋ ምንጭ",
+      "askAi": "በቋንቋዬ አብራራልኝ"
+    }
   },
   "account": {
     "title": "መለያ",
@@ -559,7 +599,11 @@
     "deleteConfirmTitle": "ይህን ውይይት መሰረዝ ይፈልጋሉ?",
     "deleteConfirmBody": "መልዕክቶቹ በቋሚነት ይሰረዛሉ። ትዕዛዞችዎ እና ደረሰኞችዎ አይነኩም።",
     "cancel": "ተወው",
-    "today": "ዛሬ"
+    "today": "ዛሬ",
+    "exampleWhyMoved": "ዛሬ ወርቅ ለምን ተለወጠ?",
+    "exampleProve": "የመጨረሻውን ግብይቴን አረጋግጥልኝ",
+    "languageNote": "ለALKEVA በመረጡት ቋንቋ ይመልሳል።",
+    "proveQuestion": "ግብይት {serial}ን አረጋግጥልኝ። የመዝገብ ግቤቶቹን አሳየኝ።"
   },
   "notifications": {
     "title": "ማሳወቂያዎች",
@@ -617,7 +661,9 @@
       "treasury": "ግምጃ ቤት",
       "compliance": "ተገዢነት",
       "audit": "የክትትል መዝገብ",
-      "delivery": "አቅርቦቶች"
+      "delivery": "አቅርቦቶች",
+      "revenue": "ገቢ",
+      "cases": "የአደጋ መዝገቦች"
     },
     "analytics": {
       "days7": "ያለፉት 7 ቀናት",
@@ -644,7 +690,10 @@
       "exportBody": "እያንዳንዱ የተገዢነት ክስተት — የገደብ ምርመራዎች፣ ውሳኔዎቻቸው እና አብረው የተመዘገቡ ማስረጃዎች — ለተቆጣጣሪው ወይም ለአጋር ባንክ በCSV ቅርጸት።",
       "exportButton": "CSV አውርድ",
       "rulesTitle": "ንቁ ሕጎች",
-      "rulesBody": "ከምርመራ ገደቡ በላይ ያሉ ትዕዛዞች ከመፈጸማቸው በፊት የተገዢነት ውሳኔ ይጠብቃሉ፤ መለያዎች በግዴታ ምክንያት በእጅ ሊታገዱና ሊፈቱ ይችላሉ። እያንዳንዱ እርምጃ በማይሰረዘው የክትትል መዝገብ ውስጥ ይመዘገባል።"
+      "rulesBody": "ከምርመራ ገደቡ በላይ ያሉ ትዕዛዞች ከመፈጸማቸው በፊት የተገዢነት ውሳኔ ይጠብቃሉ፤ መለያዎች በግዴታ ምክንያት በእጅ ሊታገዱና ሊፈቱ ይችላሉ። እያንዳንዱ እርምጃ በማይሰረዘው የክትትል መዝገብ ውስጥ ይመዘገባል።",
+      "queueTitle": "የአደጋ መዝገብ ወረፋ",
+      "queueBody": "ቋሚ ደንቦች የተጠናቀቁ እንቅስቃሴዎችን ይቃኛሉ፤ ሰው እንዲያነብ መዝገብ ይከፍታሉ። በራስ-ሰር ምንም አይታገድም፣ የተጠቆመው ሂሳብም አይነገረውም።",
+      "queueButton": "የመዝገብ ወረፋን ክፈት"
     },
     "overview": {
       "pendingKyc": "በመጠባበቅ ላይ ያሉ መታወቂያዎች",
@@ -706,6 +755,17 @@
         "passport": "ፓስፖርት",
         "driving_licence": "የመንጃ ፈቃድ",
         "kebele_id": "የቀበሌ መታወቂያ"
+      },
+      "declaredVsRead": "የተገለጸ / የተነበበ",
+      "readAs": "ተነቧል፦",
+      "fullName": "ስም",
+      "docNumber": "ቁጥር",
+      "expiry": "ማብቂያ",
+      "noDetails": "ምንም ዝርዝር አልቀረበም",
+      "confidence": {
+        "high": "ሰነዱ በግልጽ ተነቧል",
+        "medium": "ሰነዱ በከፊል ይነበባል",
+        "low": "ሰነዱ ለማንበብ አስቸጋሪ ነው"
       }
     },
     "reviews": {
@@ -763,6 +823,114 @@
       "target": "ዒላማ",
       "exportCsv": "የ AML CSV አውርድ",
       "loadMore": "ተጨማሪ አሳይ"
+    },
+    "revenue": {
+      "subtitle": "የተገኘ ኮሚሽን፣ እና ከዚያ ውስጥ በእውነት ማውጣት የሚችሉት",
+      "allTime": "ጠቅላላ የተገኘ ኮሚሽን",
+      "allTimeFoot": "መድረኩ በኮሚሽን የሰበሰበው እያንዳንዱ ብር — ከመዝገቡ የተነበበ፣ ግምት አይደለም።",
+      "windowEarned": "በዚህ ጊዜ",
+      "vsPrev": "ካለፈው ጊዜ ጋር",
+      "newActivity": "የመጀመሪያ እንቅስቃሴ",
+      "today": "ዛሬ",
+      "monthToDate": "ከወሩ መጀመሪያ ጀምሮ",
+      "chartTitle": "የዕለት ኮሚሽን",
+      "byMetal": "ከየት እንደመጣ",
+      "ordersCount": "{count} ትዕዛዞች",
+      "shareOfCommission": "በዚህ ጊዜ ከኮሚሽኑ {pct}%",
+      "rateTitle": "በሥራ ላይ ያለው ተመን",
+      "commissionRate": "ኮሚሽን",
+      "perSide": "በግዢና በሽያጭ ላይ",
+      "effectiveRate": "ውጤታማ ተመን",
+      "effectiveFoot": "ኮሚሽን ÷ ግብይት",
+      "serviceFee": "የአገልግሎት ክፍያ",
+      "perOrder": "ቋሚ፣ በእያንዳንዱ ትዕዛዝ",
+      "collectedTitle": "ለሌሎች የተሰበሰበ",
+      "collectedNote": "ግብርና የደን ልማት ክፍያ በመድረኩ በኩል ተሰብስበው ለሌላ አካል የሚተላለፉ ናቸው። የእርስዎ ገቢ አይደሉም፤ በሚወጣው ገንዘብ ውስጥም አይቆጠሩም።",
+      "tax": "ግብር",
+      "reforestation": "የደን ልማት",
+      "positionTitle": "ማውጣት የሚችሉት",
+      "chapaAvailable": "የቻፓ ነጋዴ ቀሪ ሒሳብ",
+      "chapaUnavailable": "አልተገናኘም",
+      "customerLiability": "የደንበኞች ቀሪ ሒሳብ",
+      "customerLiabilityHint": "ደንበኞችዎ በመድረኩ ላይ የያዙት ብር። በተመሳሳይ ሒሳብ ውስጥ ቢቀመጥም የእነሱ ገንዘብ ነው።",
+      "payoutHold": "በሂደት ላይ ያሉ ወጪዎች",
+      "payoutHoldHint": "ተጠይቀው ገና ላልተጠናቀቁ ክፍያዎች የተያዘ።",
+      "haltBuffer": "የሥራ ማስኬጃ መጠባበቂያ",
+      "haltBufferHint": "መድረኩ ብረት መልሶ መግዛት የሚያቆምበት የገንዘብ ወለል። በግምጃ ቤት ውቅር ውስጥ ይቀመጣል።",
+      "safeToSweep": "በደህና ማውጣት የሚቻል",
+      "safeToSweepNote": "የነጋዴ ቀሪ ሒሳብ ሲቀነስ የደንበኞች ገንዘብ፣ በሂደት ላይ ያሉ ወጪዎችና የሥራ መጠባበቂያ። አሉታዊ አይሆንም — ጉድለት እንደ ዜሮ ይታያል።",
+      "positionNote": "ገንዘብ የሚወጣው ከቻፓ ዳሽቦርድ ነው እንጂ ከዚህ አይደለም። ይህ መድረክ ከመዝገቡ ወደ ግለሰብ ገንዘብ የሚያንቀሳቅስበት መንገድ የለውም — ሆን ተብሎ።",
+      "exposureTitle": "ክፍት የብረት አቋም",
+      "issued": "ለደንበኞች የተሸጠ",
+      "exposureNote": "ደንበኞች የያዙትና መድረኩ የሚያስረክባቸው ብረት፣ በአሁኑ ዋጋ ተሰልቶ። ዋጋው ሲጨምር ይህ ዕዳ አብሮ ይጨምራል — የሚሸፍነው ግምጃ ቤቱ ነው።",
+      "contributorsTitle": "በኮሚሽን ቀዳሚ ደንበኞች",
+      "customer": "ደንበኛ",
+      "ordersCol": "ትዕዛዞች",
+      "commission": "ኮሚሽን (ብር)",
+      "noContributors": "በዚህ ጊዜ የተጠናቀቀ ግብይት የለም።",
+      "footnote": "ኮሚሽን የመድረኩ ብቸኛ ገቢ ነው። እዚህ ያሉት ሁሉም አኃዞች ከተጠናቀቁ ትዕዛዞችና ከድርብ-መዝገብ የተገኙ ናቸው፤ ይህ ገጽ ቀሪ ሒሳብ መለወጥ አይችልም።",
+      "windowVolume": "የግብይት መጠን"
+    },
+    "cases": {
+      "explain": "ደንቦች በጊዜ ሰሌዳና በጥያቄ ይሠራሉ። እያንዳንዱ መዝገብ በሰው ሊታይ የሚገባ ንድፍ ነው — መደምደሚያ አይደለም። ሂሳብ ማገድ በተጠቃሚው መዝገብ ላይ የተለየ ሆን ተብሎ የሚደረግ ተግባር ነው።",
+      "runScan": "አሁን ቃኝ",
+      "scanning": "በመቃኘት ላይ…",
+      "scanResult": "ቅኝት ተጠናቅቋል፦ {found} ግኝት፣ {opened} አዲስ መዝገብ ተከፍቷል።",
+      "empty": "እዚህ ምንም መዝገብ የለም።",
+      "resolve": "ፍታ",
+      "resolvedBy": "በ{email} ተፈቷል",
+      "explainAction": "ይህን መዝገብ አብራራ",
+      "explaining": "በመጻፍ ላይ…",
+      "frozen": "ሂሳብ ታግዷል",
+      "tab": {
+        "open": "ክፍት",
+        "resolved": "የተፈታ"
+      },
+      "col": {
+        "rule": "ደንብ",
+        "account": "ሂሳብ",
+        "evidence": "ማስረጃ",
+        "opened": "የተከፈተበት"
+      },
+      "severity": {
+        "high": "ከፍተኛ",
+        "medium": "መካከለኛ",
+        "low": "ዝቅተኛ"
+      },
+      "rule": {
+        "structuring_near_threshold": "ከግምገማ መስመር በታች የቆሙ ግብይቶች",
+        "velocity_spike": "በግብይት ላይ ድንገተኛ ዝላይ",
+        "rapid_in_out": "ገቢ ተደርጎ ወዲያው ወጪ ሆነ",
+        "new_account_volume": "በአዲስ ሂሳብ ላይ ትልቅ መጠን",
+        "dormant_reactivation": "የቆመ ሂሳብ እንደገና ተነቃ",
+        "repeated_refusals": "ተደጋጋሚ ውድቅ ትዕዛዞች",
+        "txn_over_500k": "ከግምገማ መስመር በላይ ትዕዛዝ"
+      },
+      "evidence": {
+        "orderCount": "ትዕዛዞች",
+        "combinedCents": "ጠቅላላ",
+        "smallestCents": "ትንሹ",
+        "reviewThresholdCents": "የግምገማ መስመር",
+        "nearThresholdFloorCents": "የተቆጠረው ከ",
+        "ordersToday": "የዛሬ ትዕዛዞች",
+        "ordersInLookback": "ቀደም ያሉ ትዕዛዞች",
+        "lookbackDays": "የመነሻ ቀናት",
+        "dailyAverage": "የቀን አማካይ",
+        "depositedCents": "ገቢ",
+        "withdrawnCents": "ወጪ",
+        "returnedPct": "የተመለሰ (%)",
+        "windowHours": "ጊዜ (ሰዓት)",
+        "volumeCents": "መጠን",
+        "accountAgeDays": "የሂሳብ ዕድሜ (ቀናት)",
+        "quietDays": "ጸጥታ የነበረባቸው ቀናት",
+        "lastActivityAt": "የመጨረሻ እንቅስቃሴ",
+        "refusalCount": "ውድቅዎች",
+        "reasons": "ምክንያቶች",
+        "side": "አቅጣጫ",
+        "orderId": "ትዕዛዝ",
+        "quoteId": "ዋጋ",
+        "totalCents": "ጠቅላላ"
+      }
     }
   },
   "kyc": {
@@ -789,7 +957,14 @@
       "kyc_pending_exists": "አስቀድሞ በምርመራ ላይ ያለ ማስረከቢያ አለዎት።",
       "file_required": "መጀመሪያ የሰነድ ፋይል ይምረጡ።",
       "generic": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።"
-    }
+    },
+    "reading": "ሰነዱን በማንበብ ላይ…",
+    "readFailed": "ሰነዱ በራስ-ሰር ሊነበብ አልቻለም። እባክዎ ዝርዝሮቹን እራስዎ ይጻፉ።",
+    "detailsLegend": "የእርስዎ ዝርዝሮች",
+    "detailsHint": "በተቻለ መጠን ከሰነድዎ ተሞልቷል። ከማስገባትዎ በፊት እያንዳንዱን መስክ ያረጋግጡ፤ የተሳሳተውን ያስተካክሉ — እነዚህ የእርስዎ ዝርዝሮች ናቸው፣ የእኛ አይደሉም።",
+    "fullNameLabel": "ሙሉ ስም እንደተጻፈው",
+    "docNumberLabel": "የሰነድ ቁጥር",
+    "expiryLabel": "የማብቂያ ቀን እንደተጻፈው"
   },
   "credential": {
     "eyebrow": "የተመዘገበ ሥራ",
@@ -813,5 +988,18 @@
     "termsLink": "ውሎች",
     "privacyLink": "ግላዊነት",
     "backToSite": "ወደ ጣቢያው ተመለስ"
+  },
+  "whatIf": {
+    "title": "ክፍፍሉ ቢለያይ ምን ይሆናል?",
+    "hint": "በዛሬው ዋጋ ላይ ስሌት — ምክር አይደለም",
+    "noHoldings": "እስካሁን ብረት አልያዙም፣ ስለዚህ የሚከፋፈል የለም።",
+    "sliderLabel": "በወርቅ የተያዘ ድርሻ",
+    "atCurrent": "ይህ የዛሬው ክፍፍልዎ ነው — {pct}% ወርቅ። ሌላ ክፍፍል ምን እንደሚጠይቅ ለማየት እጀታውን ያንቀሳቅሱ።",
+    "buy": "{metal} ይግዙ",
+    "sell": "{metal} ይሽጡ",
+    "estimatedFees": "የተገመተ ኮሚሽን ({pct}%)",
+    "disclaimer": "እነዚህ አኃዞች የአሁኑን ዋጋና በሥራ ላይ ያለውን ኮሚሽን ይጠቀማሉ። ግምት እንጂ ቅናሽ አይደሉም — ዋጋ ለ30 ሰከንድ ይቆለፋል፣ የሚያረጋግጡት ዋጋ ብቻ ነው አስገዳጅ። ALKEVA ምንም ዓይነት ክፍፍል አይመክርም።",
+    "goToTrade": "ወደ ግብይት ሂድ",
+    "reset": "ወደ ክፍፍሌ ተመለስ"
   }
 }

@@ -71,6 +71,20 @@
       "when": 1786790000004,
       "tag": "0009_locale_to_text",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786790000005,
+      "tag": "0010_risk_cases",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786790000006,
+      "tag": "0011_kyc_extraction",
+      "breakpoints": true
     }
   ]
 }

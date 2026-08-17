@@ -198,6 +198,25 @@
     "buyShort": "Buy",
     "sellShort": "Sell"
   },
+  "attribution": {
+    "title": "Why did it move?",
+    "hint": "Metal price vs birr rate",
+    "notEnough": "Not enough price history yet to split this move.",
+    "totalLabel": "{metal} in birr",
+    "metalLabel": "World {metal} price",
+    "currencyLabel": "Birr against the dollar",
+    "dominant": {
+      "metal": "Mostly the metal.",
+      "currency": "Mostly the currency.",
+      "both": "Both moved, roughly equally."
+    },
+    "birrWeaker": "Over this window the birr weakened against the dollar, which lifts the birr price on its own.",
+    "birrStronger": "Over this window the birr strengthened against the dollar, which lowers the birr price on its own.",
+    "birrFlat": "The birr rate did not move over this window.",
+    "interaction": "Interaction and rounding account for {value}.",
+    "window": "{from} → {to}",
+    "sources": "Sources: {metal} · {fx}"
+  },
   "trade": {
     "title": "Trade",
     "buy": "Buy",
@@ -413,7 +432,28 @@
     "countNote": "{count} receipts",
     "searchSerial": "Search serial",
     "noMatch": "No receipt matches that serial.",
-    "clearSearch": "Clear search"
+    "clearSearch": "Clear search",
+    "proof": {
+      "title": "Proof",
+      "hint": "The ledger entries behind this receipt",
+      "intro": "Nothing here is a summary. These are the accounting entries this transaction wrote, exactly as stored — both sides of every movement.",
+      "accountCol": "Account",
+      "amountCol": "Amount",
+      "you": "Your account",
+      "accounts": {
+        "cash": "ALKEVA cash",
+        "fees": "ALKEVA commission",
+        "tax": "Tax collected",
+        "reforestation": "Reforestation levy",
+        "vault": "{metal} vault"
+      },
+      "checkLabel": "{asset} entries add up to",
+      "balancedYes": "Every asset nets to exactly zero — nothing was created or destroyed.",
+      "balancedNo": "These entries do not net to zero. Please report this.",
+      "quoteLock": "Price locked",
+      "provenance": "Price source",
+      "askAi": "Explain this in my language"
+    }
   },
   "account": {
     "title": "Account",
@@ -559,7 +599,11 @@
     "deleteConfirmTitle": "Delete this conversation?",
     "deleteConfirmBody": "Its messages are removed permanently. Your orders and receipts are not affected.",
     "cancel": "Cancel",
-    "today": "Today"
+    "today": "Today",
+    "exampleWhyMoved": "Why did gold move today?",
+    "exampleProve": "Prove my last transaction",
+    "languageNote": "It answers in the language you chose for ALKEVA.",
+    "proveQuestion": "Prove transaction {serial}. Show me the ledger entries."
   },
   "notifications": {
     "title": "Notices",
@@ -617,7 +661,9 @@
       "treasury": "Treasury",
       "compliance": "Compliance",
       "audit": "Audit log",
-      "delivery": "Deliveries"
+      "delivery": "Deliveries",
+      "revenue": "Revenue",
+      "cases": "Risk cases"
     },
     "analytics": {
       "days7": "Last 7 days",
@@ -644,7 +690,10 @@
       "exportBody": "Every compliance event — threshold reviews, their resolutions, and the evidence recorded with them — as a CSV for the regulator or the partner bank.",
       "exportButton": "Download CSV",
       "rulesTitle": "Active rules",
-      "rulesBody": "Orders at or above the review threshold are held for a compliance decision before they settle; accounts can be frozen and unfrozen manually, with a mandatory reason. Every action is written to the append-only audit log."
+      "rulesBody": "Orders at or above the review threshold are held for a compliance decision before they settle; accounts can be frozen and unfrozen manually, with a mandatory reason. Every action is written to the append-only audit log.",
+      "queueTitle": "Risk case queue",
+      "queueBody": "Deterministic rules scan settled activity and open a case for a person to read. Nothing is frozen or blocked automatically, and the flagged account is never notified.",
+      "queueButton": "Open the case queue"
     },
     "overview": {
       "pendingKyc": "Pending KYC",
@@ -706,6 +755,17 @@
         "passport": "Passport",
         "driving_licence": "Driving licence",
         "kebele_id": "Kebele ID"
+      },
+      "declaredVsRead": "Declared / read",
+      "readAs": "read:",
+      "fullName": "Name",
+      "docNumber": "Number",
+      "expiry": "Expiry",
+      "noDetails": "No details submitted",
+      "confidence": {
+        "high": "Document read clearly",
+        "medium": "Document partly legible",
+        "low": "Document hard to read"
       }
     },
     "reviews": {
@@ -763,6 +823,114 @@
       "target": "Target",
       "exportCsv": "Export AML CSV",
       "loadMore": "Show more"
+    },
+    "revenue": {
+      "subtitle": "Commission earned, and how much of it you can actually take out",
+      "allTime": "Commission earned, all time",
+      "allTimeFoot": "Every birr the platform has taken in commission, read from the ledger — not an estimate.",
+      "windowEarned": "This period",
+      "vsPrev": "vs previous period",
+      "newActivity": "first activity",
+      "today": "Today",
+      "monthToDate": "Month to date",
+      "chartTitle": "Commission per day",
+      "byMetal": "Where it comes from",
+      "ordersCount": "{count} orders",
+      "shareOfCommission": "{pct}% of commission this period",
+      "rateTitle": "The rate in force",
+      "commissionRate": "Commission",
+      "perSide": "on every buy and sell",
+      "effectiveRate": "Effective rate",
+      "effectiveFoot": "commission ÷ volume",
+      "serviceFee": "Service fee",
+      "perOrder": "flat, per order",
+      "collectedTitle": "Collected for others",
+      "collectedNote": "Tax and reforestation are collected through the platform and owed onward. They are not your earnings and never count towards the withdrawable figure.",
+      "tax": "Tax",
+      "reforestation": "Reforestation",
+      "positionTitle": "What you can withdraw",
+      "chapaAvailable": "Chapa merchant balance",
+      "chapaUnavailable": "Not connected",
+      "customerLiability": "Customer balances",
+      "customerLiabilityHint": "Birr your customers hold on the platform. It sits in the same account, but it is their money.",
+      "payoutHold": "Withdrawals in flight",
+      "payoutHoldHint": "Held for payouts that have been requested but have not settled yet.",
+      "haltBuffer": "Operating buffer",
+      "haltBufferHint": "The float floor below which the platform stops buying metal back. Set in treasury config.",
+      "safeToSweep": "Safe to withdraw",
+      "safeToSweepNote": "Merchant balance minus customer money, payouts in flight and the operating buffer. Never negative — a shortfall shows as zero.",
+      "positionNote": "Withdrawing is done from the Chapa dashboard, not from here. This platform has no way to move ledger money to a person, by design.",
+      "exposureTitle": "Open metal position",
+      "issued": "sold to customers",
+      "exposureNote": "Metal customers hold that the platform owes them, valued at the current price. If the price rises this debt rises with it — the vault is what covers it.",
+      "contributorsTitle": "Top customers by commission",
+      "customer": "Customer",
+      "ordersCol": "Orders",
+      "commission": "Commission (ETB)",
+      "noContributors": "No settled trades in this period.",
+      "footnote": "Commission is the platform's only income. Every figure here is derived from settled orders and the double-entry ledger; this page cannot change a balance.",
+      "windowVolume": "Traded volume"
+    },
+    "cases": {
+      "explain": "Rules run on a timer and on demand. Each case is a pattern worth a human look — not a conclusion. Freezing an account is a separate, deliberate act on the user's record.",
+      "runScan": "Run scan now",
+      "scanning": "Scanning…",
+      "scanResult": "Scan complete: {found} finding(s), {opened} new case(s) opened.",
+      "empty": "No cases here.",
+      "resolve": "Resolve",
+      "resolvedBy": "Resolved by {email}",
+      "explainAction": "Explain this case",
+      "explaining": "Writing…",
+      "frozen": "Account frozen",
+      "tab": {
+        "open": "Open",
+        "resolved": "Resolved"
+      },
+      "col": {
+        "rule": "Rule",
+        "account": "Account",
+        "evidence": "Evidence",
+        "opened": "Opened"
+      },
+      "severity": {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      },
+      "rule": {
+        "structuring_near_threshold": "Transactions parked under the review line",
+        "velocity_spike": "Sudden jump in trading",
+        "rapid_in_out": "Deposited then withdrawn",
+        "new_account_volume": "Large volume on a new account",
+        "dormant_reactivation": "Dormant account reactivated",
+        "repeated_refusals": "Repeated refused orders",
+        "txn_over_500k": "Order at or above the review line"
+      },
+      "evidence": {
+        "orderCount": "Orders",
+        "combinedCents": "Combined",
+        "smallestCents": "Smallest",
+        "reviewThresholdCents": "Review line",
+        "nearThresholdFloorCents": "Counted from",
+        "ordersToday": "Orders today",
+        "ordersInLookback": "Orders before",
+        "lookbackDays": "Baseline days",
+        "dailyAverage": "Daily average",
+        "depositedCents": "Deposited",
+        "withdrawnCents": "Withdrawn",
+        "returnedPct": "Sent back (%)",
+        "windowHours": "Window (hours)",
+        "volumeCents": "Volume",
+        "accountAgeDays": "Account age (days)",
+        "quietDays": "Days quiet",
+        "lastActivityAt": "Last activity",
+        "refusalCount": "Refusals",
+        "reasons": "Reasons",
+        "side": "Side",
+        "orderId": "Order",
+        "quoteId": "Quote",
+        "totalCents": "Total"
+      }
     }
   },
   "kyc": {
@@ -789,7 +957,14 @@
       "kyc_pending_exists": "You already have a submission under review.",
       "file_required": "Choose a document file first.",
       "generic": "Something went wrong. Please try again."
-    }
+    },
+    "reading": "Reading the document…",
+    "readFailed": "The document could not be read automatically. Please type the details yourself.",
+    "detailsLegend": "Your details",
+    "detailsHint": "Filled in from your document where possible. Check every field and correct anything wrong before you submit — these are your details, not ours.",
+    "fullNameLabel": "Full name as printed",
+    "docNumberLabel": "Document number",
+    "expiryLabel": "Expiry date as printed"
   },
   "credential": {
     "eyebrow": "Registered work",
@@ -813,5 +988,18 @@
     "termsLink": "Terms",
     "privacyLink": "Privacy",
     "backToSite": "Back to site"
+  },
+  "whatIf": {
+    "title": "What if the split were different?",
+    "hint": "Arithmetic on today's price — not advice",
+    "noHoldings": "You hold no metal yet, so there is nothing to split.",
+    "sliderLabel": "Share held in gold",
+    "atCurrent": "This is your split today — {pct}% gold. Move the handle to see what a different one would take.",
+    "buy": "Buy {metal}",
+    "sell": "Sell {metal}",
+    "estimatedFees": "Estimated commission ({pct}%)",
+    "disclaimer": "These figures use the current price and the commission in force. They are an estimate, not an offer — a quote fixes the real price for 30 seconds, and only a quote you confirm is binding. ALKEVA does not recommend any allocation.",
+    "goToTrade": "Go to trade",
+    "reset": "Back to my split"
   }
 }

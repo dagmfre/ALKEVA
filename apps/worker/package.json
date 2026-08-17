@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@alkeva/db": "workspace:*",
+    "@alkeva/risk": "workspace:*",
     "@alkeva/shared": "workspace:*",
     "drizzle-orm": "^0.38.3",
     "ioredis": "^5.4.2",
