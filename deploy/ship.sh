@@ -29,8 +29,13 @@ ZONE=europe-west1-b
 PROJECT=alkeva
 VM_HOST=23.251.133.30
 VM_USER=hp
-SITE=https://23-251-133-30.sslip.io
 REMOTE=/opt/alkeva
+# SITE is resolved from the VM's own ALKEVA_DOMAIN below, not hardcoded here.
+# It was hardcoded to the sslip.io hostname, and when the real domain went
+# live that host stopped having a certificate — so every health check failed
+# the TLS handshake and the script reported a broken deploy on a healthy one.
+# Reading the value Caddy actually serves means this cannot drift again.
+SITE=
 COMPOSE="docker compose -f deploy/docker-compose.prod.yml"
 SSH_KEY="${HOME}/.ssh/google_compute_engine"
 
@@ -57,6 +62,15 @@ ssh_vm() { ssh -n -i "$SSH_KEY" -o StrictHostKeyChecking=no \
   "${VM_USER}@${VM_HOST}" "$@" 2>&1 | sed '/^Warning: Permanently added/d'; }
 
 step() { printf "\n\033[1m→ %s\033[0m\n" "$1"; }
+
+# The domain Caddy is actually configured with. `tail -1` because a key may
+# appear more than once in the env file and the last assignment is the one
+# that wins; `tr -d` strips the CR that survives an editor on Windows.
+SITE="https://$(ssh_vm "grep -E '^ALKEVA_DOMAIN=' ${REMOTE}/.env | tail -1 | cut -d= -f2-" | tr -d '\r\n ')"
+if [ "$SITE" = "https://" ]; then
+  echo "could not read ALKEVA_DOMAIN from ${REMOTE}/.env on the VM" >&2
+  exit 1
+fi
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT

@@ -3,7 +3,7 @@
 Everything needed to run, update, and hand over the deployed platform.
 Written 16 Aug 2026, after the migration from Vercel + Render to Google Cloud.
 
-**Live now:** <https://23-251-133-30.sslip.io>
+**Live now:** <https://allkeva.com>
 
 ---
 
@@ -53,7 +53,8 @@ costs more than this entire VM.
 | VM instance | `alkeva`, zone `europe-west1-b`, type `e2-small` |
 | Static IP | `23.251.133.30` (reserved as `alkeva-ip`) |
 | Firewall rule | `alkeva-allow-web` (tcp:80, tcp:443, tag `alkeva-web`) |
-| Hostname | `23-251-133-30.sslip.io` (wildcard DNS — no domain purchased yet) |
+| Hostname | `allkeva.com` (set as `ALKEVA_DOMAIN` in `/opt/alkeva/.env`; Caddy reads it) |
+| Retired hostname | `23-251-133-30.sslip.io` — no longer certificated, so it now fails the TLS handshake. Do not use it in health checks. |
 | App directory | `/opt/alkeva/app` |
 | Secrets | `/opt/alkeva/.env` (chmod 600, never in git, never in the image) |
 | SSH user | `hp` |
@@ -207,9 +208,9 @@ the same key either way.
 ## 5. Health checks
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://23-251-133-30.sslip.io/welcome
-curl -s https://23-251-133-30.sslip.io/api/healthz
-curl -s https://23-251-133-30.sslip.io/api/prices/latest
+curl -s -o /dev/null -w '%{http_code}\n' https://allkeva.com/welcome
+curl -s https://allkeva.com/api/healthz
+curl -s https://allkeva.com/api/prices/latest
 ```
 
 A healthy price response has `"stale": false` and an `at` timestamp within the
@@ -252,10 +253,15 @@ file created at provisioning (`deploy/vm-startup.sh`). Do not remove it.
 
 ## 7. Before going live
 
-### 7.1 Buy and attach a real domain
+### 7.1 Buy and attach a real domain — **done**
 
-`23-251-133-30.sslip.io` works and has a valid certificate, but it does not read
-as a finished product in front of investors. A `.com` is $10–15/year.
+`allkeva.com` is live and certificated. The steps below are kept as the record
+of how it was attached, and as the recipe if the domain ever moves.
+
+Note that the sslip.io hostname stopped being certificated the moment the real
+domain took over: Caddy only obtains certificates for `ALKEVA_DOMAIN`. Anything
+still pointing at the old host — a bookmark, a health check, a script — will
+fail the TLS handshake rather than redirect.
 
 1. **Buy** the domain (Namecheap, Cloudflare, Porkbun — any registrar).
 2. **Point it at the VM.** Create two DNS A records:
