@@ -63,8 +63,8 @@ costs more than this entire VM.
 | Backups | `/opt/alkeva/backups`, nightly at 02:15 EAT via root's crontab (`deploy/backup-db.sh`), 14 days kept. Same disk as the database — copy one off-box periodically. `supabase-final-*.dump` is the last Supabase snapshot, kept for reference |
 | Measured memory (13 Oct 2026) | whole stack ≈ 460 MB: web 177 · postgres 115 · api 66 · worker 62 · caddy 27 · redis 10 MB |
 
-**Retired:** the GCE VM `alkeva` (`23.251.133.30`, europe-west1-b) — stopped,
-pending deletion; and Supabase project `svemjehggwcjeycplvvd` — no longer
+**Retired:** the GCE VM `alkeva` (`23.251.133.30`, europe-west1-b) — deleted
+13 Oct 2026 with its disk and reserved IPs; and Supabase project `svemjehggwcjeycplvvd` — no longer
 written to, kept until the netcup setup is trusted.
 
 ### Database (on-box Postgres)
@@ -98,9 +98,8 @@ Since 13 Oct 2026:
 | Chapa / Brevo | 0 (free tiers) |
 | **Total** | **~$12–19 / month** |
 
-Plus the domain at Squarespace. The GCE era cost ~$25–32/month; until the
-stopped VM's disk and its reserved static IP are deleted, they still cost
-~$9/month (§7.3).
+Plus the domain at Squarespace. The GCE era cost ~$25–32/month; its VM, disk
+and IPs were deleted on 13 Oct 2026, leaving only the DNS zone.
 
 **What would change this:** Gemini scales with usage — cap it with a quota so
 it cannot surprise you.
@@ -336,12 +335,9 @@ Only after the new origin passes a full manual test:
 
 **Google Cloud + Supabase (after the 13 Oct 2026 move to netcup), in this order:**
 
-1. **Delete the stopped GCE VM, its disk and the reserved IP** — ~$9/month for
-   nothing. The disk also still holds an old copy of `.env`.
-   ```bash
-   gcloud compute instances delete alkeva --zone=europe-west1-b --project=alkeva --delete-disks=all
-   gcloud compute addresses delete alkeva-ip --region=europe-west1 --project=alkeva
-   ```
+1. ~~Delete the stopped GCE VM, its disk and the reserved IPs~~ — **done 13 Oct
+   2026** (VM `alkeva` + disk, `alkeva-ip`, `ephemeral-static`). The project now
+   holds only the DNS zone `allkeva-com` (~$0.20/month).
 2. **Move DNS to Squarespace**, records first, nameservers second, so there is
    no gap: in Squarespace → Domains → allkeva.com → DNS, add `A @ 159.195.85.255`
    and `CNAME www allkeva.com` and remove the Squarespace default records; only
