@@ -28,11 +28,19 @@ export function createDb(
         `Check for surrounding quotes or a wrong value in the environment.`,
     );
   }
+  // Supabase requires SSL; a local Postgres does not offer it. `sslmode=disable`
+  // in the URL is the explicit opt-out for a database on a private network that
+  // is not localhost — the compose `postgres` service on the VPS. It has to be
+  // honoured here: postgres-js lets an explicit `ssl` option override the URL's
+  // sslmode, so without this check the URL's opt-out would be silently ignored.
+  const noSsl =
+    /[?&]sslmode=disable(&|$)/i.test(url) ||
+    url.includes("localhost") ||
+    url.includes("127.0.0.1");
   const client = postgres(url, {
     max: opts?.max ?? 10,
     idle_timeout: opts?.idleTimeoutSec ?? 20,
-    // Supabase requires SSL in production; local docker does not offer it.
-    ssl: url.includes("localhost") || url.includes("127.0.0.1") ? false : "require",
+    ssl: noSsl ? false : "require",
   });
   const db = drizzle(client, { schema });
   return { db, client };

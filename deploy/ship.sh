@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ALKEVA — one-command deploy to the Compute Engine VM.
+# ALKEVA — one-command deploy to the production VPS (netcup VPS 500, Oct 2026).
 #
 #   ./deploy/ship.sh            # ship HEAD, rebuild what changed, restart apps
 #   ./deploy/ship.sh --dirty    # ship the working tree instead of HEAD
@@ -25,10 +25,10 @@
 # leaves production untouched.
 set -euo pipefail
 
-ZONE=europe-west1-b
-PROJECT=alkeva
-VM_HOST=23.251.133.30
-VM_USER=hp
+# netcup VPS 500 G12.5 (Debian 13). Replaced the GCE VM 23.251.133.30 in
+# Oct 2026. Login is root by key only — password SSH is disabled on the box.
+VM_HOST=159.195.85.255
+VM_USER=root
 REMOTE=/opt/alkeva
 # SITE is resolved from the VM's own ALKEVA_DOMAIN below, not hardcoded here.
 # It was hardcoded to the sslip.io hostname, and when the real domain went
@@ -37,7 +37,7 @@ REMOTE=/opt/alkeva
 # Reading the value Caddy actually serves means this cannot drift again.
 SITE=
 COMPOSE="docker compose -f deploy/docker-compose.prod.yml"
-SSH_KEY="${HOME}/.ssh/google_compute_engine"
+SSH_KEY="${HOME}/.ssh/alkeva_vps"
 
 SHIP_DIRTY=0
 TAIL_LOGS=0

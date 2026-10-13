@@ -1,12 +1,17 @@
-# ALKEVA — production stack for a single Google Compute Engine VM.
+# ALKEVA — production stack for a single VPS (netcup since Oct 2026; was a
+# Google Compute Engine VM).
 #
 #   caddy  :80/:443  ─┬─ /api/*  → api:4000   (prefix stripped)
 #                     └─ /*      → web:3000
 #   worker            (no ingress; ticks prices, publishes price:tick)
 #   redis             (internal only — never published to the host)
+#   postgres          (internal only — never published to the host)
 #
-# Postgres is NOT here: it stays on Supabase (Decision, 16 Aug 2026). Only
-# DATABASE_URL points off-box.
+# Postgres moved on-box from Supabase in Oct 2026: a paused free-tier project
+# took production down, and a second vendor for one database was not worth it.
+# DATABASE_URL points at postgres:5432 with sslmode=disable (private network).
+# Its credentials live in /opt/alkeva/postgres.env so the database container
+# never sees the app's payment and AI secrets.
 #
 # Every service runs the same image, differing only by command. Build it once:
 #   docker compose -f deploy/docker-compose.prod.yml build
@@ -26,10 +31,29 @@ x-app: &app
   depends_on:
     redis:
       condition: service_healthy
+    postgres:
+      condition: service_healthy
     migrate:
       condition: service_completed_successfully
 
 services:
+  postgres:
+    image: postgres:17-alpine
+    env_file: [/opt/alkeva/postgres.env]
+    # Sized for a 4 GB box shared with the whole app. The api pool is 10, the
+    # worker 3, migrate 1 — 50 leaves room for a psql session and a backup.
+    command: ["postgres", "-c", "shared_buffers=256MB", "-c", "max_connections=50"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    # Postgres needs a moment to flush on stop; the default 10s can cut it off.
+    stop_grace_period: 60s
+    restart: unless-stopped
+
   redis:
     image: redis:7-alpine
     # appendonly so idempotency keys and WebAuthn challenges survive a restart.
@@ -60,6 +84,8 @@ services:
     command: ["sh", "-c", "./node_modules/.bin/tsx src/migrate.ts && ./node_modules/.bin/tsx src/seed.ts"]
     depends_on:
       redis:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     restart: "no"
 
@@ -105,6 +131,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  pgdata: # THE database. Never `docker compose down -v`. Nightly dumps in /opt/alkeva/backups.
   redisdata:
   caddydata: # ACME account + issued certificates — losing this re-issues, and
   caddyconfig: # Let's Encrypt rate-limits. Do not prune it.
