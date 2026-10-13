@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Nightly Postgres dump on the VPS. Installed by cron as root:
 #
-#   15 23 * * * /opt/alkeva/app/deploy/backup-db.sh >> /var/log/alkeva-backup.log 2>&1
+#   15 23 * * * bash /opt/alkeva/app/deploy/backup-db.sh >> /var/log/alkeva-backup.log 2>&1
 #
 # (23:15 UTC = 02:15 EAT, the quietest hour.)
 #
