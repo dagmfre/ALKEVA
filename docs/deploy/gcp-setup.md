@@ -1,5 +1,10 @@
 # ALKEVA on Google Cloud — setup runbook
 
+> **Retired 13 Oct 2026.** Production moved to a netcup VPS with Postgres
+> on-box (see `OPERATIONS.md`). Google Cloud now only hosts the DNS zone for
+> `allkeva.com`, until it moves to Squarespace (`OPERATIONS.md` §7.3). This file
+> is kept as the record of the GCE setup.
+
 Target shape (decided 16 Aug 2026): **one Compute Engine VM** running web, API,
 price worker, Redis and Caddy in Docker. **Postgres stays on Supabase.** This
 replaces the Vercel (web + API) + Render (worker) split.
@@ -9,6 +14,32 @@ rest is Gemini API usage. Nothing here is on a free tier that can expire.
 
 Steps marked **[you]** need a browser or an interactive login and cannot be run
 by an agent.
+
+---
+
+## As actually built
+
+The commands below were written before the project and region were chosen, and
+drifted from reality. These are the values in production — use them, not the
+placeholders in the prose:
+
+| Thing | Value |
+|---|---|
+| Project id | `alkeva` (**not** `alkeva-prod`) |
+| Zone / region | `europe-west1-b` / `europe-west1` |
+| VM name | `alkeva` (e2-small, Debian 12, 20 GB) |
+| Static IP | `alkeva-ip` = `23.251.133.30`, **reserved** — survives a stop |
+| Domain | `allkeva.com`, Cloud DNS zone `allkeva-com` |
+| App path | `/opt/alkeva/app` — rsynced by `deploy/ship.sh`, **not a git checkout** |
+
+`gcloud` run *on the VM* authenticates as the compute service account, which was
+created without `cloud-platform` scope: every `gcloud compute` call there fails
+with `ACCESS_TOKEN_SCOPE_INSUFFICIENT`. Run admin commands from your own machine
+or Cloud Shell. The VM's own IP is readable without any credential:
+
+```bash
+curl -H "Metadata-Flavor: Google"   http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip
+```
 
 ---
 
@@ -69,12 +100,12 @@ these in Cloud Shell.
 
 ```bash
 gcloud auth login
-gcloud config set project alkeva-prod
+gcloud config set project alkeva
 gcloud services enable compute.googleapis.com
 
 # Static IP first — the domain must resolve before Caddy's first ACME attempt.
-gcloud compute addresses create alkeva-ip --region=us-central1
-gcloud compute addresses describe alkeva-ip --region=us-central1 --format='value(address)'
+gcloud compute addresses create alkeva-ip --region=europe-west1
+gcloud compute addresses describe alkeva-ip --region=europe-west1 --format='value(address)'
 
 gcloud compute instances create alkeva \
   --zone=us-central1-a \
@@ -88,16 +119,15 @@ gcloud compute firewall-rules create alkeva-web \
   --allow=tcp:80,tcp:443 --target-tags=http-server,https-server
 ```
 
-Region note: `us-central1` is the cheapest and is what the cost estimate
-assumes. A region closer to Ethiopia (`europe-west1`, `me-central1`) cuts
-latency but costs 10–25 % more — worth considering before the demo, but change
-it *now* if at all, since moving later means rebuilding.
+Region note: **`europe-west1` was chosen** — closer to Ethiopia than
+`us-central1` at 10–25 % more cost. This is settled; moving region now means
+rebuilding the VM and re-pointing DNS.
 
 **Point the domain's A record at the static IP and wait for it to resolve.**
 Caddy will fail its HTTP-01 challenge until it does, and Let's Encrypt
 rate-limits repeated failures.
 
-Then, on the VM (`gcloud compute ssh alkeva --zone=us-central1-a`):
+Then, on the VM (`gcloud compute ssh alkeva --zone=europe-west1-b`):
 
 ```bash
 sudo apt-get update && sudo apt-get install -y docker.io docker-compose-v2 git
@@ -187,3 +217,18 @@ Only after the manual test pass on the new domain succeeds:
   `/etc/docker/daemon.json` before the disk fills.
 - **Restarts.** `restart: unless-stopped` plus Docker's own systemd unit means
   a VM reboot brings the whole stack back with no cron or pinger involved.
+- **A billing lapse stops the VM, it does not delete it.** Symptom:
+  `ERR_CONNECTION_TIMED_OUT` in the browser (DNS still resolves — that is how it
+  differs from a missing A record, which gives `ERR_NAME_NOT_RESOLVED`), and no
+  answer on ICMP, :80 or :443. Diagnose and recover from your own machine:
+
+  ```bash
+  gcloud compute instances list --project=alkeva          # STATUS: TERMINATED
+  gcloud compute instances start alkeva --zone=europe-west1-b --project=alkeva
+  ```
+
+  Because `alkeva-ip` is reserved, the IP is unchanged, so DNS stays correct and
+  the Caddy volume's existing certificate is reused — **no new ACME issuance**,
+  and therefore no Let's Encrypt rate-limit exposure. `restart: unless-stopped`
+  brings all five services back by itself; the site answered ~90 s after start.
+  Nothing needs redeploying — the code on the VM is untouched by a stop.

@@ -2,6 +2,9 @@
 
 Everything needed to run, update, and hand over the deployed platform.
 Written 16 Aug 2026, after the migration from Vercel + Render to Google Cloud.
+**Updated 13 Oct 2026: production moved to a netcup VPS, and Postgres moved
+on-box from Supabase.** Google Cloud now only serves DNS until it moves to
+Squarespace (§7.3).
 
 **Live now:** <https://allkeva.com>
 
@@ -9,8 +12,8 @@ Written 16 Aug 2026, after the migration from Vercel + Render to Google Cloud.
 
 ## 1. What is deployed, and where
 
-One Compute Engine VM runs five containers behind Caddy. Postgres is the only
-piece that lives off-box.
+One netcup VPS runs six containers behind Caddy, Postgres included. Nothing
+lives off-box except DNS (Google Cloud DNS, pending a move to Squarespace).
 
 ```
                     Internet
@@ -25,7 +28,7 @@ piece that lives off-box.
                   │
         ┌─────────┼──────────┐
     ┌───▼───┐ ┌───▼────┐ ┌───▼──────────┐
-    │ redis │ │ worker │ │  Supabase    │  ← off-box, managed Postgres
+    │ redis │ │ worker │ │  postgres 17 │  ← on-box, volume `pgdata`
     └───────┘ └────────┘ └──────────────┘
 ```
 
@@ -36,6 +39,7 @@ piece that lives off-box.
 | `api` | NestJS | Ledger, orders, payments, admin, AI, SSE price stream |
 | `worker` | Price feed | 30-second tick, publishes `price:tick` to Redis |
 | `redis` | Cache / pub-sub | Idempotency keys, WebAuthn challenges, price fan-out |
+| `postgres` | Database | Postgres 17, never published to the host. Credentials in `/opt/alkeva/postgres.env` |
 | `migrate` | One-shot | Runs migrations + seed on every deploy, then exits |
 
 **Why one VM and not Cloud Run:** the price worker is a loop, not a request,
@@ -48,54 +52,58 @@ costs more than this entire VM.
 
 | Thing | Value |
 |---|---|
-| GCP project | `alkeva` (number `199775236542`) |
-| Billing account | `019EAA-90BB45-0AC5D4` |
-| VM instance | `alkeva`, zone `europe-west1-b`, type `e2-small` |
-| Static IP | `23.251.133.30` (reserved as `alkeva-ip`) |
-| Firewall rule | `alkeva-allow-web` (tcp:80, tcp:443, tag `alkeva-web`) |
+| Server | netcup **VPS 500 G12.5** — 2 vCore x86, 4 GB RAM, 64 GB SSD, Debian 13, ~€7.98/month (monthly contract; **cancel in the CCP or it renews**) |
+| IP / hostname | `159.195.85.255` · `v2202610417868537912.goodsrv.de` (IPv6 `2a03:4000:63:1b3e:458:70ff:fe61:f4b6`, no AAAA record yet) |
+| SSH | `root` by key only (`~/.ssh/alkeva_vps`); password SSH is disabled in `/etc/ssh/sshd_config.d/00-alkeva-hardening.conf` |
+| Host firewall | `ufw`: 22, 80, 443 in; everything else denied. netcup's own SCP firewall sits in front (see §6 for its mail block) |
 | Hostname | `allkeva.com` (set as `ALKEVA_DOMAIN` in `/opt/alkeva/.env`; Caddy reads it) |
-| Retired hostname | `23-251-133-30.sslip.io` — no longer certificated, so it now fails the TLS handshake. Do not use it in health checks. |
+| Domain | Registered at **Squarespace** (expires 16 Aug 2027). DNS currently served by Google Cloud DNS zone `allkeva-com` in GCP project `alkeva` — **that project's billing must stay on until DNS moves**, or the domain stops resolving |
 | App directory | `/opt/alkeva/app` |
-| Secrets | `/opt/alkeva/.env` (chmod 600, never in git, never in the image) |
-| SSH user | `hp` |
+| Secrets | `/opt/alkeva/.env` (chmod 600, never in git, never in the image); `/opt/alkeva/postgres.env` for the database container only |
+| Backups | `/opt/alkeva/backups`, nightly at 02:15 EAT via root's crontab (`deploy/backup-db.sh`), 14 days kept. Same disk as the database — copy one off-box periodically. `supabase-final-*.dump` is the last Supabase snapshot, kept for reference |
+| Measured memory (13 Oct 2026) | whole stack ≈ 460 MB: web 177 · postgres 115 · api 66 · worker 62 · caddy 27 · redis 10 MB |
 
-### Database (Supabase)
+**Retired:** the GCE VM `alkeva` (`23.251.133.30`, europe-west1-b) — stopped,
+pending deletion; and Supabase project `svemjehggwcjeycplvvd` — no longer
+written to, kept until the netcup setup is trusted.
 
-Managed Postgres on the free tier, region `eu-west-1`, reached through the
-**session pooler on port 5432**. The transaction pooler (6543) is rejected by
-`createDb` on purpose — it cannot hold the session state the ledger's row locks
-require.
+### Database (on-box Postgres)
 
-Supabase free tier pauses a project after a week of inactivity. This project is
-never idle: the price worker writes a tick every 30 seconds.
+Postgres 17 in the `postgres` compose service, data in the `pgdata` volume,
+reachable only on the compose network as `postgres:5432`. `DATABASE_URL` ends
+in `?sslmode=disable`, which `createDb` honours (it forces SSL for every other
+non-localhost URL, because Supabase required it).
+
+```bash
+# psql into production
+docker compose -f deploy/docker-compose.prod.yml exec postgres psql -U alkeva -d alkeva
+# restore a backup (DESTRUCTIVE — replaces the live data)
+docker compose -f deploy/docker-compose.prod.yml exec -T postgres \
+  pg_restore -U alkeva -d alkeva --clean --if-exists --no-owner < /opt/alkeva/backups/<file>.dump
+```
+
+**Never** run `docker compose down -v` — `-v` deletes the database volume.
 
 ---
 
 ## 2. What it costs
 
-Measured against the resources actually provisioned, `europe-west1` rates:
+Since 13 Oct 2026:
 
-| Item | Monthly (USD) |
+| Item | Monthly |
 |---|---|
-| `e2-small` VM (2 vCPU burst, 2 GB RAM) | ~13.45 |
-| Static external IPv4 | ~3.00 |
-| 20 GB pd-balanced boot disk | ~2.20 |
-| Network egress (demo-scale) | ~1–3 |
-| **Google Cloud subtotal** | **~20–22** |
-| Gemini API (light production use) | ~3–10 |
-| Supabase / Chapa / Brevo | 0 (free tiers) |
-| **Total** | **~25–32 / month** |
+| netcup VPS 500 G12.5 (traffic included) | €7.98 (−13% on a 12-month term) |
+| Google Cloud DNS zone (until DNS moves to Squarespace) | ~$0.20 |
+| Gemini API (light production use) | ~$3–10 |
+| Chapa / Brevo | 0 (free tiers) |
+| **Total** | **~$12–19 / month** |
 
-Roughly **$300–380/year**, plus a domain at $10–15/year.
+Plus the domain at Squarespace. The GCE era cost ~$25–32/month; until the
+stopped VM's disk and its reserved static IP are deleted, they still cost
+~$9/month (§7.3).
 
-**What would change this:**
-- **Supabase Pro ($25/mo)** if the free tier's storage or connection limits are
-  outgrown.
-- **Gemini** scales with usage — cap it with a quota so it cannot surprise you.
-- **A bigger disk.** 20 GB is tight (see §6); 40 GB adds ~$2/month.
-
-Check the real number any time: Console → Billing → Cost table, filtered to the
-`alkeva` project. That page is also the client's invoice evidence.
+**What would change this:** Gemini scales with usage — cap it with a quota so
+it cannot surprise you.
 
 ---
 
@@ -137,7 +145,7 @@ app containers, prunes disk, and health-checks the result.
 If the script is unavailable:
 
 ```bash
-ssh -i ~/.ssh/google_compute_engine hp@23.251.133.30
+ssh -i ~/.ssh/alkeva_vps root@159.195.85.255
 cd /opt/alkeva/app
 docker compose -f deploy/docker-compose.prod.yml build
 docker compose -f deploy/docker-compose.prod.yml up -d
@@ -149,8 +157,8 @@ docker image prune -f
 No rebuild needed — the env file is read at container start:
 
 ```bash
-ssh -i ~/.ssh/google_compute_engine hp@23.251.133.30
-sudo nano /opt/alkeva/.env
+ssh -i ~/.ssh/alkeva_vps root@159.195.85.255
+nano /opt/alkeva/.env
 cd /opt/alkeva/app
 docker compose -f deploy/docker-compose.prod.yml up -d --force-recreate api web worker
 ```
@@ -193,7 +201,7 @@ alias dc='docker compose -f deploy/docker-compose.prod.yml'
 **Connecting to the VM:**
 
 ```bash
-ssh -i ~/.ssh/google_compute_engine hp@23.251.133.30
+ssh -i ~/.ssh/alkeva_vps root@159.195.85.255
 ```
 
 Use OpenSSH rather than `gcloud compute ssh` on Windows — gcloud shells out to
@@ -232,19 +240,18 @@ if anything looks wrong.
 ## 6. Known issues and their fixes
 
 **Disk fills during builds.** Each build leaves a ~2.7 GB image plus build
-cache; 20 GB fills after about three deploys, and the box gets flaky mid-build.
-`ship.sh` prunes every run, which contains it. The durable fix is a bigger disk:
+cache. On the old 20 GB GCE disk that wedged the box after about three deploys;
+the netcup VPS has 62 GB, and `ship.sh` still prunes every run.
 
-```bash
-gcloud compute disks resize alkeva --size=40GB --zone=europe-west1-b --project=alkeva
-ssh -i ~/.ssh/google_compute_engine hp@23.251.133.30 "sudo resize2fs /dev/sda1"
-```
+**`next build` RAM.** On the 2 GB GCE VM the build needed the 4 GB swap file
+from `deploy/vm-startup.sh`. The netcup box (4 GB) built the image without
+touching swap; the swap file stays as a safety net. Do not remove it.
 
-Costs ~$2/month more. Recommended before demo day — a deploy that can wedge the
-box is a bad trade for $2.
-
-**`next build` needs more RAM than an `e2-small` has.** Handled by a 4 GB swap
-file created at provisioning (`deploy/vm-startup.sh`). Do not remove it.
+**Outbound email is blocked by netcup by default.** netcup ships every VPS with
+a "netcup Mail Block" firewall policy that blocks SMTP (25/465/587) in both
+directions. Brevo is unreachable until that policy is deleted in the SCP →
+Firewall. Symptom: password resets and notification emails silently never
+arrive; `notification` rows stay `queued`.
 
 **Docker logs.** Capped at 10 MB × 3 per container via
 `/etc/docker/daemon.json`. Without that a chatty container fills the disk.
@@ -326,7 +333,27 @@ Only after the new origin passes a full manual test:
   code against the *same* database — including code that predates migration
   0009.
 - Cancel any external uptime pinger.
-- **Keep Supabase.**
+
+**Google Cloud + Supabase (after the 13 Oct 2026 move to netcup), in this order:**
+
+1. **Delete the stopped GCE VM, its disk and the reserved IP** — ~$9/month for
+   nothing. The disk also still holds an old copy of `.env`.
+   ```bash
+   gcloud compute instances delete alkeva --zone=europe-west1-b --project=alkeva --delete-disks=all
+   gcloud compute addresses delete alkeva-ip --region=europe-west1 --project=alkeva
+   ```
+2. **Move DNS to Squarespace**, records first, nameservers second, so there is
+   no gap: in Squarespace → Domains → allkeva.com → DNS, add `A @ 159.195.85.255`
+   and `CNAME www allkeva.com` and remove the Squarespace default records; only
+   then switch the nameservers from Google Cloud DNS to Squarespace's.
+3. **Wait 48 hours** (resolvers cache the old delegation up to the `.com` NS TTL),
+   then shut down the GCP project `alkeva`. Until step 3, **its billing must stay
+   linked** — on 13 Oct a billing lapse took the whole domain offline even
+   though the server was healthy.
+4. **Delete the Supabase project** `svemjehggwcjeycplvvd` once the netcup setup
+   is trusted. It is a full copy of production data (users, KYC, ledger) that
+   nothing writes to any more; `/opt/alkeva/backups/supabase-final-*.dump` is
+   the last snapshot of it.
 
 ### 7.4 Security checklist
 
