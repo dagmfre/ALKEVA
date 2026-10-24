@@ -330,7 +330,14 @@
     "emptyTitle": "Ammatti albuuda hin qabdu",
     "emptyBody": "Giraama 1 irraa jalqabdee bituu dandeessa.",
     "metalColumn": "Albuuda",
-    "vaultVisualHint": "guddinni isaa giraama ati qabdu hordofa"
+    "vaultVisualHint": "guddinni isaa giraama ati qabdu hordofa",
+    "vault": {
+      "openHint": "Kuusaa kee banuuf saanduqa tuqi",
+      "closeHint": "Cufuuf tuqi",
+      "yourGold": "Warqee kee",
+      "openAria": "Saanduqa warqee kee banii haftee warqee kee ilaali",
+      "closeAria": "Saanduqa warqee kee cufi"
+    }
   },
   "tier": {
     "label": "Sadarkaa",

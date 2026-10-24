@@ -330,7 +330,14 @@
     "emptyTitle": "You hold no metal yet",
     "emptyBody": "You can buy from 1 gram.",
     "metalColumn": "Metal",
-    "vaultVisualHint": "size follows the grams you hold"
+    "vaultVisualHint": "size follows the grams you hold",
+    "vault": {
+      "openHint": "Tap the box to open your vault",
+      "closeHint": "Tap to close",
+      "yourGold": "Your gold",
+      "openAria": "Open your gold box and show your gold balance",
+      "closeAria": "Close your gold box"
+    }
   },
   "tier": {
     "label": "Tier",

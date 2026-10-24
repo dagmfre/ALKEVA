@@ -330,7 +330,14 @@
     "emptyTitle": "ገና ማዕድን ኣይሓዝካን",
     "emptyBody": "ካብ 1 ግራም ጀሚርካ ክትገዝእ ትኽእል።",
     "metalColumn": "ማዕድን",
-    "vaultVisualHint": "ዓቐኑ ነቲ እትሕዞ ግራም ይኽተል"
+    "vaultVisualHint": "ዓቐኑ ነቲ እትሕዞ ግራም ይኽተል",
+    "vault": {
+      "openHint": "ካዝናኹም ንምኽፋት ነቲ ሳንዱቕ ጠውቑ",
+      "closeHint": "ንምዕጻው ጠውቑ",
+      "yourGold": "ወርቂኹም",
+      "openAria": "ሳንዱቕ ወርቂኹም ከፊትኩም ተረፍ ወርቂኹም ርአዩ",
+      "closeAria": "ሳንዱቕ ወርቂኹም ዕጸዉ"
+    }
   },
   "tier": {
     "label": "ደረጃ",

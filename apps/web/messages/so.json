@@ -330,7 +330,14 @@
     "emptyTitle": "Weli macdan ma haysatid",
     "emptyBody": "Waxaad ka bilaabi kartaa 1 garaam.",
     "metalColumn": "Macdan",
-    "vaultVisualHint": "cabbirku wuxuu raacaa garaamka aad haysato"
+    "vaultVisualHint": "cabbirku wuxuu raacaa garaamka aad haysato",
+    "vault": {
+      "openHint": "Taabo sanduuqa si aad u furto khasnaddaada",
+      "closeHint": "Taabo si aad u xirto",
+      "yourGold": "Dahabkaaga",
+      "openAria": "Fur sanduuqa dahabkaaga oo eeg haraagaaga dahabka",
+      "closeAria": "Xir sanduuqa dahabkaaga"
+    }
   },
   "tier": {
     "label": "Heer",

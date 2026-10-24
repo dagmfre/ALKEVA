@@ -25,6 +25,7 @@ import {
 import { TierMark } from "@/components/shell/nav-items";
 import { BadgesRow } from "@/components/portfolio/badges-row";
 import { DeliveryCard } from "@/components/portfolio/delivery-card";
+import { GoldVault } from "@/components/three/gold-vault";
 import { MetalMass } from "@/components/three/metal-mass";
 import { useTradeSheet } from "@/components/trade/trade-sheet-context";
 import { revalueHolding } from "@/lib/live-value";
@@ -216,19 +217,30 @@ export function PortfolioScreen() {
         </Button>
       </div>
 
-      {/* The vault visual (spec F13): rendered volume ∝ actual held grams,
-          label fed from the same holdings values the table above shows. */}
+      {/* The vault visual (spec F13): gold lives in the gold box — click it
+          open to lift the bar out; platinum keeps its ingot. Bar volume ∝
+          actual held grams, labels fed from the same holdings values the
+          table above shows. */}
       <Panel className="lg:col-span-8">
         <PanelHeader title={t("vaultVisualTitle")} hint={t("vaultVisualHint")} />
-        <PanelBody className={cn("grid gap-3", held.length > 1 && "sm:grid-cols-2")}>
-          {held.map((h) => (
-            <MetalMass
-              key={h.asset}
-              asset={h.asset}
-              gramsMg={h.gramsMg}
-              label={`${grams(h.gramsMg)} ${tc("g")} ${h.asset === "XAU" ? tc("gold") : tc("platinum")}`}
-            />
-          ))}
+        <PanelBody className="grid gap-3">
+          {held.map((h) =>
+            h.asset === "XAU" ? (
+              <GoldVault
+                key={h.asset}
+                gramsMg={h.gramsMg}
+                gramsLabel={`${grams(h.gramsMg)} ${tc("g")}`}
+                valueLabel={`${money(h.valueCents)} ${tc("birr")}`}
+              />
+            ) : (
+              <MetalMass
+                key={h.asset}
+                asset={h.asset}
+                gramsMg={h.gramsMg}
+                label={`${grams(h.gramsMg)} ${tc("g")} ${tc("platinum")}`}
+              />
+            ),
+          )}
         </PanelBody>
       </Panel>
 

@@ -21,7 +21,7 @@ const Scene = dynamic(() => import("./metal-mass-scene"), {
   loading: () => null,
 });
 
-function useStaticFallback(): boolean {
+export function useStaticFallback(): boolean {
   const [fallback, setFallback] = useState(true);
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

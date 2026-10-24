@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useMemo, useRef } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
+import { StudioEnvironment } from "@/components/three/studio-environment";
+import { ingotGeometry } from "@/components/three/ingot-geometry";
 import { massScale } from "@/components/three/mass-scale";
 
 /**
@@ -23,62 +24,6 @@ import { massScale } from "@/components/three/mass-scale";
 // metalness goes to 1 and roughness drops — a cast bar is polished, not matte.
 const GOLD = { color: "#d4a017", metalness: 1, roughness: 0.16 } as const;
 const PLATINUM = { color: "#c9cdd6", metalness: 1, roughness: 0.2 } as const;
-
-/**
- * Image-based lighting from three's bundled RoomEnvironment (a procedural
- * scene rendered to a PMREM once) — this is what makes metal look like metal:
- * every facet picks up a different window/panel reflection as the bar turns.
- * No HDR download, no external request — CSP-safe and offline-safe, same as
- * the old hand-rolled rig, which stays underneath for base fill.
- */
-function StudioEnvironment() {
-  const gl = useThree((s) => s.gl);
-  const scene = useThree((s) => s.scene);
-
-  useEffect(() => {
-    const pmrem = new THREE.PMREMGenerator(gl);
-    const envScene = new RoomEnvironment();
-    const target = pmrem.fromScene(envScene, 0.04);
-    scene.environment = target.texture;
-    return () => {
-      scene.environment = null;
-      target.dispose();
-      pmrem.dispose();
-    };
-  }, [gl, scene]);
-
-  return null;
-}
-
-/** Classic trapezoid ingot: rectangular base, tapered top, flat shading. */
-function ingotGeometry(): THREE.BufferGeometry {
-  // Base 2.4 × 1.2, top 1.9 × 0.85, height 0.7 — proportions of a cast bar.
-  const bx = 1.2, bz = 0.6, tx = 0.95, tz = 0.425, h = 0.7;
-  const base = [
-    [-bx, 0, -bz], [bx, 0, -bz], [bx, 0, bz], [-bx, 0, bz],
-  ] as const;
-  const top = [
-    [-tx, h, -tz], [tx, h, -tz], [tx, h, tz], [-tx, h, tz],
-  ] as const;
-  const quads: [number[], number[], number[], number[]][] = [
-    [base[3] as never, base[2] as never, base[1] as never, base[0] as never], // bottom
-    [top[0] as never, top[1] as never, top[2] as never, top[3] as never], // top
-    [base[0] as never, base[1] as never, top[1] as never, top[0] as never], // back
-    [base[2] as never, base[3] as never, top[3] as never, top[2] as never], // front
-    [base[1] as never, base[2] as never, top[2] as never, top[1] as never], // right
-    [base[3] as never, base[0] as never, top[0] as never, top[3] as never], // left
-  ];
-  const positions: number[] = [];
-  for (const [a, b, c, d] of quads) {
-    positions.push(...a, ...b, ...c, ...a, ...c, ...d);
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  geo.computeVertexNormals();
-  // Center vertically so rotation pivots through the bar's middle.
-  geo.translate(0, -h / 2, 0);
-  return geo;
-}
 
 function Ingot({ asset, gramsMg }: { asset: "XAU" | "XPT"; gramsMg: string }) {
   const mesh = useRef<THREE.Mesh>(null);

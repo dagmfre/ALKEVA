@@ -330,7 +330,14 @@
     "emptyTitle": "እስካሁን ማዕድን የለዎትም",
     "emptyBody": "ከ1 ግራም ጀምሮ መግዛት ይችላሉ።",
     "metalColumn": "ብረት",
-    "vaultVisualHint": "መጠኑ የያዙትን ግራም ይከተላል"
+    "vaultVisualHint": "መጠኑ የያዙትን ግራም ይከተላል",
+    "vault": {
+      "openHint": "ካዝናዎን ለመክፈት ሳጥኑን ይንኩ",
+      "closeHint": "ለመዝጋት ይንኩ",
+      "yourGold": "የእርስዎ ወርቅ",
+      "openAria": "የወርቅ ሳጥንዎን ከፍተው የወርቅ ቀሪ ሂሳብዎን ይመልከቱ",
+      "closeAria": "የወርቅ ሳጥንዎን ይዝጉ"
+    }
   },
   "tier": {
     "label": "የመለያ ደረጃ",
