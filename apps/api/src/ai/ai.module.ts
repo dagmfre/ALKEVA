@@ -5,7 +5,6 @@ import { PortfolioModule } from "../portfolio/portfolio.module.js";
 import { PricesModule } from "../prices/prices.module.js";
 import { AiController } from "./ai.controller.js";
 import { AiService } from "./ai.service.js";
-import { VisionService } from "./vision.service.js";
 
 /**
  * Note what is NOT imported: LedgerModule, PaymentsModule, PayoutsModule.
@@ -14,11 +13,6 @@ import { VisionService } from "./vision.service.js";
 @Module({
   imports: [AuthModule, OrdersModule, PortfolioModule, PricesModule],
   controllers: [AiController],
-  providers: [AiService, VisionService],
-  // Exported so the compliance console can ask for a case narrative. That call
-  // runs with NO tools at all — it is text generation over evidence a
-  // deterministic rule already established, never a second opinion on whether
-  // the finding holds.
-  exports: [AiService, VisionService],
+  providers: [AiService],
 })
 export class AiModule {}

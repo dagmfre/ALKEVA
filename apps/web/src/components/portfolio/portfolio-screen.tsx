@@ -25,7 +25,6 @@ import {
 import { TierMark } from "@/components/shell/nav-items";
 import { BadgesRow } from "@/components/portfolio/badges-row";
 import { DeliveryCard } from "@/components/portfolio/delivery-card";
-import { WhatIfPanel } from "@/components/portfolio/what-if-panel";
 import { MetalMass } from "@/components/three/metal-mass";
 import { useTradeSheet } from "@/components/trade/trade-sheet-context";
 import { revalueHolding } from "@/lib/live-value";
@@ -234,8 +233,6 @@ export function PortfolioScreen() {
       </Panel>
 
       <BadgesRow badges={data.badges ?? []} className="lg:col-span-4" />
-
-      <WhatIfPanel portfolio={data} className="lg:col-span-12" />
 
       <DeliveryCard
         eligible={data.tier.deliveryEligible}

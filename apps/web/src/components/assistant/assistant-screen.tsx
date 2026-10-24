@@ -383,7 +383,6 @@ export function AssistantScreen() {
             {(
               [
                 "examplePrice",
-                "exampleWhyMoved",
                 "exampleProve",
                 "examplePortfolio",
                 "exampleFees",

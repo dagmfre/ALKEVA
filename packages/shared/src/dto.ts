@@ -58,15 +58,6 @@ export interface PriceSnapshotResponse {
   at: string; // server time the snapshot was assembled
 }
 
-/** The rate card in force. Never a price — a quote is the only binding figure. */
-export interface FeeRatesResponse {
-  /** Commission in milli-percent: 2% → 2000. */
-  commissionPctMilli: number;
-  serviceFeeCents: string;
-  taxPctMilli: number;
-  reforestPctMilli: number;
-}
-
 export interface PricePointDto {
   at: string;
   etbCentsPerGram: string;
@@ -76,43 +67,6 @@ export interface PriceHistoryResponse {
   asset: Asset;
   range: PriceRange;
   points: PricePointDto[];
-}
-
-/** One end of an attribution window — a raw tick, never a bucket average. */
-export interface PriceAttributionPointDto {
-  at: string;
-  etbCentsPerGram: string;
-  usdPerOzMicro: string;
-  fxRateMicro: string;
-}
-
-/**
- * Why the birr price moved. A price in ETB/gram is the metal's dollar price
- * times the birr's dollar rate, so a move in birr is always two moves at once:
- * the world metal price, and the currency. Both halves are stored on every
- * price_tick, so this is arithmetic on our own data — not a model's opinion.
- */
-export interface PriceAttributionResponse {
-  asset: Asset;
-  range: PriceRange;
-  from: PriceAttributionPointDto;
-  to: PriceAttributionPointDto;
-  /** Total ETB/gram move, milli-percent. Null when there is no distinct reference tick. */
-  totalPctMilli: string | null;
-  /** The metal's own move in USD/oz, milli-percent. */
-  metalPctMilli: string | null;
-  /** USD→ETB move, milli-percent. Positive = the birr weakened against the dollar. */
-  fxPctMilli: string | null;
-  /**
-   * total − metal − fx: the interaction of the two moves plus the cents
-   * rounding. Reported rather than folded silently into the other two, so the
-   * three figures always reconcile to the total exactly.
-   */
-  crossPctMilli: string | null;
-  /** Which half did more of the work; null when neither moved meaningfully. */
-  dominant: "metal" | "currency" | "both" | null;
-  source: string;
-  fxSource: string;
 }
 
 /** One leg of the double-entry pair behind an order. */
@@ -473,25 +427,6 @@ export const KYC_DOC_TYPES = ["fayda", "passport", "driving_licence", "kebele_id
 export type KycDocType = (typeof KYC_DOC_TYPES)[number];
 export type KycStatus = "pending" | "approved" | "rejected";
 
-/**
- * What a model read off an uploaded document. A transcription, not a check:
- * nothing here verifies that the document is genuine, valid, or unexpired.
- */
-export interface KycExtractionDto {
-  fullName: string | null;
-  docNumber: string | null;
-  expiry: string | null;
-  confidence: "high" | "medium" | "low";
-}
-
-/** The user's own declared identity fields, submitted with the document. */
-export const kycDeclaredDto = z.object({
-  fullName: z.string().max(200).optional(),
-  docNumber: z.string().max(200).optional(),
-  expiry: z.string().max(200).optional(),
-});
-export type KycDeclaredDto = z.infer<typeof kycDeclaredDto>;
-
 export interface KycMeResponse {
   kycTier: number;
   /** Latest submission, if any. */
@@ -502,9 +437,6 @@ export interface KycMeResponse {
     reviewNote: string | null;
     createdAt: string;
     reviewedAt: string | null;
-    declaredFullName: string | null;
-    declaredDocNumber: string | null;
-    declaredExpiry: string | null;
   } | null;
 }
 
@@ -741,16 +673,6 @@ export interface AdminKycItem {
   status: KycStatus;
   fileName: string;
   createdAt: string;
-  /** What the user typed. */
-  declaredFullName: string | null;
-  declaredDocNumber: string | null;
-  declaredExpiry: string | null;
-  /** What was read off the image — shown beside the declared values so the
-      reviewer can see any disagreement. Never a verdict on the document. */
-  extractedFullName: string | null;
-  extractedDocNumber: string | null;
-  extractedExpiry: string | null;
-  extractedConfidence: string | null;
 }
 
 export interface AdminReviewItem {
@@ -766,45 +688,6 @@ export interface AdminReviewItem {
 
 export interface AdminOrderSearchItem extends OrderListItem {
   userEmail: string;
-}
-
-// ── AML risk cases (spec F20/F22) ─────────────────────────────────
-export type RiskCaseStatus = "open" | "resolved";
-
-/**
- * A finding from the deterministic rules engine, awaiting a person.
- * `narrative` is assistant-written display text — advisory, never an input to
- * any decision; the officer's own action is what the audit log records.
- */
-export interface AdminRiskCaseItem {
-  id: string;
-  userId: string | null;
-  userEmail: string | null;
-  userStatus: "active" | "frozen" | null;
-  ruleKey: string;
-  severity: string | null;
-  score: number | null;
-  evidence: Record<string, string> | null;
-  windowStart: string | null;
-  narrative: string | null;
-  narrativeLocale: string | null;
-  resolvedAt: string | null;
-  resolvedByEmail: string | null;
-  resolutionNote: string | null;
-  createdAt: string;
-}
-
-export interface AdminRiskCasesResponse {
-  cases: AdminRiskCaseItem[];
-  openCount: number;
-}
-
-export interface AdminRiskScanResponse {
-  scannedAt: string;
-  windowStart: string;
-  found: number;
-  opened: number;
-  byRule: Record<string, number>;
 }
 
 export interface AdminAuditItem {

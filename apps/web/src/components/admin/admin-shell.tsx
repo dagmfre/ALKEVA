@@ -37,9 +37,6 @@ const NAV: AdminNavItem[] = [
   { href: "/admin/orders", key: "orders", roles: ["administrator", "compliance", "finance"] },
   { href: "/admin/treasury", key: "treasury", roles: ["administrator", "finance"] },
   { href: "/admin/delivery", key: "delivery", roles: ["administrator", "compliance"] },
-  // The AML queue sits above the exports page: cases are the work, the CSV is
-  // the artefact that leaves the building.
-  { href: "/admin/cases", key: "cases", roles: ["administrator", "compliance"] },
   { href: "/admin/compliance", key: "compliance", roles: ["administrator", "compliance"] },
   { href: "/admin/audit", key: "audit", roles: ["administrator", "compliance"] },
 ];

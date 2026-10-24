@@ -198,25 +198,6 @@
     "buyShort": "Biti",
     "sellShort": "Gurguri"
   },
-  "attribution": {
-    "title": "Maaliif jijjiirame?",
-    "hint": "Gatii sibiilaa fi safarrii birrii",
-    "notEnough": "Jijjiirama kana qooduuf seenaan gatii gahaan hin jiru.",
-    "totalLabel": "{metal} Birriidhaan",
-    "metalLabel": "Gatii addunyaa {metal}",
-    "currencyLabel": "Birrii doolaara irratti",
-    "dominant": {
-      "metal": "Caalaatti sibiilicha.",
-      "currency": "Caalaatti maallaqicha.",
-      "both": "Lamaanuu walqixxeetti jijjiiraman."
-    },
-    "birrWeaker": "Yeroo kana keessatti Birriin doolaara irratti laafeera; kunis ofuma isaatiin gatii Birrii ol kaasa.",
-    "birrStronger": "Yeroo kana keessatti Birriin doolaara irratti jabaateera; kunis ofuma isaatiin gatii Birrii gadi buusa.",
-    "birrFlat": "Yeroo kana keessatti safarriin Birrii hin jijjiiramne.",
-    "interaction": "Walqunnamtiin fi marsaan {value} qabatu.",
-    "window": "{from} → {to}",
-    "sources": "Madda: {metal} · {fx}"
-  },
   "trade": {
     "title": "Daldala",
     "buy": "Biti",
@@ -600,7 +581,6 @@
     "deleteConfirmBody": "Ergaawwan isaa bara baraan haqamu. Ajajni fi nagaheen kee hin tuqaman.",
     "cancel": "Haqi",
     "today": "Har'a",
-    "exampleWhyMoved": "Har'a warqeen maaliif jijjiirame?",
     "exampleProve": "Daldala koo isa dhumaa mirkaneessi",
     "languageNote": "Afaan ALKEVA'f filatteen deebisa.",
     "proveQuestion": "Daldala {serial} mirkaneessi. Galmeewwan herregaa natti agarsiisi."
@@ -662,8 +642,7 @@
       "compliance": "Qorannoo",
       "audit": "Galmee qorannoo",
       "delivery": "Fudhannaa",
-      "revenue": "Galii",
-      "cases": "Galmee balaa"
+      "revenue": "Galii"
     },
     "analytics": {
       "days7": "Guyyaa 7 darban",
@@ -690,10 +669,7 @@
       "exportBody": "Taatee qorannoo hundi — qorannoo daangaa, murtii isaanii fi ragaa isaan waliin galmaa'e — akka CSV'tti qaama toʼataaf yookiin baankii michuuf.",
       "exportButton": "CSV buufadhu",
       "rulesTitle": "Seerota hojii irra jiran",
-      "rulesBody": "Ajajni daangaa qorannoo irra yookiin ol jiru osoo hin xumuramin dura murtii qorannoo eega; herregni harkaan cufamuu fi banamuu danda'a, sababiin dirqama. Gochi hundi galmee hin haqamne keessatti barreeffama.",
-      "queueTitle": "Sarara galmee balaa",
-      "queueBody": "Seerotni murtaa'oo sochii xumurame sakatta'u, namni akka dubbisuuf galmee banu. Ofumaan homaa hin ugguramu, herregni mallattoo qabus hin beeksifamu.",
-      "queueButton": "Sarara galmee bani"
+      "rulesBody": "Ajajni daangaa qorannoo irra yookiin ol jiru osoo hin xumuramin dura murtii qorannoo eega; herregni harkaan cufamuu fi banamuu danda'a, sababiin dirqama. Gochi hundi galmee hin haqamne keessatti barreeffama."
     },
     "overview": {
       "pendingKyc": "KYC eegaa jiru",
@@ -755,17 +731,6 @@
         "passport": "Paaspoortii",
         "driving_licence": "Hayyama konkolaachisummaa",
         "kebele_id": "Eenyummaa gandaa"
-      },
-      "declaredVsRead": "Kan ibsame / kan dubbifame",
-      "readAs": "dubbifame:",
-      "fullName": "Maqaa",
-      "docNumber": "Lakkoofsa",
-      "expiry": "Raawwii",
-      "noDetails": "Bal'inni hin dhiyaanne",
-      "confidence": {
-        "high": "Sanadichi ifatti dubbifame",
-        "medium": "Sanadichi gartokkoon dubbifama",
-        "low": "Sanadichi dubbisuuf ulfaataa dha"
       }
     },
     "reviews": {
@@ -870,67 +835,6 @@
       "noContributors": "Yeroo kana daldalli xumurame hin jiru.",
       "footnote": "Komishiniin galii pilaatformii qofaadha. Lakkoofsonni asii hundi ajajawwan xumuraman fi galmee dachaa irraa argaman; fuulli kun hafteera jijjiiruu hin danda'u.",
       "windowVolume": "Hamma daldalaa"
-    },
-    "cases": {
-      "explain": "Seerotni yeroo murtaa'een fi gaafannoodhaan hojjetu. Galmeen tokkoon tokkoon isaa bocaa namni ilaaluu qabu dha — murtii miti. Herrega ugguruun galmee fayyadamaa irratti gocha adda ta'e dha.",
-      "runScan": "Amma sakatta'i",
-      "scanning": "Sakatta'aa jira…",
-      "scanResult": "Sakatta'iinsi xumurame: argannoo {found}, galmee haaraa {opened} banameera.",
-      "empty": "Asitti galmeen hin jiru.",
-      "resolve": "Furi",
-      "resolvedBy": "{email}n furame",
-      "explainAction": "Galmee kana ibsi",
-      "explaining": "Barreessaa jira…",
-      "frozen": "Herregni uggurameera",
-      "tab": {
-        "open": "Banaa",
-        "resolved": "Furame"
-      },
-      "col": {
-        "rule": "Seera",
-        "account": "Herrega",
-        "evidence": "Ragaa",
-        "opened": "Yeroo banamee"
-      },
-      "severity": {
-        "high": "Ol'aanaa",
-        "medium": "Giddu galeessa",
-        "low": "Gadi aanaa"
-      },
-      "rule": {
-        "structuring_near_threshold": "Daldalawwan sarara gamaggamaa jala dhaabatan",
-        "velocity_spike": "Utaalcha tasaa daldalaa",
-        "rapid_in_out": "Galee battalumatti bahe",
-        "new_account_volume": "Herrega haaraa irratti hamma guddaa",
-        "dormant_reactivation": "Herregni ciise deebi'ee ka'e",
-        "repeated_refusals": "Ajajawwan irra deddeebi'anii didaman",
-        "txn_over_500k": "Ajaja sarara gamaggamaa ol"
-      },
-      "evidence": {
-        "orderCount": "Ajajawwan",
-        "combinedCents": "Waliigala",
-        "smallestCents": "Xiqqaa",
-        "reviewThresholdCents": "Sarara gamaggamaa",
-        "nearThresholdFloorCents": "Kan lakkaa'ame irraa",
-        "ordersToday": "Ajajawwan har'aa",
-        "ordersInLookback": "Ajajawwan duraa",
-        "lookbackDays": "Guyyoota bu'uuraa",
-        "dailyAverage": "Giddu galeessa guyyaa",
-        "depositedCents": "Galii",
-        "withdrawnCents": "Baasii",
-        "returnedPct": "Kan deebi'e (%)",
-        "windowHours": "Yeroo (sa'aatii)",
-        "volumeCents": "Hamma",
-        "accountAgeDays": "Umurii herregaa (guyyoota)",
-        "quietDays": "Guyyoota calliisaa",
-        "lastActivityAt": "Sochii dhumaa",
-        "refusalCount": "Diddaawwan",
-        "reasons": "Sababoota",
-        "side": "Gama",
-        "orderId": "Ajaja",
-        "quoteId": "Gatii",
-        "totalCents": "Waliigala"
-      }
     }
   },
   "kyc": {
@@ -957,14 +861,7 @@
       "kyc_pending_exists": "Dhiheessa qorannoo irra jiru qabda.",
       "file_required": "Duraan dursii faayilii waraqaa filadhu.",
       "generic": "Rakkoon uumameera. Maaloo irra deebi'ii yaali."
-    },
-    "reading": "Sanada dubbisaa jira…",
-    "readFailed": "Sanadichi ofumaan dubbifamuu hin dandeenye. Maaloo bal'ina isaa ofii kee barreessi.",
-    "detailsLegend": "Bal'ina kee",
-    "detailsHint": "Hamma danda'ametti sanada kee irraa guutameera. Osoo hin ergin dura dirree hunda mirkaneessi, wanti dogoggora ta'e jiraatu sirreessi — kun bal'ina kee malee kan keenya miti.",
-    "fullNameLabel": "Maqaa guutuu akkuma barreeffametti",
-    "docNumberLabel": "Lakkoofsa sanadaa",
-    "expiryLabel": "Guyyaa raawwii akkuma barreeffametti"
+    }
   },
   "credential": {
     "eyebrow": "Hojii galmaaye",
@@ -988,18 +885,5 @@
     "termsLink": "Haalota",
     "privacyLink": "Dhuunfaa",
     "backToSite": "Gara marsariitii deebii"
-  },
-  "whatIf": {
-    "title": "Qoodni yoo garaa gara ta'e maal ta'a?",
-    "hint": "Gatii har'aa irratti herrega — gorsa miti",
-    "noHoldings": "Amma sibiila hin qabdu, kanaaf wanti qoodamu hin jiru.",
-    "sliderLabel": "Qooda warqeedhaan qabame",
-    "atCurrent": "Kun qooda kee har'aa ti — warqee {pct}%. Qoodni biraa maal akka gaafatu ilaaluuf qabduu sochoosi.",
-    "buy": "{metal} biti",
-    "sell": "{metal} gurguri",
-    "estimatedFees": "Komishinii tilmaamame ({pct}%)",
-    "disclaimer": "Lakkoofsonni kunneen gatii ammaa fi komishinii hojii irra jiru fayyadamu. Tilmaama malee dhiyeessii miti — gatiin sekondii 30f cufama, gatiin ati mirkaneessitu qofti dirqisiisaa dha. ALKEVA qooda kamiyyuu hin gorsu.",
-    "goToTrade": "Gara daldalaa deemi",
-    "reset": "Gara qooda kootti deebi'i"
   }
 }

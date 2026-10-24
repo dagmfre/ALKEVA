@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
@@ -35,16 +34,6 @@ export function AdminComplianceScreen() {
         <p className="mt-1.5 text-[0.9375rem] leading-relaxed text-muted-foreground">
           {t("compliance.rulesBody")}
         </p>
-      </section>
-
-      <section className="max-w-[40rem] rounded-lg border border-border bg-card p-5">
-        <h2 className="text-[1.0625rem] font-semibold">{t("compliance.queueTitle")}</h2>
-        <p className="mt-1.5 text-[0.9375rem] leading-relaxed text-muted-foreground">
-          {t("compliance.queueBody")}
-        </p>
-        <Button variant="outline" className="mt-4" asChild>
-          <Link href="/admin/cases">{t("compliance.queueButton")}</Link>
-        </Button>
       </section>
     </div>
   );

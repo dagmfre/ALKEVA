@@ -625,13 +625,6 @@ export class AdminService {
         status: r.submission.status,
         fileName: r.submission.fileRef,
         createdAt: r.submission.createdAt.toISOString(),
-        declaredFullName: r.submission.declaredFullName,
-        declaredDocNumber: r.submission.declaredDocNumber,
-        declaredExpiry: r.submission.declaredExpiry,
-        extractedFullName: r.submission.extractedFullName,
-        extractedDocNumber: r.submission.extractedDocNumber,
-        extractedExpiry: r.submission.extractedExpiry,
-        extractedConfidence: r.submission.extractedConfidence,
       })),
     };
   }

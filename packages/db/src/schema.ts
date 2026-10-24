@@ -202,6 +202,9 @@ export const kycSubmissions = pgTable(
     /** The document itself, in-row (migration 0004); ≤2 MB enforced at the API. */
     fileData: bytea("file_data"),
     fileMime: text("file_mime"),
+    // Dormant since 24 Oct 2026: KYC vision was removed from main, but these
+    // columns (migration 0011) stay so the database needs no migration either
+    // way. Nothing writes them now; the code lives on `hackathon-features`.
     /** What the USER typed and submitted — their own claim about themselves. */
     declaredFullName: text("declared_full_name"),
     declaredDocNumber: text("declared_doc_number"),
@@ -471,6 +474,10 @@ export const complianceEvents = pgTable(
     ruleKey: text("rule_key").notNull(),
     evidence: jsonb("evidence"),
     action: complianceActionEnum("action").notNull(),
+    // score … resolutionNote and ce_user_rule_window_uq are dormant since
+    // 24 Oct 2026: the AML rules engine was removed from main, but its columns
+    // (migration 0010) stay so the database needs no migration either way.
+    // The code lives on the `hackathon-features` branch.
     /** 0–100, higher is more concerning. Advisory only — nothing gates on it. */
     score: integer("score"),
     /** low | high | medium. Text, not an enum: adding a band must not be a
