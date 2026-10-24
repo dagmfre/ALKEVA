@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type {
   BalancesResponse,
@@ -10,8 +9,10 @@ import type {
   PayoutResponse,
 } from "@alkeva/shared";
 
+import { AmountField, KycGate, Steps, WalletNav, fieldCls } from "@/components/money/wallet-ui";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
+import { Panel, PanelHeader } from "@/components/ui/panel";
 import {
   Select,
   SelectContent,
@@ -24,7 +25,6 @@ import { SystemBanner } from "@/components/system/banner";
 import { api, ApiError } from "@/lib/api";
 import { eatStamp, money } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
-import { cn } from "@/lib/utils";
 
 const KNOWN = new Set([
   "kyc_required",
@@ -37,8 +37,11 @@ const KNOWN = new Set([
 /**
  * Money out. A request moves the cents into the payout-hold account
  * immediately — the balance genuinely drops — and a finance approver either
- * sends it through Chapa or returns it. The status list below the form is the
- * user's window into that queue.
+ * sends it through Chapa or returns it. The requests list beside the form is
+ * the user's window into that queue.
+ *
+ *   wallet nav
+ *   withdraw form (amount · destination · how it works) │ your requests
  */
 export function WithdrawScreen() {
   const t = useTranslations("withdraw");
@@ -100,172 +103,135 @@ export function WithdrawScreen() {
     }
   }
 
-  return (
-    <div className="mx-auto grid w-full max-w-[64rem] grid-cols-1 items-start gap-3.5 lg:mx-0 lg:max-w-none lg:grid-cols-12 lg:gap-5">
-      {needsKyc ? (
-        <Panel className="flex flex-col gap-3 p-5 lg:col-span-7">
-          <h2 className="text-lg font-semibold">{t("kycGateTitle")}</h2>
-          <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
-            {t("kycGateBody")}
-          </p>
-          <Button size="cta" asChild>
-            <Link href="/kyc">{t("kycGateCta")}</Link>
-          </Button>
-        </Panel>
-      ) : (
-        <Panel className="p-5 lg:col-span-7">
-          <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-4">
-            <div className="well flex items-center justify-between rounded-md px-3.5 py-2.5">
-              <span className="text-[0.9375rem] text-muted-foreground">{t("available")}</span>
-              {balances.data ? (
-                <span className="tnum text-[0.9375rem] font-semibold">
-                  {money(balances.data.etbCents)} {tc("birr")}
-                </span>
-              ) : (
-                <Skeleton className="h-5 w-24" />
-              )}
-            </div>
+  const payouts = list.data?.payouts ?? [];
 
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[0.9375rem] font-medium">{t("amountLabel")}</span>
-              <div className="well flex items-center rounded-md">
-                <input
-                  inputMode="decimal"
+  return (
+    <div className="flex flex-col gap-3">
+      <WalletNav />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_25.25rem]">
+        {needsKyc ? (
+          <KycGate title={t("kycGateTitle")} body={t("kycGateBody")} cta={t("kycGateCta")} />
+        ) : (
+          <Panel aria-label={t("formTitle")}>
+            <PanelHeader
+              title={t("formTitle")}
+              action={
+                <span className="tnum text-[0.8125rem] text-muted-foreground">
+                  <span className="font-sans">{t("available")}</span>{" "}
+                  <b className="font-semibold text-foreground">
+                    {balances.data ? money(balances.data.etbCents) : "—"}
+                  </b>{" "}
+                  {tc("birr")}
+                </span>
+              }
+            />
+            <form
+              onSubmit={(e) => void submit(e)}
+              className="grid flex-1 grid-cols-1 gap-x-8 gap-y-5 px-[1.125rem] pb-[1.125rem] xl:grid-cols-[minmax(0,1fr)_17rem]"
+            >
+              <div className="flex flex-col gap-4">
+                <AmountField
+                  label={t("amountLabel")}
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="tnum min-h-12 w-full bg-transparent px-3.5 text-lg outline-none"
+                  onChange={setAmount}
+                  unit={tc("birr")}
                   disabled={busy}
                 />
-                <span className="pe-3.5 text-[0.9375rem] text-muted-foreground">{tc("birr")}</span>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="flex flex-col gap-1.5 sm:col-span-2">
+                    <span className="data-label">{t("bankLabel")}</span>
+                    <Select value={bankCode} onValueChange={setBankCode} disabled={busy || banks.data === null}>
+                      <SelectTrigger aria-label={t("bankLabel")}>
+                        <SelectValue placeholder={banks.data === null ? tc("loading") : t("bankPlaceholder")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sortedBanks.map((b) => (
+                          <SelectItem key={b.id} value={String(b.id)}>
+                            {b.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {banks.error && <span className="text-[0.75rem] text-loss">{t("errors.banks_unavailable")}</span>}
+                  </div>
+                  <label className="flex flex-col gap-1.5">
+                    <span className="data-label">{t("accountNumberLabel")}</span>
+                    <input
+                      value={accountNumber}
+                      onChange={(e) => setAccountNumber(e.target.value)}
+                      required
+                      minLength={4}
+                      maxLength={34}
+                      inputMode="numeric"
+                      className={`${fieldCls} tnum`}
+                      disabled={busy}
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1.5">
+                    <span className="data-label">{t("accountNameLabel")}</span>
+                    <input
+                      value={accountName}
+                      onChange={(e) => setAccountName(e.target.value)}
+                      required
+                      minLength={2}
+                      maxLength={120}
+                      className={fieldCls}
+                      disabled={busy}
+                    />
+                  </label>
+                </div>
+                {error && (
+                  <SystemBanner tone="critical" className="mb-0">
+                    {KNOWN.has(error) || error === "amount_too_small"
+                      ? t(`errors.${error}` as never)
+                      : t("errors.generic")}
+                  </SystemBanner>
+                )}
+                <div className="mt-auto flex flex-col gap-2">
+                  <Button type="submit" variant="ink" size="cta" disabled={busy}>
+                    {busy ? tc("loading") : t("cta")}
+                  </Button>
+                  <p className="text-[0.75rem] leading-relaxed text-subtle">{t("holdNote")}</p>
+                </div>
               </div>
-            </label>
+              <div className="border-t border-border pt-4 xl:border-t-0 xl:border-s xl:ps-8 xl:pt-0">
+                <Steps title={t("howTitle")} items={[t("how1"), t("how2"), t("how3")]} />
+              </div>
+            </form>
+          </Panel>
+        )}
 
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[0.9375rem] font-medium">{t("bankLabel")}</span>
-              <Select
-                value={bankCode}
-                onValueChange={setBankCode}
-                disabled={busy || banks.data === null}
-              >
-                {/* Matches the sunk `.well` fields around it — one form-control
-                    vocabulary per surface. */}
-                <SelectTrigger
-                  className="min-h-12 w-full border-border bg-well! shadow-[var(--sunk)]"
-                  aria-label={t("bankLabel")}
-                >
-                  <SelectValue
-                    placeholder={banks.data === null ? tc("loading") : t("bankPlaceholder")}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {sortedBanks.map((b) => (
-                    <SelectItem key={b.id} value={String(b.id)}>
-                      {b.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {banks.error && (
-                <span className="text-[0.8125rem] text-loss">{t("errors.banks_unavailable")}</span>
-              )}
-            </div>
-
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[0.9375rem] font-medium">{t("accountNumberLabel")}</span>
-              <input
-                value={accountNumber}
-                onChange={(e) => setAccountNumber(e.target.value)}
-                required
-                minLength={4}
-                maxLength={34}
-                inputMode="numeric"
-                className="well tnum min-h-12 rounded-md px-3.5 text-base outline-none"
-                disabled={busy}
-              />
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[0.9375rem] font-medium">{t("accountNameLabel")}</span>
-              <input
-                value={accountName}
-                onChange={(e) => setAccountName(e.target.value)}
-                required
-                minLength={2}
-                maxLength={120}
-                className="well min-h-12 rounded-md px-3.5 text-base outline-none"
-                disabled={busy}
-              />
-            </label>
-
-            {error && (
-              <SystemBanner tone="critical">
-                {KNOWN.has(error) || error === "amount_too_small"
-                  ? t(`errors.${error}` as never)
-                  : t("errors.generic")}
-              </SystemBanner>
-            )}
-
-            <Button type="submit" size="cta" disabled={busy}>
-              {busy ? tc("loading") : t("cta")}
-            </Button>
-            <p className="text-[0.8125rem] leading-relaxed text-subtle">{t("holdNote")}</p>
-          </form>
-        </Panel>
-      )}
-
-      <div className="flex flex-col gap-3.5 lg:col-span-5 lg:gap-5">
-        <Panel>
-          <PanelHeader title={t("historyTitle")} />
-          {(list.data?.payouts.length ?? 0) === 0 ? (
-            <PanelBody>
-              <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
+        <Panel aria-label={t("historyTitle")} className="lg:h-0 lg:min-h-full">
+          <PanelHeader
+            title={t("historyTitle")}
+            hint={payouts.length > 0 ? String(payouts.length) : undefined}
+          />
+          <div className="min-h-0 flex-1 overflow-y-auto border-t border-border">
+            {list.loading ? (
+              <div className="p-4">
+                <Skeleton className="h-24" />
+              </div>
+            ) : payouts.length === 0 ? (
+              <p className="flex h-full min-h-32 items-center justify-center px-6 text-center text-[0.8125rem] leading-relaxed text-muted-foreground">
                 {t("historyEmpty")}
               </p>
-            </PanelBody>
-          ) : (
-            <div className="border-t border-border">
-              {list.data?.payouts.map((p) => (
-                <div key={p.id} className="border-b border-border px-4 py-3 last:border-0 lg:px-5">
+            ) : (
+              payouts.map((p) => (
+                <div key={p.id} className="border-b border-border px-[1.125rem] py-3 last:border-0">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="tnum text-base font-semibold">
-                      {money(p.amountCents)}{" "}
-                      <span className="font-sans font-normal text-muted-foreground">
-                        {tc("birr")}
-                      </span>
+                    <span className="tnum text-[0.9375rem] font-semibold">
+                      {money(p.amountCents)} <span className="font-sans text-[0.75rem] font-medium text-subtle">{tc("birr")}</span>
                     </span>
                     <PayoutStatus status={p.status} />
                   </div>
-                  <div className="mt-1 flex items-center justify-between gap-3">
-                    <span className="tnum text-[0.875rem] text-muted-foreground">
-                      {p.accountNumber}
-                    </span>
-                    <span className="font-latin text-[0.8125rem] text-subtle">
-                      {eatStamp(p.createdAt)}
-                    </span>
+                  <div className="mt-1 flex items-center justify-between gap-3 text-[0.75rem]">
+                    <span className="tnum text-muted-foreground">{p.accountNumber}</span>
+                    <span className="tnum text-subtle">{eatStamp(p.createdAt)}</span>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </Panel>
-
-        <Panel>
-          <PanelHeader title={t("howTitle")} />
-          <PanelBody>
-            <ol className="flex flex-col gap-3">
-              {[t("how1"), t("how2"), t("how3")].map((step, i) => (
-                <li key={step} className="flex gap-3">
-                  <span className="tnum grid size-6 flex-none place-items-center rounded-full border border-input text-[0.8125rem] font-semibold text-gold-400">
-                    {i + 1}
-                  </span>
-                  <span className="text-[0.9375rem] leading-relaxed text-muted-foreground">
-                    {step}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </PanelBody>
+              ))
+            )}
+          </div>
         </Panel>
       </div>
     </div>
@@ -274,16 +240,9 @@ export function WithdrawScreen() {
 
 function PayoutStatus({ status }: { status: PayoutResponse["status"] }) {
   const t = useTranslations("withdraw");
-  const cls =
-    status === "settled"
-      ? "text-gain"
-      : status === "rejected"
-        ? "text-loss"
-        : "text-platinum-400";
-  const glyph = status === "settled" ? "✓" : status === "rejected" ? "✕" : "◑";
   return (
-    <span className={cn("text-[0.9375rem]", cls)}>
-      {glyph} {t(`status.${status}` as never)}
-    </span>
+    <Badge dot variant={status === "settled" ? "gain" : status === "rejected" ? "loss" : "platinum"}>
+      {t(`status.${status}` as never)}
+    </Badge>
   );
 }

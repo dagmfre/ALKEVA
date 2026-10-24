@@ -30,7 +30,9 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
+import { Check, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Panel, PanelHeader } from "@/components/ui/panel";
 import {
   Dialog,
   DialogClose,
@@ -221,13 +223,25 @@ export function AssistantScreen() {
   const activeTitle = list.find((c) => c.id === activeId)?.title ?? t("newChat");
 
   return (
-    <div className="mx-auto flex h-[calc(100dvh-180px)] max-w-[72rem] gap-5 lg:h-[calc(100dvh-150px)]">
+    <div className="flex h-[calc(100dvh-10.5rem-env(safe-area-inset-bottom))] min-h-[28rem] gap-3 lg:h-[calc(100dvh-6.25rem)]">
       {/* ── Thread rail (≥lg) — the long-term memory surface ── */}
-      <aside className="hidden w-[260px] flex-none flex-col gap-3 lg:flex">
-        <Button variant="outline" size="sm" onClick={newChat} disabled={busy}>
-          {t("newChat")}
-        </Button>
-        <div className="flex-1 space-y-1 overflow-y-auto pe-1">
+      <Panel className="hidden w-[17rem] flex-none lg:flex" aria-label={t("threads")}>
+        <PanelHeader
+          title={t("threads")}
+          action={
+            <Button
+              variant="gold"
+              size="icon-sm"
+              onClick={newChat}
+              disabled={busy}
+              aria-label={t("newChat")}
+              title={t("newChat")}
+            >
+              <Plus />
+            </Button>
+          }
+        />
+        <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto border-t border-border p-2">
           {threads.loading ? (
             <>
               <Skeleton className="h-14 rounded-md" />
@@ -240,8 +254,8 @@ export function AssistantScreen() {
               <div
                 key={c.id}
                 className={cn(
-                  "group relative rounded-md transition-colors",
-                  c.id === activeId ? "pill-active" : "hover:bg-card",
+                  "group relative rounded-[0.625rem] transition-colors",
+                  c.id === activeId ? "bg-raised shadow-(--shadow-thumb)" : "hover:bg-white/[0.03]",
                 )}
               >
                 <button
@@ -250,10 +264,10 @@ export function AssistantScreen() {
                   disabled={busy}
                   className="w-full min-h-11 px-3 py-2 pe-9 text-start"
                 >
-                  <span className="block truncate text-[0.9375rem] leading-snug">
+                  <span className="block truncate text-[0.84375rem] font-semibold leading-snug">
                     {c.title || t("newChat")}
                   </span>
-                  <span className="font-latin mt-0.5 block text-[0.75rem] text-subtle">
+                  <span className="tnum mt-0.5 block text-[0.6875rem] text-subtle">
                     {eatStamp(c.lastAt)}
                   </span>
                 </button>
@@ -276,14 +290,14 @@ export function AssistantScreen() {
             ))
           )}
         </div>
-      </aside>
+      </Panel>
 
       {/* ── Chat column ── */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <Panel className="min-w-0 flex-1" aria-label={t("title")}>
         {/* Phone thread picker — the rail collapses into a menu. */}
-        <div className="flex items-center gap-2 pb-2 lg:hidden">
+        <div className="flex items-center gap-2 border-b border-border p-2.5 lg:hidden">
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-md border border-input px-3 text-start text-[0.9375rem]">
+            <DropdownMenuTrigger className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-[0.5625rem] border border-border bg-panel-2 px-3 text-start text-[0.8125rem] font-semibold">
               <span className="truncate">{activeTitle}</span>
               <svg
                 width="10"
@@ -312,8 +326,8 @@ export function AssistantScreen() {
           </Button>
         </div>
 
-        <Conversation className="rounded-lg border border-border bg-card">
-          <ConversationContent className="gap-5 p-4 lg:p-5">
+        <Conversation className="min-h-0 flex-1">
+          <ConversationContent className="mx-auto w-full max-w-[52rem] gap-5 p-4 lg:p-6">
             {transcriptLoading ? (
               <div className="space-y-3">
                 <Skeleton className="h-16 rounded-lg" />
@@ -379,7 +393,7 @@ export function AssistantScreen() {
         </Conversation>
 
         {messages.length === 0 && !transcriptLoading && (
-          <Suggestions className="pt-3">
+          <Suggestions className="mx-auto w-full max-w-[52rem] px-4 pb-1 lg:px-6">
             {(
               [
                 "examplePrice",
@@ -393,7 +407,7 @@ export function AssistantScreen() {
           </Suggestions>
         )}
 
-        <div className="pt-3">
+        <div className="mx-auto w-full max-w-[52rem] px-3 pt-2 lg:px-6">
           <PromptInput onSubmit={onSubmit}>
             <PromptInputBody>
               <PromptInputTextarea
@@ -413,8 +427,28 @@ export function AssistantScreen() {
             </PromptInputFooter>
           </PromptInput>
         </div>
-        <p className="pt-2 text-center text-[0.75rem] text-subtle">{t("disclaimer")}</p>
-      </div>
+        <p className="px-4 pt-2 pb-3 text-center text-[0.6875rem] text-subtle">{t("disclaimer")}</p>
+      </Panel>
+
+      {/* ── What it can answer (≥xl) — read-only by construction ── */}
+      <Panel className="hidden w-[18rem] flex-none xl:flex" aria-label={t("canTitle")}>
+        <PanelHeader title={t("canTitle")} />
+        <div className="flex flex-1 flex-col gap-4 border-t border-border px-[1.125rem] py-4">
+          <ul className="flex flex-col gap-3">
+            {(["canPrices", "canHoldings", "canHistory", "canProve", "canFees"] as const).map((k) => (
+              <li key={k} className="flex gap-2.5 text-[0.8125rem] leading-snug">
+                <Check className="mt-0.5 size-3.5 flex-none text-gold-400" />
+                <span className="text-muted-foreground">{t(k)}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="rounded-[0.75rem] border border-border bg-background p-3.5">
+            <span className="text-[0.8125rem] font-bold">{t("neverTitle")}</span>
+            <p className="mt-1 text-[0.75rem] leading-relaxed text-muted-foreground">{t("neverBody")}</p>
+          </div>
+          <p className="mt-auto text-[0.71875rem] leading-relaxed text-subtle">{t("languageNote")}</p>
+        </div>
+      </Panel>
 
       {/* Delete confirmation — destructive, so it is a Dialog, never a hover-click. */}
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>

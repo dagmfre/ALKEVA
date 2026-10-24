@@ -6,20 +6,9 @@ import { Select as SelectPrimitive } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 /**
- * shadcn Select, re-tokenised for ALKEVA.
- *
- * Changed from the shadcn default, deliberately:
- *  - Trigger and items are ≥44px tall (min-h-11); the stock 36px fails the
- *    touch-target floor.
- *  - Trigger sits on `bg-control` (the interactive input surface, #252525
- *    territory) with the `border-input` raised hairline — a select is a
- *    field, not a chip.
- *  - Content on `bg-popover` with the one soft large shadow, popper-
- *    positioned so long bank lists drop below the field.
- *  - Highlighted items use `bg-control`, never a colour tint.
- *  - Chevron and check are inline SVGs, not lucide imports — the primitive
- *    stays dependency-free.
- *  - No scroll buttons: lists here scroll natively (max-height + overflow).
+ * Select, design v2. The trigger is a field (same surface and focus ring as
+ * Input); the list is a raised menu with a white/6 highlight and a champagne
+ * check. Lists scroll natively, no scroll buttons.
  */
 
 function ChevronDownIcon({ className }: { className?: string }) {
@@ -81,7 +70,7 @@ function SelectTrigger({
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       className={cn(
-        "flex min-h-11 w-full items-center justify-between gap-2 rounded-md border border-input bg-control px-3.5 text-[0.9375rem] whitespace-nowrap transition-colors outline-none hover:border-foreground/30 disabled:pointer-events-none disabled:opacity-50 data-[placeholder]:text-muted-foreground [&>span]:line-clamp-1",
+        "flex h-11 w-full items-center justify-between gap-2 rounded-md border border-border bg-panel-2 px-3.5 text-[0.9375rem] whitespace-nowrap transition-[border-color,box-shadow] duration-150 outline-none hover:border-input focus-visible:border-gold-500 focus-visible:shadow-[0_0_0_3px_oklch(0.717_0.098_73.3/0.18)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 data-[placeholder]:text-subtle data-[state=open]:border-gold-500 [&>span]:line-clamp-1",
         className
       )}
       {...props}
@@ -106,7 +95,7 @@ function SelectContent({
         data-slot="select-content"
         position={position}
         className={cn(
-          "relative z-(--z-index-dropdown) max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border border-border bg-popover text-popover-foreground shadow-[0_20px_50px_rgba(0,0,0,0.35)]",
+          "relative z-(--z-index-dropdown) max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-[0.75rem] border border-input bg-popover text-popover-foreground shadow-(--shadow-pop)",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
           position === "popper" &&
             "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
@@ -137,7 +126,7 @@ function SelectLabel({
       data-slot="select-label"
       className={cn(
         // Non-interactive, so it may sit below 44px. No uppercase — Ethiopic.
-        "px-3 py-1.5 text-[0.8125rem] font-medium text-muted-foreground",
+        "data-label px-3 py-1.5",
         className
       )}
       {...props}
@@ -154,7 +143,7 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "relative flex min-h-11 w-full cursor-default items-center gap-2 rounded-sm py-2 pr-9 pl-3 text-[0.9375rem] outline-hidden select-none focus:bg-control focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>span:last-child]:line-clamp-1",
+        "relative flex min-h-10 w-full cursor-default items-center gap-2 rounded-[0.5rem] py-2 pr-9 pl-3 text-[0.875rem] outline-hidden select-none focus:bg-white/6 focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>span:last-child]:line-clamp-1",
         className
       )}
       {...props}

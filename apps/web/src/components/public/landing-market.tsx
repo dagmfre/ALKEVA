@@ -1,150 +1,120 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
-import type { MetalAsset, PriceLatestResponse } from "@alkeva/shared";
+import type { MetalAsset } from "@alkeva/shared";
 
-import { MetalMass } from "@/components/three/metal-mass";
 import { PriceChart } from "@/components/market/price-chart";
-import { PriceProvider } from "@/components/market/price-provider";
+import { useAssetPrice } from "@/components/market/price-provider";
+import { MetalMass } from "@/components/three/metal-mass";
+import { Coin, DeltaChip, Panel, PanelHeader } from "@/components/ui/panel";
 import { Skeleton } from "@/components/ui/skeleton";
-import { money, pctMilli, timeOfDay } from "@/lib/format";
-import { useResource } from "@/lib/use-resource";
-import { cn } from "@/lib/utils";
+import { fxRate, money, usdPerOz } from "@/lib/format";
 
 /**
- * The landing page's live surfaces.
- *
- * `/prices/latest` and `/prices/history` are public, so a signed-out visitor
- * sees the same feed the trading screen quotes — the first trust signal is
- * that the marketing page carries the real market rather than a mock. Nothing
- * here is illustrative: if the feed is down, these read as pending, not as
- * invented numbers.
+ * The landing page's live surfaces. `/prices/*` is public, so a signed-out
+ * visitor sees the same feed the terminal quotes — the page carries the real
+ * market, not a mock. If the feed is down these read as pending, never as
+ * invented numbers. All of this renders inside the page's PriceProvider.
  */
 
-/** Hero object: the metal itself, with the live gold price pinned beside it. */
+const GRAMS_PER_TROY_OUNCE = 31.1034768;
+
+/** Hero object: both metals as real 3D bars, the live gold price beside them. */
 export function LandingHeroVisual() {
   const t = useTranslations("public");
   const tc = useTranslations("common");
-  const { data } = useResource<PriceLatestResponse>("/prices/latest?asset=XAU", {
-    intervalMs: 30_000,
-  });
+  const gold = useAssetPrice("XAU");
 
   return (
-    <div className="relative isolate flex min-h-[21rem] items-center justify-center lg:min-h-[30rem]">
-      {/* A single warm light behind the bar — the room, not a glass card. */}
+    <div className="relative isolate h-[22rem] lg:h-[34rem]">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 opacity-70 [background:radial-gradient(60%_50%_at_50%_45%,oklch(0.868_0.175_96.5/0.16),transparent_70%)]"
+        className="pointer-events-none absolute inset-0 -z-10 [background:radial-gradient(55%_45%_at_45%_50%,oklch(0.797_0.09_78.1/0.18),transparent_70%)]"
       />
-      <MetalMass asset="XAU" gramsMg="10000" className="w-full max-w-[34rem]" />
+      <MetalMass asset="XAU" gramsMg="12000" className="absolute inset-x-[4%] top-[8%] w-[78%]" />
+      <MetalMass asset="XPT" gramsMg="5000" className="absolute end-0 bottom-[2%] w-[48%]" />
 
-      <div className="absolute end-0 top-2 rounded-lg border border-border bg-card/90 px-4 py-3 backdrop-blur-[2px] lg:end-4">
-        <span className="flex items-center gap-2 text-[0.8125rem] text-muted-foreground">
-          <span aria-hidden="true" className="glow-gold size-2 rounded-full bg-gold-500" />
-          {t("liveNow")}
+      <div className="absolute end-[2%] top-[10%] flex flex-col gap-1 rounded-[0.875rem] border border-gold-400/25 bg-card/90 px-4 py-3 shadow-(--shadow-pop)">
+        <span className="flex items-center gap-2 text-[0.75rem] font-semibold text-muted-foreground">
+          <span aria-hidden="true" className="live-dot size-[7px] rounded-full bg-gain" />
+          {t("liveNow")} · {tc("gold")}
         </span>
-        {data ? (
+        {gold ? (
           <>
-            <span className="tnum mt-1 block text-[1.375rem] font-semibold text-gold-400">
-              {money(data.etbCentsPerGram)}
+            <span className="tnum text-[1.375rem] font-semibold">
+              {money(gold.etbCentsPerGram)}{" "}
+              <span className="text-[0.75rem] font-medium text-muted-foreground">
+                {tc("birr")}/{tc("g")}
+              </span>
             </span>
-            <span className="text-[0.8125rem] text-muted-foreground">
-              {tc("birr")} / {tc("g")} · {tc("gold")}
-            </span>
+            <DeltaChip pctMilli={gold.change24hPctMilli} className="self-start bg-transparent px-0" />
           </>
         ) : (
-          <Skeleton className="mt-1.5 h-7 w-32" />
+          <Skeleton className="h-10 w-36" />
         )}
       </div>
+    </div>
+  );
+}
+
+/** The market section: the real chart beside the arithmetic that makes the price. */
+export function LandingMarket() {
+  const [asset, setAsset] = useState<MetalAsset>("XAU");
+  return (
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_23rem]">
+      <PriceChart asset={asset} onAssetChange={setAsset} className="hidden min-h-[26rem] lg:flex" />
+      <PriceChart asset={asset} onAssetChange={setAsset} compact className="lg:hidden" />
+      <PriceFormula asset={asset} />
     </div>
   );
 }
 
 /**
- * The market section: both metals, and the real 24-hour curve.
- *
- * The chart reads the shared price store for its current-price tag, so the
- * landing page mounts the same provider the app does — `/prices/stream` is
- * public, and the visitor gets the identical pushed tick.
+ * World spot in dollars per troy ounce, divided into grams, times the birr
+ * rate: the whole derivation of the number a customer pays, with the live
+ * figures filled in. The result is the feed's own birr price, not a re-sum.
  */
-export function LandingMarket() {
+function PriceFormula({ asset }: { asset: MetalAsset }) {
   const t = useTranslations("public");
-
-  return (
-    <PriceProvider>
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1fr_20rem] lg:gap-5">
-        <PriceChart asset="XAU" className="h-[22rem]" chartClassName="h-auto" />
-        <div className="flex flex-col gap-4">
-          <PriceCell asset="XAU" />
-          <PriceCell asset="XPT" />
-          <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
-            {t("marketSource")}
-          </p>
-        </div>
-      </div>
-    </PriceProvider>
-  );
-}
-
-/** Compact live quote — also used above the fold. */
-export function PriceCell({ asset, className }: { asset: MetalAsset; className?: string }) {
   const tc = useTranslations("common");
-  const { data } = useResource<PriceLatestResponse>(`/prices/latest?asset=${asset}`, {
-    intervalMs: 30_000,
-  });
-  const milli = data?.change24hPctMilli ?? null;
-  const pct = pctMilli(milli);
-  const up = milli !== null && BigInt(milli) > 0n;
-  const down = milli !== null && BigInt(milli) < 0n;
-  const isGold = asset === "XAU";
+  const p = useAssetPrice(asset);
+  const usdPerGram = p ? Number(BigInt(p.usdPerOzMicro)) / 1_000_000 / GRAMS_PER_TROY_OUNCE : null;
+
+  const rows = [
+    { k: t("formulaSpot"), v: p ? `${usdPerOz(p.usdPerOzMicro)} USD/oz` : null },
+    { k: t("formulaOunce"), v: usdPerGram !== null ? `${usdPerGram.toFixed(2)} USD/g` : null },
+    { k: t("formulaFx", { source: p?.fxSource ?? "—" }), v: p ? `× ${fxRate(p.fxRateMicro)}` : null },
+  ];
 
   return (
-    <div
-      className={cn(
-        "flex flex-col gap-2 rounded-lg border border-border bg-card px-4 py-3.5",
-        className,
-      )}
-    >
-      <span className="flex items-center justify-between gap-3">
-        <span className="flex items-center gap-2.5 text-[0.9375rem]">
-          <span
-            aria-hidden="true"
-            className={cn("size-2.5 rounded-full", isGold ? "bg-gold-500" : "bg-platinum-400")}
-          />
-          {isGold ? tc("gold") : tc("platinum")}
-          <span className="text-muted-foreground">· {tc("perGram")}</span>
-        </span>
-        {data && (
-          <span className="font-latin text-[0.75rem] text-subtle">
-            {timeOfDay(data.at, "en")}
-          </span>
-        )}
-      </span>
-      {data ? (
-        <span className="flex items-baseline gap-2.5">
-          <span
-            className={cn(
-              "tnum text-[1.5rem] font-semibold",
-              isGold ? "text-gold-400" : "text-platinum-400",
-            )}
-          >
-            {money(data.etbCentsPerGram)}
-          </span>
-          {pct && (
-            <span
-              className={cn(
-                "tnum text-[0.9375rem] font-semibold",
-                up ? "text-gain" : down ? "text-loss" : "text-muted-foreground",
-              )}
-            >
-              {up ? "↑" : down ? "↓" : "·"} {up ? "+" : down ? "−" : ""}
-              {pct}%
+    <Panel aria-label={t("formulaTitle")}>
+      <PanelHeader title={t("formulaTitle")} dot={asset === "XAU" ? "gold" : "platinum"} />
+      <div className="flex flex-1 flex-col gap-3 px-[1.125rem] pb-[1.125rem]">
+        <p className="text-[0.8125rem] leading-relaxed text-muted-foreground">{t("marketBody")}</p>
+        <div className="flex flex-col overflow-hidden rounded-[0.75rem] border border-border">
+          {rows.map((r) => (
+            <div key={r.k} className="flex items-baseline justify-between gap-3 border-b border-border bg-background px-3.5 py-3 text-[0.8125rem]">
+              <span className="text-muted-foreground">{r.k}</span>
+              {r.v ? <span className="tnum font-medium">{r.v}</span> : <Skeleton className="h-4 w-20" />}
+            </div>
+          ))}
+          <div className="flex items-baseline justify-between gap-3 bg-gold-400/8 px-3.5 py-3.5">
+            <span className="flex items-center gap-2 text-[0.875rem] font-bold">
+              <Coin metal={asset} size="sm" />
+              {t("formulaResult")}
             </span>
-          )}
-        </span>
-      ) : (
-        <Skeleton className="h-7 w-32" />
-      )}
-    </div>
+            {p ? (
+              <span className="tnum text-[1.125rem] font-semibold text-gold-300">
+                {money(p.etbCentsPerGram)} <span className="text-[0.75rem] text-subtle">{tc("birr")}</span>
+              </span>
+            ) : (
+              <Skeleton className="h-5 w-24" />
+            )}
+          </div>
+        </div>
+        <p className="mt-auto text-[0.75rem] leading-relaxed text-subtle">{t("marketSource")}</p>
+      </div>
+    </Panel>
   );
 }

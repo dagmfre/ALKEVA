@@ -144,7 +144,27 @@
     "receiptFeeLabel": "Komishinii",
     "receiptTotalLabel": "Ida'ama kaffalame",
     "receiptSourceLabel": "Madda gatii",
-    "copyrightCta": "Galmee mirga qophii ilaali"
+    "copyrightCta": "Galmee mirga qophii ilaali",
+    "siteNav": "Marsariitii",
+    "navPrices": "Gatii",
+    "navHow": "Akkamitti hojjeta",
+    "navRules": "Nageenya",
+    "navTiers": "Sadarkaa",
+    "navFaq": "Gaaffilee",
+    "kicker": "Safari. Qabadhu. Gurguri.",
+    "heroTrust1Title": "Kuusaadhaan deeggarame",
+    "heroTrust1Body": "Giraamni kuusaa keessa hin jirre hin gurguramu",
+    "heroTrust2Title": "Gatiin 30 s qabama",
+    "heroTrust2Body": "Gatii argite mirkaneessita",
+    "heroTrust3Title": "Afaanota shan",
+    "heroTrust3Body": "Amaariffaa, Ingiliffa, Tigiriffa, Afaan Oromoo, Afaan Somaalii",
+    "formulaTitle": "Gatiin Birrii akkamitti akka hojjetamu",
+    "formulaSpot": "Gatii addunyaa",
+    "formulaOunce": "÷ 31.1035 g ounsii tiroyii tokkoof",
+    "formulaFx": "× USD → ETB · {source}",
+    "formulaResult": "Birrii giraama tokkoof",
+    "tierDelivery": "fudhannaa qaamaa",
+    "tierLevel": "sadarkaa {n}"
   },
   "nav": {
     "home": "Fuula duraa",
@@ -160,7 +180,11 @@
     "sectionMarket": "Gabaa",
     "sectionAccount": "Herrega",
     "adminConsole": "Toʼannoo bulchitootaa",
-    "sectionMoney": "Maallaqa"
+    "sectionMoney": "Maallaqa",
+    "markets": "Gabaa",
+    "wallet": "Waalletii",
+    "more": "Dabalataa",
+    "primary": "Qajeelcha ijoo"
   },
   "home": {
     "totalLabel": "Qabeenya waliigalaa",
@@ -196,7 +220,12 @@
     "openPortfolio": "Qabeenya",
     "youHold": "Ati qabda",
     "buyShort": "Biti",
-    "sellShort": "Gurguri"
+    "sellShort": "Gurguri",
+    "vsCost": "waan kaffalte waliin",
+    "vaultFoot": "Sararri kun kuusaa tokkoon tokkoon isaa keessaa hammam duraanuu maamiltootaaf akka ba'e agarsiisa.",
+    "floatTitle": "Maallaqa deebisanii gurguruuf",
+    "floatCash": "Maallaqa qulqulluu qophaa'e",
+    "floatHeadroom": "Har'a ammallee kaffalamuu danda'a"
   },
   "trade": {
     "title": "Daldala",
@@ -266,7 +295,45 @@
       "conflict": "Gaaffiin kun kan duraa waliin wal faalleessa. Gatii haaraa gaafadhu.",
       "rate_limited": "Gaaffii baay'eetu jira — maaloo xiqqoo eegiitii irra deebi'ii yaali.",
       "generic": "Rakkoon uumameera. Maaloo irra deebi'ii yaali."
-    }
+    },
+    "orderTitle": "Ajaja",
+    "orderHint": "gatii qabameen",
+    "unitGrams": "Giraama",
+    "unitBirr": "Birrii",
+    "birrNote": "Gatii albuudaa — komishiniin gatii kenname irratti ida'ama.",
+    "yourPrice": "Gatii kee",
+    "expiredShort": "Yeroon darbe",
+    "estimate": "Tilmaama",
+    "heldFor": "Gatiin erga mul'atee booda 30 s cufamee tura",
+    "changeAmount": "Hanga jijjiiri",
+    "confirmBuy": "{grams} g {metal} biti",
+    "confirmSell": "{grams} g {metal} gurguri",
+    "yourMetal": "Albuuda kee",
+    "tabHoldings": "Qabeenya",
+    "tabOrders": "Ajaja",
+    "tabRefused": "Diddame",
+    "tabReceipts": "Nagahee",
+    "colAsset": "Qabeenya",
+    "colGrams": "Giraama",
+    "colAvgCost": "Baasii giddugalaa / g",
+    "colMark": "Gatii ammaa / g",
+    "colValue": "Gatii ETB",
+    "colGainLoss": "Bu'aa / Kasaaraa",
+    "colShare": "Qooda",
+    "cash": "Maallaqa qulqulluu",
+    "cashReady": "Daldalaaf qophaa'e",
+    "vaultBacked": "{code} · kuusaadhaan deeggarame",
+    "account": "Herrega",
+    "metalValue": "Gatii albuudaa",
+    "verified": "Mirkanaa'e",
+    "verifyNow": "Mirkaneessi",
+    "emptyHoldings": "Ammatti albuuda hin qabdu. Giraama kee jalqabaa gabatee ajajaa irraa bituu dandeessa.",
+    "emptyOrders": "Ammatti ajajni hin jiru.",
+    "emptyRefused": "Wanti diddame hin jiru — ajajni ati kaa'te hundi darbeera.",
+    "emptyReceipts": "Nagaheen yeroo ajajni xumuramu asitti mul'ata.",
+    "liveNotHeld": "kallattii · ammallee hin qabamne",
+    "metalValueRow": "Gatii albuudaa",
+    "onTheQuote": "gatii kenname irratti mul'ata"
   },
   "portfolio": {
     "title": "Qabeenya",
@@ -296,7 +363,15 @@
         "amount_too_small": "Hangi baay'ee xiqqaa dha.",
         "account_frozen": "Herregni kee cufameera — gaaffiin fudhannaa dhaabateera.",
         "generic": "Rakkoon uumameera. Maaloo irra deebi'ii yaali."
-      }
+      },
+      "open": "Banaa",
+      "lockedBadge": "Cufaa",
+      "locked": "Fudhannaan qaamaa sadarkaa olaanoo lamaan irratti banama. Qabeenyi kee yeroo guddatu, asitti siif banama.",
+      "youHold": "Ati qabda",
+      "step1": "Giraama gaafadhuu bilbilaa fi teessoo kenni.",
+      "step2": "Gareen keenya ilaalee fudhannaa sana si waliin mirkaneessa.",
+      "step3": "Hanga fudhannaan raawwatutti herrega kee keessaa homaa hin ba'u.",
+      "unlocksLater": "Sadarkaa olaanaa irratti banama"
     },
     "badges": {
       "title": "Mallattoo",
@@ -313,7 +388,8 @@
         "gold_holder": "Yoo xiqqaate giraama 1 warqee qabadhu.",
         "platinum_holder": "Pilaatinemii kamiyyuu qabadhu.",
         "early_adopter": "Yeroo jalqabaatti makamte."
-      }
+      },
+      "earned": "{total} keessaa {n} argatteetta"
     },
     "totalValue": "Gatii waliigalaa",
     "totalMetalValue": "Gatii albuudaa waliigalaa",
@@ -337,7 +413,16 @@
       "yourGold": "Warqee kee",
       "openAria": "Saanduqa warqee kee banii haftee warqee kee ilaali",
       "closeAria": "Saanduqa warqee kee cufi"
-    }
+    },
+    "allocation": "Qoodinsa",
+    "byLiveValue": "gatii kallattiitiin",
+    "summary": "Cuunfaa",
+    "totalLive": "Gatii waliigalaa · kallattiin shallagame",
+    "costBasisMetal": "Baasii jalqabaa albuudaa",
+    "gainLossMetal": "Bu'aa / kasaaraa albuudaa",
+    "goldHeld": "Warqee qabame",
+    "platinumHeld": "Pilaatinemii qabame",
+    "cashEtb": "Maallaqa qulqulluu · ETB"
   },
   "tier": {
     "label": "Sadarkaa",
@@ -355,7 +440,18 @@
       "Ruby": "Ruubii",
       "Sapphire": "Saafaayirii",
       "Emerald": "Emeraaldii"
-    }
+    },
+    "nextShort": "Itti aanu {name} — daangaa olaanaa",
+    "perTxnCap": "Daangaa daldala tokkoo",
+    "dailyCap": "Daangaa guyyaa",
+    "toNextShort": "itti aanu: {name}",
+    "deliveryOn": "Fudhannaa",
+    "noLimit": "Daangaa hin qabu",
+    "delivery": "Fudhannaa qaamaa",
+    "yes": "Eeyyee",
+    "notYet": "Ammaaf miti",
+    "toNextLabel": "Gara {name}",
+    "whatItUnlocks": "Sadarkaan kee maal siif hayyama"
   },
   "history": {
     "title": "Seenaa",
@@ -440,8 +536,15 @@
       "balancedNo": "Galmeewwan kunneen zeeroo hin ta'an. Maaloo nuuf gabaasi.",
       "quoteLock": "Gatiin itti cufame",
       "provenance": "Madda gatii",
-      "askAi": "Afaan kootiin naaf ibsi"
-    }
+      "askAi": "Afaan kootiin naaf ibsi",
+      "flowTitle": "Akkamitti akka sochoʼe"
+    },
+    "statCount": "Nagahee kenname",
+    "statLatest": "Lakkoofsa dhumaa",
+    "statBuys": "Bittaa xumurame",
+    "statSells": "Gurgurtaa xumurame",
+    "openFull": "Nagahee guutuu bani",
+    "listNote": "Nagaheen kan jiru ajaja xumurameef qofa — lakkoofsi isaa yeroo xumuraatti kennama. Lakkoofsa guutuu yookiin lakkoofsota isaa dhumaatiin barbaadi."
   },
   "account": {
     "title": "Herrega",
@@ -459,7 +562,8 @@
       "remove": "Haqi",
       "removeTitle": "Passkey kun haqamuu?",
       "removeBody": "Meeshaa sana irratti isaan seenuu hin dandeessu. Jechi darbii kee itti fufee hojjeta.",
-      "failed": "Hin xumuramne. Maaloo irra deebi'ii yaali."
+      "failed": "Hin xumuramne. Maaloo irra deebi'ii yaali.",
+      "foot": "Passkey'n meeshaa kee irra tura. ALKEVA walakkaa isaa ifaa qofa qabatti, kanaafuu asitti wanti hatamu hin jiru."
     },
     "language": "Afaan",
     "tierLabel": "Sadarkaa",
@@ -482,7 +586,11 @@
       "administrator": "Bulchaa",
       "compliance": "Qorannoo",
       "finance": "Faayinaansii"
-    }
+    },
+    "roleLabel": "Gahee hojjetaa",
+    "languageHint": "Fuulli, imeeliin fi gargaaraan isa hordofu",
+    "passwordHint": "Hidhaa haaromsaa imeeliin siif ergina",
+    "moneyHint": "Birrii karaa Chapa galchuu fi baasuu"
   },
   "deposit": {
     "title": "Maallaqa galchuu",
@@ -523,7 +631,9 @@
     "howTitle": "Maallaqa galchuun akkamitti hojjeta",
     "how1": "Hanga galchiitii gara kaffaltii Chapa nageenya qabuutti itti fufi.",
     "how2": "Telebirr, CBEBirr, baankii yookiin kaardiin kaffali.",
-    "how3": "ALKEVA kaffaltii Chapa waliin mirkaneessitee herrega keetti dabalti."
+    "how3": "ALKEVA kaffaltii Chapa waliin mirkaneessitee herrega keetti dabalti.",
+    "formTitle": "Birrii dabali",
+    "viaChapa": "kaffaltii Chapa'n"
   },
   "withdraw": {
     "title": "Maallaqa baasuu",
@@ -559,7 +669,8 @@
     "howTitle": "Maallaqa baasuun akkamitti hojjeta",
     "how1": "Yeroo gaafattetti Birriin kee gara qabiinsaatti darba — herregni battalumatti gadi bu'a.",
     "how2": "Faayinaansiin gaaffii guddaa ilaala; xiqqaan kallattiin baankiitti ergama.",
-    "how3": "Dabarsi erga mirkanaa'ee qabiinsi gara herrega baankii keetii gadi dhiifama."
+    "how3": "Dabarsi erga mirkanaa'ee qabiinsi gara herrega baankii keetii gadi dhiifama.",
+    "formTitle": "Birrii gara baankii keetti ergi"
   },
   "assistant": {
     "emptyTitle": "Waa'ee warqee kee gaafadhu",
@@ -590,7 +701,16 @@
     "today": "Har'a",
     "exampleProve": "Daldala koo isa dhumaa mirkaneessi",
     "languageNote": "Afaan ALKEVA'f filatteen deebisa.",
-    "proveQuestion": "Daldala {serial} mirkaneessi. Galmeewwan herregaa natti agarsiisi."
+    "proveQuestion": "Daldala {serial} mirkaneessi. Galmeewwan herregaa natti agarsiisi.",
+    "title": "Gargaaraa",
+    "canTitle": "Maal gaafachuu dandeessa",
+    "canPrices": "Gatii warqee fi pilaatinemii har'aa, akkasumas maaliif akka sochoʼe",
+    "canHoldings": "Waan qabdu, baasii isaa, akkasumas bu'aa yookiin kasaaraa kee",
+    "canHistory": "Ajaja kee darban, kan diddaman fi sababa isaanii dabalatee",
+    "canProve": "Mirkaneessa nagahee kamiyyuu — galmeewwan herregaa isa duuba jiran",
+    "canFees": "Komishiniin fi kaffaltiin biroo akkamitti akka shallagaman",
+    "neverTitle": "Ni dubbisa, gonkumaa hin hojjetu",
+    "neverBody": "Gargaaraan daldaluu, maallaqa sochoosuu yookiin herrega kee jijjiiruu hin danda'u, gorsa invastimantiis hin kennu."
   },
   "notifications": {
     "title": "Beeksisa",
@@ -620,7 +740,9 @@
     "listTitle": "Akeekkachiisa gatii",
     "armed": "Ka'aa",
     "fired": "Ka'eera",
-    "remove": "Haqi"
+    "remove": "Haqi",
+    "listEmpty": "Ammatti akeekkachiisni gatii hin jiru. Bilbila chaartii gatii kamiyyuu irra jiru irraa kaa'i.",
+    "listFoot": "Akeekkachiisni al tokko ka'ee beeksisa erga. Kan haaraa bilbila chaartii gatii kamiyyuu irra jiru irraa kaa'i."
   },
   "admin": {
     "confirmAction": "Mirkaneessituu?",
@@ -868,7 +990,25 @@
       "kyc_pending_exists": "Dhiheessa qorannoo irra jiru qabda.",
       "file_required": "Duraan dursii faayilii waraqaa filadhu.",
       "generic": "Rakkoon uumameera. Maaloo irra deebi'ii yaali."
-    }
+    },
+    "formTitle": "Eenyummaa kee mirkaneessi",
+    "oneDocument": "waraqaa tokko",
+    "dropTitle": "Suuraa yookiin PDF filadhu",
+    "statusTitle": "Eessa akka jirtu",
+    "stateVerified": "Mirkanaa'e",
+    "stateReview": "Qorannoo irra",
+    "stateNone": "Hin jalqabamne",
+    "unlocksTitle": "Mirkaneeffannaan kan banu",
+    "unlockDeposit": "Birrii galchuu",
+    "unlockTrade": "Albuuda bituu fi gurguruu",
+    "unlockWithdraw": "Gara baankii keetti baasuu",
+    "reviewNote": "Qondaalli qorannoo waraqaa hunda harkaan ilaala. Yeroo xumuramutti beeksisa argatta.",
+    "stepSubmit": "Waraqaa tokko ergi",
+    "stepSubmitBody": "Fayda, paaspoortii, hayyama konkolaachisummaa yookiin eenyummaa gandaa.",
+    "stepReview": "Qorannoo",
+    "stepReviewBody": "Namni waraqaa sana ilaala — yeroo baay'ee guyyaa hojii tokko keessatti.",
+    "stepVerified": "Mirkanaa'e",
+    "stepVerifiedBody": "Maallaqa galchuun, daldaluun fi baasuun ni banama."
   },
   "credential": {
     "eyebrow": "Hojii galmaaye",
@@ -892,5 +1032,32 @@
     "termsLink": "Haalota",
     "privacyLink": "Dhuunfaa",
     "backToSite": "Gara marsariitii deebii"
+  },
+  "market": {
+    "selector": "Gabaa",
+    "perGram24h": "ETB giraama tokkoof · sa'aatii 24",
+    "perGramShort": "ETB / g",
+    "worldSpot": "Gatii addunyaa · USD/oz",
+    "fx": "USD → ETB",
+    "high24h": "Olaanaa sa'aatii 24",
+    "low24h": "Gadi aanaa sa'aatii 24",
+    "lastTick": "Gatii dhumaa · {source}",
+    "heldBadge": "Gatiin hunda irratti 30 s siif qabama",
+    "ticks": "Haaromsa gatii",
+    "tickTime": "Sa'aatii",
+    "tickPrice": "ETB / g",
+    "sessionTicks": "Yeroo fuulli banamee jirutti kan dhufe",
+    "buckets": "Giddugala daqiiqaa 5 · sa'aatii 24",
+    "weekend": "Dhuma torbanii — gabaan addunyaa cufameera. Gatiin hanga inni banamutti akkuma jirutti tura.",
+    "waitingTick": "Gatii itti aanu eegaa jira…",
+    "approxSpot": "≈ {spot} USD/oz",
+    "chartTitle": "Gatii",
+    "range": "Yeroo",
+    "chartSource": "ETB giraama tokkoof · {source} × {fxSource} USD→ETB",
+    "tickEvery": "gatiin haaraan tilmaamaan 30 s hundaa",
+    "tickerLabel": "Gatiiwwan",
+    "worldGold": "Warqee addunyaa · USD/oz",
+    "worldPlatinum": "Pilaatinemii addunyaa · USD/oz",
+    "fxSource": "USD → ETB · {source}"
   }
 }

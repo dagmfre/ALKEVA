@@ -144,7 +144,27 @@
     "receiptFeeLabel": "Commission",
     "receiptTotalLabel": "Total paid",
     "receiptSourceLabel": "Price source",
-    "copyrightCta": "View copyright registration"
+    "copyrightCta": "View copyright registration",
+    "siteNav": "Site",
+    "navPrices": "Prices",
+    "navHow": "How it works",
+    "navRules": "Safety",
+    "navTiers": "Tiers",
+    "navFaq": "FAQ",
+    "kicker": "Weigh it. Own it. Sell it.",
+    "heroTrust1Title": "Vault-backed",
+    "heroTrust1Body": "No gram is sold that the vault does not hold",
+    "heroTrust2Title": "Price held 30 s",
+    "heroTrust2Body": "You confirm the price you saw",
+    "heroTrust3Title": "Five languages",
+    "heroTrust3Body": "Amharic, English, Tigrinya, Oromo, Somali",
+    "formulaTitle": "How the birr price is made",
+    "formulaSpot": "World spot",
+    "formulaOunce": "÷ 31.1035 g per troy ounce",
+    "formulaFx": "× USD → ETB · {source}",
+    "formulaResult": "Birr per gram",
+    "tierDelivery": "physical delivery",
+    "tierLevel": "level {n}"
   },
   "nav": {
     "home": "Home",
@@ -160,7 +180,11 @@
     "sectionMarket": "Market",
     "sectionAccount": "Account",
     "adminConsole": "Admin console",
-    "sectionMoney": "Money"
+    "sectionMoney": "Money",
+    "markets": "Markets",
+    "wallet": "Wallet",
+    "more": "More",
+    "primary": "Main navigation"
   },
   "home": {
     "totalLabel": "Total holdings",
@@ -196,7 +220,12 @@
     "openPortfolio": "Portfolio",
     "youHold": "You hold",
     "buyShort": "Buy",
-    "sellShort": "Sell"
+    "sellShort": "Sell",
+    "vsCost": "vs. what you paid",
+    "vaultFoot": "The bar shows how much of each vault is already issued to customers.",
+    "floatTitle": "Cash for sell-backs",
+    "floatCash": "Cash float",
+    "floatHeadroom": "Can still pay out today"
   },
   "trade": {
     "title": "Trade",
@@ -266,7 +295,45 @@
       "conflict": "This request conflicts with an earlier one. Request a new quote.",
       "rate_limited": "Too many requests — please wait a moment and try again.",
       "generic": "Something went wrong. Please try again."
-    }
+    },
+    "orderTitle": "Order",
+    "orderHint": "at a held quote",
+    "unitGrams": "Grams",
+    "unitBirr": "Birr",
+    "birrNote": "Metal value — commission is added on the quote.",
+    "yourPrice": "Your price",
+    "expiredShort": "Expired",
+    "estimate": "Estimate",
+    "heldFor": "The price is fixed for 30 s once shown",
+    "changeAmount": "Change amount",
+    "confirmBuy": "Buy {grams} g {metal}",
+    "confirmSell": "Sell {grams} g {metal}",
+    "yourMetal": "Your metal",
+    "tabHoldings": "Holdings",
+    "tabOrders": "Orders",
+    "tabRefused": "Refused",
+    "tabReceipts": "Receipts",
+    "colAsset": "Asset",
+    "colGrams": "Grams",
+    "colAvgCost": "Avg cost / g",
+    "colMark": "Mark / g",
+    "colValue": "Value ETB",
+    "colGainLoss": "Gain / loss",
+    "colShare": "Share",
+    "cash": "Cash",
+    "cashReady": "Ready to trade",
+    "vaultBacked": "{code} · vault-backed",
+    "account": "Account",
+    "metalValue": "Metal value",
+    "verified": "Verified",
+    "verifyNow": "Verify",
+    "emptyHoldings": "You hold no metal yet. Your first gram can be bought from the order panel.",
+    "emptyOrders": "No orders yet.",
+    "emptyRefused": "Nothing refused — every order you placed went through.",
+    "emptyReceipts": "Receipts appear here when an order settles.",
+    "liveNotHeld": "live · not held yet",
+    "metalValueRow": "Metal value",
+    "onTheQuote": "shown on the quote"
   },
   "portfolio": {
     "title": "Portfolio",
@@ -296,7 +363,15 @@
         "amount_too_small": "The amount is too small.",
         "account_frozen": "Your account is frozen — delivery requests are paused.",
         "generic": "Something went wrong. Please try again."
-      }
+      },
+      "open": "Open",
+      "lockedBadge": "Locked",
+      "locked": "Physical delivery opens at the two highest tiers. As your holding grows, it unlocks here.",
+      "youHold": "You hold",
+      "step1": "Request the grams and give a phone and address.",
+      "step2": "Our team reviews it and confirms the handover with you.",
+      "step3": "Nothing leaves your balance until the handover itself.",
+      "unlocksLater": "Unlocks at a higher tier"
     },
     "badges": {
       "title": "Badges",
@@ -313,7 +388,8 @@
         "gold_holder": "Hold at least 1 gram of gold.",
         "platinum_holder": "Hold any platinum.",
         "early_adopter": "Joined during the launch period."
-      }
+      },
+      "earned": "{n} of {total} earned"
     },
     "totalValue": "Total value",
     "totalMetalValue": "Total metal value",
@@ -337,7 +413,16 @@
       "yourGold": "Your gold",
       "openAria": "Open your gold box and show your gold balance",
       "closeAria": "Close your gold box"
-    }
+    },
+    "allocation": "Allocation",
+    "byLiveValue": "by live value",
+    "summary": "Summary",
+    "totalLive": "Total value · marked live",
+    "costBasisMetal": "Metal cost basis",
+    "gainLossMetal": "Gain / loss on metal",
+    "goldHeld": "Gold held",
+    "platinumHeld": "Platinum held",
+    "cashEtb": "Cash · ETB"
   },
   "tier": {
     "label": "Tier",
@@ -355,7 +440,18 @@
       "Ruby": "Ruby",
       "Sapphire": "Sapphire",
       "Emerald": "Emerald"
-    }
+    },
+    "nextShort": "{name} next — higher limits",
+    "perTxnCap": "Per-trade limit",
+    "dailyCap": "Daily limit",
+    "toNextShort": "next: {name}",
+    "deliveryOn": "Delivery",
+    "noLimit": "No limit",
+    "delivery": "Physical delivery",
+    "yes": "Yes",
+    "notYet": "Not yet",
+    "toNextLabel": "To {name}",
+    "whatItUnlocks": "What your tier allows"
   },
   "history": {
     "title": "History",
@@ -440,8 +536,15 @@
       "balancedNo": "These entries do not net to zero. Please report this.",
       "quoteLock": "Price locked",
       "provenance": "Price source",
-      "askAi": "Explain this in my language"
-    }
+      "askAi": "Explain this in my language",
+      "flowTitle": "How it moved"
+    },
+    "statCount": "Receipts issued",
+    "statLatest": "Latest serial",
+    "statBuys": "Settled buys",
+    "statSells": "Settled sells",
+    "openFull": "Open the full receipt",
+    "listNote": "A receipt exists only for a settled order — its serial is issued at the moment of settlement. Search by the full serial or its last digits."
   },
   "account": {
     "title": "Account",
@@ -459,7 +562,8 @@
       "remove": "Remove",
       "removeTitle": "Remove this passkey?",
       "removeBody": "You will no longer be able to sign in with it on that device. Your password keeps working.",
-      "failed": "That did not complete. Please try again."
+      "failed": "That did not complete. Please try again.",
+      "foot": "A passkey stays on your device. ALKEVA keeps only its public half, so there is nothing here to steal."
     },
     "language": "Language",
     "tierLabel": "Tier",
@@ -482,7 +586,11 @@
       "administrator": "Administrator",
       "compliance": "Compliance",
       "finance": "Finance"
-    }
+    },
+    "roleLabel": "Staff role",
+    "languageHint": "Screens, emails and the assistant follow it",
+    "passwordHint": "We email you a reset link",
+    "moneyHint": "Birr in and out through Chapa"
   },
   "deposit": {
     "title": "Deposit",
@@ -523,7 +631,9 @@
     "howTitle": "How a deposit works",
     "how1": "Enter the amount and continue to Chapa's secure checkout.",
     "how2": "Pay with Telebirr, CBEBirr, a bank transfer, or a card.",
-    "how3": "ALKEVA verifies the payment with Chapa, then credits your balance."
+    "how3": "ALKEVA verifies the payment with Chapa, then credits your balance.",
+    "formTitle": "Add birr",
+    "viaChapa": "via Chapa checkout"
   },
   "withdraw": {
     "title": "Withdraw",
@@ -559,7 +669,8 @@
     "howTitle": "How a withdrawal works",
     "how1": "Your birr moves to a hold the moment you request it — the balance drops immediately.",
     "how2": "Finance reviews larger requests; smaller ones are sent straight to the bank.",
-    "how3": "Once the transfer is confirmed the hold is released to your bank account."
+    "how3": "Once the transfer is confirmed the hold is released to your bank account.",
+    "formTitle": "Send birr to your bank"
   },
   "assistant": {
     "emptyTitle": "Ask about your gold",
@@ -590,7 +701,16 @@
     "today": "Today",
     "exampleProve": "Prove my last transaction",
     "languageNote": "It answers in the language you chose for ALKEVA.",
-    "proveQuestion": "Prove transaction {serial}. Show me the ledger entries."
+    "proveQuestion": "Prove transaction {serial}. Show me the ledger entries.",
+    "title": "Assistant",
+    "canTitle": "What you can ask",
+    "canPrices": "Today's gold and platinum price, and why it moved",
+    "canHoldings": "What you hold, what it cost, and your gain or loss",
+    "canHistory": "Your past orders, including refused ones and why",
+    "canProve": "Proof of any receipt — the ledger entries behind it",
+    "canFees": "How commission and the other fees are worked out",
+    "neverTitle": "It reads, it never acts",
+    "neverBody": "The assistant cannot trade, move money or change your account, and it does not give investment advice."
   },
   "notifications": {
     "title": "Notices",
@@ -620,7 +740,9 @@
     "listTitle": "Price alerts",
     "armed": "Armed",
     "fired": "Fired",
-    "remove": "Remove"
+    "remove": "Remove",
+    "listEmpty": "No price alerts yet. Set one from the bell on any price chart.",
+    "listFoot": "Alerts fire once and send a notice. Set new ones from the bell on any price chart."
   },
   "admin": {
     "confirmAction": "Confirm?",
@@ -868,7 +990,25 @@
       "kyc_pending_exists": "You already have a submission under review.",
       "file_required": "Choose a document file first.",
       "generic": "Something went wrong. Please try again."
-    }
+    },
+    "formTitle": "Verify your identity",
+    "oneDocument": "one document",
+    "dropTitle": "Choose a photo or PDF",
+    "statusTitle": "Where you are",
+    "stateVerified": "Verified",
+    "stateReview": "In review",
+    "stateNone": "Not started",
+    "unlocksTitle": "Verification unlocks",
+    "unlockDeposit": "Depositing birr",
+    "unlockTrade": "Buying and selling metal",
+    "unlockWithdraw": "Withdrawing to your bank",
+    "reviewNote": "A compliance officer reviews every document by hand. You will get a notice when it is done.",
+    "stepSubmit": "Send one document",
+    "stepSubmitBody": "Fayda, passport, driving licence or kebele ID.",
+    "stepReview": "Compliance review",
+    "stepReviewBody": "A person checks the document — usually within a working day.",
+    "stepVerified": "Verified",
+    "stepVerifiedBody": "Deposits, trading and withdrawals open."
   },
   "credential": {
     "eyebrow": "Registered work",
@@ -892,5 +1032,32 @@
     "termsLink": "Terms",
     "privacyLink": "Privacy",
     "backToSite": "Back to site"
+  },
+  "market": {
+    "selector": "Market",
+    "perGram24h": "ETB per gram · 24h",
+    "perGramShort": "ETB / g",
+    "worldSpot": "World spot · USD/oz",
+    "fx": "USD → ETB",
+    "high24h": "24h high",
+    "low24h": "24h low",
+    "lastTick": "Last tick · {source}",
+    "heldBadge": "Price held 30 s on every quote",
+    "ticks": "Price ticks",
+    "tickTime": "Time",
+    "tickPrice": "ETB / g",
+    "sessionTicks": "Received while open",
+    "buckets": "5-minute averages · 24h",
+    "weekend": "Weekend — the world market is closed. The price holds until it reopens.",
+    "waitingTick": "Waiting for the next tick…",
+    "approxSpot": "≈ {spot} USD/oz",
+    "chartTitle": "Price",
+    "range": "Range",
+    "chartSource": "ETB per gram · {source} × {fxSource} USD→ETB",
+    "tickEvery": "new tick about every 30 s",
+    "tickerLabel": "Prices",
+    "worldGold": "World gold · USD/oz",
+    "worldPlatinum": "World platinum · USD/oz",
+    "fxSource": "USD → ETB · {source}"
   }
 }

@@ -5,11 +5,10 @@ import { useTranslations } from "next-intl";
 import type { PayoutResponse } from "@alkeva/shared";
 
 import { AdminAction, AdminTable, Td } from "@/components/admin/ui";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Segmented } from "@/components/ui/segmented";
 import { SystemBanner } from "@/components/system/banner";
 import { eatStamp, money } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
-import { cn } from "@/lib/utils";
 
 type Row = PayoutResponse & { userEmail: string };
 
@@ -25,6 +24,7 @@ export function AdminPayoutsScreen() {
   const { data, loading } = useResource<{ payouts: Row[] }>(`/admin/payouts?status=${tab}`, {
     revision,
   });
+  const rows = data?.payouts ?? [];
 
   const done = (err: string | null) => {
     setError(err);
@@ -32,79 +32,73 @@ export function AdminPayoutsScreen() {
   };
 
   return (
-    <div>
-      <h1 className="mb-4 text-xl font-semibold">{t("nav.payouts")}</h1>
-      <div className="mb-4 flex gap-1.5">
-        {TABS.map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => setTab(s)}
-            className={cn(
-              "rounded-md px-3 py-1.5 text-[0.875rem]",
-              tab === s ? "pill-active" : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {t(`payoutStatus.${s}` as never)}
-          </button>
-        ))}
-      </div>
+    <div className="flex flex-col gap-3">
+      <h1 className="sr-only">{t("nav.payouts")}</h1>
       {error && (
-        <SystemBanner tone="critical" className="mb-3">
+        <SystemBanner tone="critical" className="mb-0">
           {t("actionFailed", { code: error })}
         </SystemBanner>
       )}
-      {loading ? (
-        <Skeleton className="h-48 rounded-lg" />
-      ) : (data?.payouts.length ?? 0) === 0 ? (
-        <p className="text-[0.9375rem] text-muted-foreground">{t("payouts.empty")}</p>
-      ) : (
-        <AdminTable
-          headers={[
-            t("users.email"),
-            t("payouts.amount"),
-            t("payouts.destination"),
-            t("orders.when"),
-            t("payouts.note"),
-            "",
-          ]}
-        >
-          {(data?.payouts ?? []).map((p) => (
-            <tr key={p.id}>
-              <Td className="font-latin">{p.userEmail}</Td>
-              <Td className="tnum font-semibold">
-                {money(p.amountCents)} {tc("birr")}
-              </Td>
-              <Td className="tnum">
-                {p.accountNumber}
-                <span className="ms-2 text-[0.8125rem] text-subtle">{p.accountName}</span>
-              </Td>
-              <Td className="font-latin text-[0.8125rem] text-subtle">{eatStamp(p.createdAt)}</Td>
-              <Td className="max-w-[220px] truncate text-[0.8125rem] text-subtle">
-                {p.failureReason ?? "—"}
-              </Td>
-              <Td>
-                {tab === "requested" && (
-                  <div className="flex justify-end gap-2">
-                    <AdminAction
-                      path={`/admin/payouts/${p.id}/approve`}
-                      label={t("payouts.approveSend")}
-                      onDone={done}
-                    />
-                    <AdminAction
-                      path={`/admin/payouts/${p.id}/reject`}
-                      body={{ note: "rejected_by_finance" }}
-                      label={t("reject")}
-                      tone="danger"
-                      onDone={done}
-                    />
-                  </div>
-                )}
-              </Td>
-            </tr>
-          ))}
-        </AdminTable>
-      )}
+      <AdminTable
+        title={t("nav.payouts")}
+        action={
+          <div className="max-w-full overflow-x-auto [scrollbar-width:none]">
+            <Segmented
+              value={tab}
+              onValueChange={setTab}
+              aria-label={t("nav.payouts")}
+              options={TABS.map((s) => ({
+                value: s,
+                label: t(`payoutStatus.${s}` as never),
+                count: s === tab && !loading ? rows.length : undefined,
+              }))}
+            />
+          </div>
+        }
+        loading={loading}
+        empty={rows.length === 0 ? t("payouts.empty") : null}
+        minWidth={760}
+        headers={[
+          t("users.email"),
+          { label: t("payouts.amount"), end: true },
+          t("payouts.destination"),
+          { label: t("orders.when"), end: true },
+          t("payouts.note"),
+          "",
+        ]}
+      >
+        {rows.map((p) => (
+          <tr key={p.id}>
+            <Td className="font-medium">{p.userEmail}</Td>
+            <Td className="tnum text-end font-semibold whitespace-nowrap">
+              {money(p.amountCents)}
+              <span className="ms-1.5 font-sans text-[0.75rem] font-medium text-subtle">{tc("birr")}</span>
+            </Td>
+            <Td>
+              <span className="flex flex-col">
+                <span className="tnum text-[0.8125rem]">{p.accountNumber}</span>
+                <span className="text-[0.75rem] text-subtle">{p.accountName}</span>
+              </span>
+            </Td>
+            <Td className="tnum text-end text-[0.75rem] whitespace-nowrap text-subtle">{eatStamp(p.createdAt)}</Td>
+            <Td className="max-w-[220px] truncate text-[0.78125rem] text-subtle">{p.failureReason ?? "—"}</Td>
+            <Td>
+              {tab === "requested" && (
+                <div className="flex justify-end gap-2">
+                  <AdminAction path={`/admin/payouts/${p.id}/approve`} label={t("payouts.approveSend")} onDone={done} />
+                  <AdminAction
+                    path={`/admin/payouts/${p.id}/reject`}
+                    body={{ note: "rejected_by_finance" }}
+                    label={t("reject")}
+                    tone="danger"
+                    onDone={done}
+                  />
+                </div>
+              )}
+            </Td>
+          </tr>
+        ))}
+      </AdminTable>
     </div>
   );
 }

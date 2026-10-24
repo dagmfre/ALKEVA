@@ -3,18 +3,10 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 /**
- * shadcn Table, re-tokenised for ALKEVA.
- *
- * Changed from the shadcn default, deliberately:
- *  - Header cells drop the uppercase/tracking treatment entirely — Ethiopic
- *    has no uppercase and letter-spacing is banned (`globals.css` :lang(am)).
- *    Hierarchy comes from `text-muted-foreground` + the header hairline.
- *  - Body rows hover to `bg-popover/50` (one step up the surface ladder),
- *    never a colour tint.
- *  - Cell padding is roomier (px-4 py-3) — these tables carry money figures
- *    that get read carefully, not scanned data grids.
- *  - Numeric alignment/`.tnum` is left to callers: only they know which
- *    columns are money.
+ * Table, design v2 (the RabbitX positions table): mono column heads in the
+ * data-label style, hairline rows, a barely-there hover. Edge cells inset
+ * 18px so they line up with the panel header. Numeric alignment and `.tnum`
+ * are left to callers — only they know which columns are money.
  */
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
@@ -24,7 +16,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
     >
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-[0.9375rem]", className)}
+        className={cn("w-full caption-bottom text-[0.875rem]", className)}
         {...props}
       />
     </div>
@@ -69,7 +61,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "border-b border-border transition-colors hover:bg-popover/50 data-[state=selected]:bg-popover",
+        "border-b border-border transition-colors hover:bg-white/[0.025] data-[state=selected]:bg-white/5",
         className
       )}
       {...props}
@@ -83,7 +75,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
       data-slot="table-head"
       className={cn(
         // No uppercase, no tracking — see file header.
-        "px-4 py-3 text-left align-middle text-[0.8125rem] font-medium text-muted-foreground",
+        "data-label h-10 px-3 text-start align-middle font-medium whitespace-nowrap first:ps-[1.125rem] last:pe-[1.125rem]",
         className
       )}
       {...props}
@@ -95,7 +87,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
   return (
     <td
       data-slot="table-cell"
-      className={cn("px-4 py-3 align-middle text-[0.9375rem]", className)}
+      className={cn("px-3 py-3 align-middle text-[0.875rem] first:ps-[1.125rem] last:pe-[1.125rem]", className)}
       {...props}
     />
   )

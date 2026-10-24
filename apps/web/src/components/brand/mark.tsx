@@ -34,7 +34,7 @@ export function Wordmark({ size = 26 }: { size?: number }) {
   return (
     <span className="flex items-center gap-2.5">
       <Mark size={size} />
-      <span className="font-latin text-base font-semibold tracking-[0.01em]">ALKEVA</span>
+      <span className="font-latin text-[0.9375rem] font-extrabold tracking-[0.22em]">ALKEVA</span>
     </span>
   );
 }

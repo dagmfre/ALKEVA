@@ -40,7 +40,7 @@ export default async function CopyrightPage() {
 
   return (
     <main className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-(--z-index-sticky) border-b border-border bg-background/85 backdrop-blur-md">
+      <header className="sticky top-0 z-(--z-index-sticky) bg-background/90 backdrop-blur-md">
         <div className="mx-auto flex min-h-[68px] w-full max-w-[76rem] items-center justify-between gap-4 px-5 lg:px-8">
           <Link href="/welcome" aria-label="ALKEVA">
             <Wordmark size={30} />
@@ -58,13 +58,13 @@ export default async function CopyrightPage() {
       <section className="relative isolate overflow-hidden border-b border-border">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -z-10 [background:radial-gradient(60%_110%_at_50%_0%,oklch(0.868_0.175_96.5/0.12),transparent_65%)]"
+          className="pointer-events-none absolute inset-0 -z-10 [background:radial-gradient(60%_110%_at_50%_0%,oklch(0.797_0.09_78.1/0.14),transparent_65%)]"
         />
         <div className="mx-auto w-full max-w-[76rem] px-5 py-14 lg:px-8 lg:py-20">
-          <p className="text-[0.8125rem] font-medium uppercase tracking-[0.14em] text-gold-400 font-latin">
+          <p className="text-[0.8125rem] font-semibold text-gold-300">
             {t("eyebrow")}
           </p>
-          <h1 className="mt-3 max-w-[24ch] text-[clamp(1.75rem,3.4vw,2.5rem)] font-semibold leading-tight tracking-[-0.01em]">
+          <h1 className="mt-3 max-w-[24ch] text-[clamp(1.75rem,3.4vw,2.5rem)] font-extrabold leading-tight tracking-[-0.02em]">
             {t("title")}
           </h1>
           <p className="mt-4 max-w-[62ch] text-[1.0625rem] leading-relaxed text-muted-foreground">
@@ -76,7 +76,7 @@ export default async function CopyrightPage() {
       {/* ── Transcript + document ──────────────────────────────────────── */}
       <section className="mx-auto grid w-full max-w-[76rem] flex-1 gap-8 px-5 py-12 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-12 lg:px-8 lg:py-16">
         <div className="lg:sticky lg:top-[92px] lg:self-start">
-          <h2 className="text-[0.8125rem] font-medium uppercase tracking-[0.14em] text-subtle">
+          <h2 className="data-label">
             {t("registryHeading")}
           </h2>
           <dl className="mt-4 flex flex-col divide-y divide-border rounded-lg border border-border bg-card">

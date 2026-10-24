@@ -6,7 +6,8 @@ import { startRegistration } from "@simplewebauthn/browser";
 import type { PublicKeyCredentialCreationOptionsJSON } from "@simplewebauthn/browser";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Panel, PanelHeader } from "@/components/ui/panel";
+import { fieldCls } from "@/components/money/wallet-ui";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -96,38 +97,39 @@ export function PasskeysCard({ className }: { className?: string }) {
   }
 
   return (
-    <Card className={cn("overflow-hidden", className)}>
-      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-        <div>
-          <h2 className="text-base font-medium">{t("passkeys.title")}</h2>
-          <p className="text-[0.8125rem] text-muted-foreground">{t("passkeys.body")}</p>
-        </div>
-        <Button variant="gold" size="sm" onClick={() => setEnrollOpen(true)}>
-          {t("passkeys.add")}
-        </Button>
-      </div>
+    <Panel className={className} aria-label={t("passkeys.title")}>
+      <PanelHeader
+        title={t("passkeys.title")}
+        action={
+          <Button variant="gold" size="sm" onClick={() => setEnrollOpen(true)}>
+            {t("passkeys.add")}
+          </Button>
+        }
+      />
+      <p className="px-[1.125rem] pb-3 text-[0.78125rem] leading-relaxed text-muted-foreground">{t("passkeys.body")}</p>
+      <div className="flex flex-1 flex-col border-t border-border">
 
       {list.loading ? (
         <div className="px-4 py-3">
           <Skeleton className="h-6 w-full" />
         </div>
       ) : (list.data?.credentials.length ?? 0) === 0 ? (
-        <p className="px-4 py-3.5 text-[0.9375rem] text-muted-foreground">
+        <p className="flex flex-1 items-center justify-center px-[1.125rem] py-6 text-center text-[0.8125rem] text-muted-foreground">
           {t("passkeys.empty")}
         </p>
       ) : (
         (list.data?.credentials ?? []).map((c, i, arr) => (
           <div
             key={c.id}
-            className={`flex items-center justify-between gap-3 px-4 py-3 ${
+            className={`flex items-center justify-between gap-3 px-[1.125rem] py-3 ${
               i < arr.length - 1 ? "border-b border-border" : ""
             }`}
           >
             <div className="min-w-0">
-              <p className="truncate text-[0.9375rem] font-medium">
+              <p className="truncate text-[0.875rem] font-semibold">
                 {c.label || t("passkeys.unnamed")}
               </p>
-              <p className="font-latin text-[0.8125rem] text-subtle">
+              <p className="tnum text-[0.6875rem] text-subtle">
                 {eatStamp(c.createdAt)}
                 {c.lastUsedAt ? ` · ${t("passkeys.lastUsed")} ${eatStamp(c.lastUsedAt)}` : ""}
               </p>
@@ -139,8 +141,12 @@ export function PasskeysCard({ className }: { className?: string }) {
         ))
       )}
 
+        <p className="mt-auto border-t border-border px-[1.125rem] py-3 text-[0.71875rem] leading-relaxed text-subtle">
+          {t("passkeys.foot")}
+        </p>
+      </div>
       {error && (
-        <p className="border-t border-border px-4 py-2.5 text-[0.875rem] text-loss">
+        <p className="border-t border-border px-[1.125rem] py-2.5 text-[0.8125rem] text-loss">
           {t("passkeys.failed")}
         </p>
       )}
@@ -153,12 +159,12 @@ export function PasskeysCard({ className }: { className?: string }) {
             <DialogDescription>{t("passkeys.addBody")}</DialogDescription>
           </DialogHeader>
           <label className="flex flex-col gap-1.5">
-            <span className="text-[0.9375rem] font-medium">{t("passkeys.labelField")}</span>
+            <span className="data-label">{t("passkeys.labelField")}</span>
             <input
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               maxLength={60}
-              className="well min-h-12 rounded-md border-input px-3.5 text-base outline-none transition-colors focus:border-gold-400"
+              className={fieldCls}
             />
           </label>
           <DialogFooter>
@@ -193,6 +199,6 @@ export function PasskeysCard({ className }: { className?: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </Panel>
   );
 }

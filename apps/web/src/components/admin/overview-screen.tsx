@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { BadgeCheck, Banknote, ScanSearch, Snowflake } from "lucide-react";
+import { ArrowRight, BadgeCheck, Banknote, ScanSearch, Snowflake } from "lucide-react";
 import type {
   AdminAnalyticsResponse,
   AdminAuditItem,
@@ -12,21 +12,28 @@ import type {
 
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 
-import { AdminTable, Td } from "@/components/admin/ui";
-import { CHART, ChartContainer, ChartTooltip, RechartsTooltip } from "@/components/ui/chart";
+import { AdminStrip, AdminTable, FillChart, Td } from "@/components/admin/ui";
+import { Button } from "@/components/ui/button";
+import { CHART, ChartTooltip, RechartsTooltip } from "@/components/ui/chart";
+import { Panel, PanelBody, PanelHeader, Stat } from "@/components/ui/panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { eatStamp, money } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
-import { cn } from "@/lib/utils";
 
 /**
- * The control room's front page: the four "is anything waiting on a human?"
- * cards and the 30-day totals. The charts moved to their own Analytics
- * destination (with a real date-range control) — the overview answers "does
- * anything need me right now?", not "how was the month?".
+ * The control room's front page, top to bottom:
+ *
+ *   queue strip — the four "is anything waiting on a human?" counters
+ *   30-day totals strip
+ *   trade volume by day (full width)
+ *   recent activity (the audit log's newest rows)
+ *
+ * Full curves with a range control live on Analytics — the overview answers
+ * "does anything need me right now?", not "how was the month?".
  */
 export function AdminOverviewScreen() {
   const t = useTranslations("admin");
+  const tc = useTranslations("common");
   const me = useResource<MeResponse>("/auth/me");
   const { data } = useResource<AdminOverviewResponse>("/admin/overview", {
     intervalMs: 30_000,
@@ -62,172 +69,153 @@ export function AdminOverviewScreen() {
   }));
 
   return (
-    <div className="flex flex-col gap-5">
-      <h1 className="text-xl font-semibold">{t("nav.overview")}</h1>
+    <div className="flex flex-col gap-3">
+      <h1 className="sr-only">{t("nav.overview")}</h1>
 
-      {/* Action cards — the queue counters, gold when someone is waiting. */}
-      <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+      {/* Queue counters — gold when someone is waiting; each opens its queue. */}
+      <AdminStrip label={t("nav.overview")}>
         {cards.map((card) => {
           const value = data ? data[card.key] : null;
           const Icon = card.icon;
-          const body = (
-            <div
-              className={cn(
-                "flex flex-col gap-1 rounded-lg border border-border bg-card p-4",
-                card.visible && "hover:border-input",
-              )}
-            >
-              <span className="flex items-center gap-2 text-[0.875rem] text-muted-foreground">
-                <Icon className="size-4 flex-none" aria-hidden="true" />
-                {t(`overview.${card.key}` as never)}
-              </span>
-              {value === null ? (
-                <Skeleton className="h-8 w-12" />
-              ) : (
-                <span
-                  className={cn(
-                    "tnum text-[1.75rem] font-semibold",
-                    value > 0 ? "text-gold-400" : "text-foreground",
-                  )}
-                >
-                  {value}
+          const cell = (
+            <Stat
+              surface="strip"
+              size="lg"
+              className="flex-1"
+              label={
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon className="size-3.5 flex-none" aria-hidden="true" />
+                  {t(`overview.${card.key}` as never)}
                 </span>
-              )}
-            </div>
+              }
+              value={value === null ? null : String(value)}
+              tone={value !== null && value > 0 ? "gold" : undefined}
+            />
           );
           return card.visible ? (
-            <Link key={card.key} href={card.href}>
-              {body}
+            <Link
+              key={card.key}
+              href={card.href}
+              className="group flex min-w-[11rem] items-stretch outline-none transition-colors hover:bg-white/[0.025] focus-visible:bg-white/[0.04]"
+            >
+              {cell}
+              <ArrowRight
+                className="me-4 size-4 flex-none self-center text-subtle transition-colors group-hover:text-gold-400"
+                aria-hidden="true"
+              />
             </Link>
           ) : (
-            <div key={card.key}>{body}</div>
+            <div key={card.key} className="flex min-w-[11rem]">
+              {cell}
+            </div>
           );
         })}
-      </div>
+      </AdminStrip>
 
-      {/* 30-day totals — the numbers a visitor asks for first. Full curves
-          with a range control live on /admin/analytics. */}
-      <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-5">
-        <Stat label={t("overview.tradeVolume30d")} value={totals ? money(totals.tradeCents) : null} unit="ETB" gold />
-        <Stat label={t("overview.settledOrders30d")} value={totals ? String(totals.settledOrders) : null} />
-        <Stat label={t("overview.moneyIn30d")} value={totals ? money(totals.depositCents) : null} unit="ETB" />
-        <Stat label={t("overview.moneyOut30d")} value={totals ? money(totals.payoutCents) : null} unit="ETB" />
-        <Stat label={t("overview.newUsers30d")} value={totals ? String(totals.newUsers) : null} />
-      </div>
+      {/* 30-day totals — the numbers a visitor asks for first. */}
+      <AdminStrip label={t("overview.chartTrade")}>
+        <Stat
+          surface="strip"
+          label={t("overview.tradeVolume30d")}
+          value={totals ? money(totals.tradeCents) : null}
+          unit={tc("birr")}
+          tone="gold"
+        />
+        <Stat surface="strip" label={t("overview.settledOrders30d")} value={totals ? String(totals.settledOrders) : null} />
+        <Stat
+          surface="strip"
+          label={t("overview.moneyIn30d")}
+          value={totals ? money(totals.depositCents) : null}
+          unit={tc("birr")}
+        />
+        <Stat
+          surface="strip"
+          label={t("overview.moneyOut30d")}
+          value={totals ? money(totals.payoutCents) : null}
+          unit={tc("birr")}
+        />
+        <Stat surface="strip" label={t("overview.newUsers30d")} value={totals ? String(totals.newUsers) : null} />
+      </AdminStrip>
 
-      {/* The month at a glance — the same ledgered figures the analytics
-          destination draws in full, small enough to read on the way past. */}
-      <section className="rounded-lg border border-border bg-card px-4 pb-4 pt-3.5 lg:px-5">
-        <div className="mb-2 flex items-baseline justify-between gap-3">
-          <h2 className="text-[1.0625rem] font-semibold">{t("overview.chartTrade")}</h2>
-          <Link href="/admin/analytics" className="text-[0.875rem] text-gold-400 hover:underline">
-            {t("overview.openAnalytics")} →
-          </Link>
-        </div>
-        {analytics.loading ? (
-          <Skeleton className="h-[140px] rounded-md" />
-        ) : trend.length === 0 ? (
-          <p className="py-10 text-center text-[0.9375rem] text-muted-foreground">
-            {t("overview.noData")}
-          </p>
-        ) : (
-          <ChartContainer height={140}>
-            <BarChart data={trend} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
-              <CartesianGrid stroke={CHART.grid} strokeOpacity={0.6} vertical={false} />
-              <XAxis
-                dataKey="day"
-                tickFormatter={(d: string) => d.slice(5)}
-                tick={{ fill: CHART.axis, fontSize: 11 }}
-                tickLine={false}
-                axisLine={false}
-                minTickGap={40}
-              />
-              <RechartsTooltip
-                cursor={{ fill: "var(--popover)", opacity: 0.5 }}
-                content={
-                  <ChartTooltip
-                    formatter={(v: number) => `${v.toLocaleString("en-US")} ETB`}
-                    labelFormatter={(d: string) => d}
-                  />
-                }
-              />
-              <Bar
-                dataKey="volume"
-                name={t("overview.tradeVolume30d")}
-                fill={CHART.gold}
-                radius={[3, 3, 0, 0]}
-              />
-            </BarChart>
-          </ChartContainer>
-        )}
-      </section>
-
-      {/* Recent activity — the audit log's newest rows, so the front page
-          shows WHO did WHAT, not just how much is queued. */}
-      {seesAudit && (
-        <section className="flex flex-col gap-2">
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-[1.0625rem] font-semibold">{t("overview.recentActivity")}</h2>
-            <Link href="/admin/audit" className="text-[0.875rem] text-gold-400 hover:underline">
-              {t("overview.openAudit")} →
-            </Link>
-          </div>
-          {audit.loading ? (
-            <Skeleton className="h-40 rounded-lg" />
+      {/* The month at a glance — the same ledgered figures Analytics draws in
+          full, small enough to read on the way past. */}
+      <Panel aria-label={t("overview.chartTrade")}>
+        <PanelHeader
+          title={t("overview.chartTrade")}
+          hint={t("analytics.days30")}
+          action={
+            <Button variant="link" size="sm" asChild>
+              <Link href="/admin/analytics">
+                {t("overview.openAnalytics")}
+                <ArrowRight />
+              </Link>
+            </Button>
+          }
+        />
+        <PanelBody className="flex flex-col">
+          {analytics.loading ? (
+            <Skeleton className="h-[200px] rounded-md" />
+          ) : trend.length === 0 ? (
+            <p className="py-10 text-center text-[0.875rem] text-muted-foreground">{t("overview.noData")}</p>
           ) : (
-            <AdminTable
-              headers={[t("audit.actor"), t("audit.action"), t("audit.target"), t("orders.when")]}
-            >
-              {(audit.data?.entries ?? []).slice(0, 8).map((e) => (
-                <tr key={e.id}>
-                  <Td className="font-latin text-[0.875rem]">{e.actorLabel}</Td>
-                  <Td className="font-latin">{e.action}</Td>
-                  <Td className="font-latin text-[0.8125rem] text-subtle">
-                    {e.targetType ? `${e.targetType} ${e.targetId ?? ""}` : "—"}
-                  </Td>
-                  <Td className="font-latin text-[0.8125rem] text-subtle">
-                    {eatStamp(e.createdAt)}
-                  </Td>
-                </tr>
-              ))}
-            </AdminTable>
+            <FillChart min={200} className="tnum">
+              <BarChart data={trend} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
+                <CartesianGrid stroke={CHART.grid} vertical={false} />
+                <XAxis
+                  dataKey="day"
+                  tickFormatter={(d: string) => d.slice(5)}
+                  tick={{ fill: CHART.axis, fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={false}
+                  minTickGap={40}
+                />
+                <RechartsTooltip
+                  cursor={{ fill: "var(--raised)", opacity: 0.5 }}
+                  content={
+                    <ChartTooltip
+                      formatter={(v: number) => `${v.toLocaleString("en-US")} ETB`}
+                      labelFormatter={(d: string) => d}
+                    />
+                  }
+                />
+                <Bar dataKey="volume" name={t("overview.tradeVolume30d")} fill={CHART.gold} radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </FillChart>
           )}
-        </section>
+        </PanelBody>
+      </Panel>
+
+      {/* Recent activity — WHO did WHAT, not just how much is queued. */}
+      {seesAudit && (
+        <AdminTable
+          title={t("overview.recentActivity")}
+          action={
+            <Button variant="link" size="sm" asChild>
+              <Link href="/admin/audit">
+                {t("overview.openAudit")}
+                <ArrowRight />
+              </Link>
+            </Button>
+          }
+          loading={audit.loading}
+          headers={[t("audit.actor"), t("audit.action"), t("audit.target"), { label: t("orders.when"), end: true }]}
+        >
+          {(audit.data?.entries ?? []).slice(0, 8).map((e) => (
+            <tr key={e.id}>
+              <Td className="tnum text-[0.8125rem]">{e.actorLabel}</Td>
+              <Td>
+                <span className="tnum inline-block rounded-[0.375rem] bg-panel-2 px-1.5 py-0.5 text-[0.75rem] leading-tight">{e.action}</span>
+              </Td>
+              <Td className="tnum text-[0.75rem] text-subtle">
+                {e.targetType ? `${e.targetType} ${e.targetId ?? ""}` : "—"}
+              </Td>
+              <Td className="tnum text-end text-[0.75rem] whitespace-nowrap text-subtle">{eatStamp(e.createdAt)}</Td>
+            </tr>
+          ))}
+        </AdminTable>
       )}
 
-      <p className="max-w-[640px] text-[0.875rem] leading-relaxed text-subtle">
-        {t("overview.note")}
-      </p>
-    </div>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  unit,
-  gold,
-}: {
-  label: string;
-  value: string | null;
-  unit?: string;
-  gold?: boolean;
-}) {
-  return (
-    <div className="well flex flex-col gap-0.5 rounded-md px-3.5 py-3">
-      <span className="text-[0.8125rem] leading-snug text-muted-foreground">{label}</span>
-      {value === null ? (
-        <Skeleton className="mt-1 h-5 w-20" />
-      ) : (
-        <span className={cn("tnum text-[1.0625rem] font-semibold", gold && "text-gold-400")}>
-          {value}
-          {unit && (
-            <span className="ms-1 font-sans text-[0.8125rem] font-normal text-muted-foreground">
-              {unit}
-            </span>
-          )}
-        </span>
-      )}
+      <p className="max-w-[640px] text-[0.8125rem] leading-relaxed text-subtle">{t("overview.note")}</p>
     </div>
   );
 }

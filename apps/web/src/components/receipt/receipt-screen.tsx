@@ -5,18 +5,23 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import type { ReceiptResponse } from "@alkeva/shared";
 
+import { ArrowLeft, Printer, Share2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Mark } from "@/components/brand/mark";
 import { ProofPanel } from "@/components/receipt/proof-panel";
 import { eatStamp, grams, money } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
+import { cn } from "@/lib/utils";
 
 /**
  * A document, not an app screen.
  *
  * This is the artefact a user screenshots and sends to their family, and the
- * one an investor asks to see: a fixed 640px column centred on the canvas at
- * any width, ruled rows, and the serial where an invoice number belongs. The
+ * one an investor asks to see: a fixed-width document with ruled rows and the
+ * serial where an invoice number belongs. On a desk the ledger proof stands
+ * beside it at the same height, so the claim and its evidence read together. The
  * provenance block is what separates it from a note — the price was not
  * invented, it came from a named feed at a named instant, and the FX rate that
  * turned an ounce in dollars into a gram in birr is printed beside it.
@@ -27,8 +32,6 @@ import { useResource } from "@/lib/use-resource";
 export function ReceiptScreen({ orderId }: { orderId: string }) {
   const t = useTranslations("receipt");
   const tc = useTranslations("common");
-  const tt = useTranslations("trade");
-  const th = useTranslations("history");
   const { data, error, loading } = useResource<ReceiptResponse>(`/orders/${orderId}/receipt`);
 
   async function share() {
@@ -49,53 +52,62 @@ export function ReceiptScreen({ orderId }: { orderId: string }) {
     }
   }
 
-  const metal = data?.asset === "XAU" ? tc("gold") : tc("platinum");
-
   return (
-    <div className="flex flex-col">
-      <div className="mb-4 flex items-center gap-3" data-print="hide">
-        <Link
-          href="/history"
-          className="inline-flex min-h-11 items-center gap-2 text-[0.9375rem] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          ← {th("title")}
-        </Link>
+    <div className="mx-auto flex w-full max-w-[78rem] flex-col gap-3">
+      <div className="flex items-center gap-2" data-print="hide">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/receipts">
+            <ArrowLeft />
+            {t("title")}
+          </Link>
+        </Button>
         <span className="ms-auto flex gap-2">
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="min-h-10 rounded-full border border-input px-4 text-[0.9375rem] transition-colors hover:border-foreground"
-          >
+          <Button variant="outline" size="sm" onClick={() => window.print()}>
+            <Printer />
             {t("print")}
-          </button>
-          <button
-            type="button"
-            onClick={() => void share()}
-            className="min-h-10 rounded-full border border-input px-4 text-[0.9375rem] transition-colors hover:border-foreground"
-          >
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => void share()}>
+            <Share2 />
             {t("share")}
-          </button>
+          </Button>
         </span>
       </div>
 
-      {loading && <Skeleton className="mx-auto h-[32rem] w-full max-w-[40rem] rounded-lg" />}
+      {loading && <Skeleton className="h-[32rem] w-full max-w-[42rem] rounded-lg" />}
 
       {error && !loading && (
-        <p className="mx-auto max-w-[40rem] rounded-lg border border-border bg-card p-5 text-[0.9375rem] text-muted-foreground">
+        <p className="max-w-[42rem] rounded-lg border border-border bg-card p-5 text-[0.9375rem] text-muted-foreground">
           {t("notAvailable")}
         </p>
       )}
 
-      {data && (
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,42rem)_minmax(0,1fr)]">
+      {data && <ReceiptDocument data={data} />}
+
+      {data && <ProofPanel orderId={orderId} />}
+      </div>
+    </div>
+  );
+}
+
+/** The receipt document itself — used by the receipt page and the Receipts preview. */
+export function ReceiptDocument({ data, className }: { data: ReceiptResponse; className?: string }) {
+  const t = useTranslations("receipt");
+  const tc = useTranslations("common");
+  const tt = useTranslations("trade");
+  const th = useTranslations("history");
+  const metal = data.asset === "XAU" ? tc("gold") : tc("platinum");
+
+  return (
         <article
           data-print="document"
-          className="mx-auto w-full max-w-[40rem] rounded-lg border border-input bg-card px-5 py-6 lg:px-10 lg:py-8"
+          className={cn("w-full rounded-xl border border-input bg-card px-5 py-6 lg:px-9 lg:py-8", className)}
         >
           <header className="flex items-start justify-between gap-4 border-b border-input pb-5">
             <span className="flex items-center gap-2.5">
               <Mark size={30} />
               <span className="flex flex-col leading-tight">
-                <span className="font-latin text-[1.125rem] font-semibold tracking-[0.03em]">
+                <span className="font-latin text-[1rem] font-extrabold tracking-[0.22em]">
                   ALKEVA
                 </span>
                 <span className="text-[0.9375rem] leading-snug text-muted-foreground">
@@ -107,7 +119,7 @@ export function ReceiptScreen({ orderId }: { orderId: string }) {
               <span className="text-[0.9375rem] leading-snug text-muted-foreground">
                 {t("serialLabel")}
               </span>
-              <span className="tnum text-[1.1875rem] font-semibold tracking-[0.02em] text-gold-400">
+              <span className="tnum text-[1.1875rem] font-semibold text-gold-300">
                 {data.serial}
               </span>
             </span>
@@ -140,7 +152,7 @@ export function ReceiptScreen({ orderId }: { orderId: string }) {
               <dt className="text-[1.0625rem] font-semibold">
                 {data.side === "buy" ? t("totalPaid") : t("totalReceived")}
               </dt>
-              <dd className="tnum text-[1.625rem] font-semibold text-gold-400">
+              <dd className="tnum text-[1.625rem] font-semibold tracking-[-0.02em] text-gold-300">
                 {money(data.totalCents)}
                 <span className="ms-1.5 font-sans text-[0.9375rem] font-medium text-muted-foreground">
                   {tc("birr")}
@@ -174,10 +186,6 @@ export function ReceiptScreen({ orderId }: { orderId: string }) {
             )}
           </footer>
         </article>
-      )}
-
-      {data && <ProofPanel orderId={orderId} className="mx-auto mt-4 w-full max-w-[40rem]" />}
-    </div>
   );
 }
 
@@ -194,9 +202,9 @@ function Meta({
 }) {
   return (
     <span className="flex flex-col gap-0.5">
-      <span className="text-[0.9375rem] leading-snug text-muted-foreground">{label}</span>
+      <span className="data-label">{label}</span>
       <span
-        className={`text-base font-semibold ${tnum ? "tnum font-medium" : ""} ${
+        className={`text-[0.9375rem] font-semibold ${tnum ? "tnum font-medium" : ""} ${
           tone === "gain" ? "text-gain" : ""
         }`}
       >
@@ -213,8 +221,8 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
         strong ? "border-input" : "border-border"
       }`}
     >
-      <dt className="text-[0.9375rem] text-muted-foreground">{label}</dt>
-      <dd className="tnum text-base font-medium">{value}</dd>
+      <dt className="text-[0.875rem] text-muted-foreground">{label}</dt>
+      <dd className="tnum text-[0.9375rem] font-medium">{value}</dd>
     </div>
   );
 }
@@ -222,8 +230,8 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
 function SourceLine({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-x-3 py-0.5">
-      <span className="text-[0.9375rem] text-muted-foreground">{label}</span>
-      <span className="tnum text-[0.9375rem]">{value}</span>
+      <span className="text-[0.8125rem] text-muted-foreground">{label}</span>
+      <span className="tnum text-[0.8125rem]">{value}</span>
     </div>
   );
 }
@@ -231,8 +239,8 @@ function SourceLine({ label, value }: { label: string; value: string }) {
 function Reference({ label, value }: { label: string; value: string }) {
   return (
     <span className="flex flex-col gap-0.5">
-      <span className="font-latin text-[0.6875rem] tracking-[0.06em] text-subtle">{label}</span>
-      <span className="font-latin break-all text-[0.8125rem] tracking-[0.02em] text-muted-foreground">
+      <span className="data-label text-[0.6875rem]">{label}</span>
+      <span className="tnum break-all text-[0.75rem] text-muted-foreground">
         {value}
       </span>
     </span>

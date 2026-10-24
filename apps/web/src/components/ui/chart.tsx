@@ -5,20 +5,16 @@ import { ResponsiveContainer, Tooltip } from "recharts";
 import { cn } from "@/lib/utils";
 
 /**
- * The chart frame for the admin console — recharts, re-tokenised to the
- * ALKEVA ramp (stock recharts ships greys and drop shadows; none of that
- * survives here). Series colours are ONLY the two metals: gold for the
- * money/asset series, platinum for the counter-series — the palette rule
- * "the only saturated colours are the two metals" applies to charts too.
- * Identity is never colour-alone: every multi-series chart renders a legend,
- * and the pair passes the CVD checks (ΔE 17 deutan, 17.4 normal-vision,
- * ≥3:1 contrast on card — validated 13 Aug 2026).
+ * The chart frame for the admin console — recharts on the v2 tokens. Series
+ * colours are the two metals: champagne for the money/asset series, platinum
+ * for the counter-series. Identity is never colour-alone: every multi-series
+ * chart renders a legend. Axis text is mono, like every number in the product.
  */
 
 export const CHART = {
   gold: "var(--gold-400)",
   platinum: "var(--platinum-400)",
-  grid: "var(--border)",
+  grid: "oklch(1 0 0 / 0.05)",
   axis: "var(--subtle)",
 } as const;
 
@@ -32,7 +28,7 @@ export function ChartContainer({
   height?: number;
 }) {
   return (
-    <div className={cn("font-latin w-full text-xs", className)} style={{ height }}>
+    <div className={cn("tnum w-full text-[0.6875rem]", className)} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         {children}
       </ResponsiveContainer>
@@ -67,7 +63,7 @@ export function ChartTooltip({
 }) {
   if (!active || !payload || payload.length === 0) return null;
   return (
-    <div className="rounded-md border border-border bg-popover px-3 py-2 shadow-lg">
+    <div className="rounded-[0.5rem] border border-input bg-popover px-3 py-2 shadow-(--shadow-pop)">
       {label !== undefined && (
         <p className="mb-1 text-[0.75rem] text-muted-foreground">
           {labelFormatter ? labelFormatter(String(label)) : String(label)}

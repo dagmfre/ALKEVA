@@ -92,9 +92,9 @@ export function MetalMass({
 function StaticIngot({ asset, gramsMg }: { asset: "XAU" | "XPT"; gramsMg: string }) {
   const scale = massScale(gramsMg);
   const isGold = asset === "XAU";
-  const face = isGold ? "#d4a017" : "#c5c9d0";
-  const top = isGold ? "#f0c040" : "#e2e6ec";
-  const side = isGold ? "#a37a10" : "#9aa0aa";
+  const face = isGold ? "#cfa264" : "#c5c9d0";
+  const top = isGold ? "#ecd09c" : "#e2e6ec";
+  const side = isGold ? "#8f6a3a" : "#9aa0aa";
 
   return (
     <div className="grid h-full w-full place-items-center">

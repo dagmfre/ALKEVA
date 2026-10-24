@@ -7,8 +7,7 @@ import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/auth/field";
-import { Wordmark } from "@/components/brand/mark";
-import { LocaleToggle } from "@/components/shell/locale-toggle";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { SystemBanner } from "@/components/system/banner";
 import { api, ApiError } from "@/lib/api";
 
@@ -44,14 +43,14 @@ export function ForgotPasswordScreen() {
   return (
     <AuthPanel>
       <div>
-        <h1 className="text-2xl font-semibold">{t("forgotTitle")}</h1>
-        <p className="mt-1 text-[0.9375rem] leading-relaxed text-muted-foreground">
+        <h1 className="text-[1.75rem] leading-tight font-extrabold tracking-[-0.02em]">{t("forgotTitle")}</h1>
+        <p className="mt-1.5 text-[0.875rem] leading-relaxed text-muted-foreground">
           {t("forgotBody")}
         </p>
       </div>
 
       {sent ? (
-        <p className="rounded-md border border-border bg-popover px-4 py-3.5 text-[0.9375rem] leading-relaxed">
+        <p className="rounded-[0.75rem] border border-gold-400/25 bg-gold-400/8 px-4 py-3.5 text-[0.875rem] leading-relaxed">
           {t("resetSent")}
         </p>
       ) : (
@@ -65,7 +64,7 @@ export function ForgotPasswordScreen() {
 
       <Link
         href="/login"
-        className="text-center text-[0.9375rem] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+        className="text-center text-[0.8125rem] font-semibold text-muted-foreground transition-colors hover:text-foreground"
       >
         ← {t("loginTitle")}
       </Link>
@@ -106,8 +105,8 @@ export function ResetPasswordScreen() {
   return (
     <AuthPanel>
       <div>
-        <h1 className="text-2xl font-semibold">{t("resetTitle")}</h1>
-        <p className="mt-1 text-[0.9375rem] leading-relaxed text-muted-foreground">
+        <h1 className="text-[1.75rem] leading-tight font-extrabold tracking-[-0.02em]">{t("resetTitle")}</h1>
+        <p className="mt-1.5 text-[0.875rem] leading-relaxed text-muted-foreground">
           {t("resetBody")}
         </p>
       </div>
@@ -133,7 +132,7 @@ export function ResetPasswordScreen() {
 
       <Link
         href="/forgot-password"
-        className="text-center text-[0.9375rem] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+        className="text-center text-[0.8125rem] font-semibold text-muted-foreground transition-colors hover:text-foreground"
       >
         {t("forgotPassword")}
       </Link>
@@ -143,15 +142,9 @@ export function ResetPasswordScreen() {
 
 function AuthPanel({ children }: { children: React.ReactNode }) {
   return (
-    <main className="flex min-h-dvh w-full items-center justify-center px-4 py-10">
-      <div className="flex w-full max-w-[27rem] flex-col gap-7 lg:gap-6 lg:rounded-lg lg:border lg:border-border lg:bg-card lg:px-8 lg:py-9">
-        <div className="flex items-center justify-between">
-          <Wordmark size={30} />
-          <LocaleToggle />
-        </div>
-        {children}
-      </div>
-    </main>
+    <AuthShell>
+      <div className="flex flex-col gap-6">{children}</div>
+    </AuthShell>
   );
 }
 

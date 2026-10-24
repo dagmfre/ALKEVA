@@ -22,7 +22,7 @@ import { massScale } from "@/components/three/mass-scale";
 
 // With image-based lighting the surface reads from its reflections, so
 // metalness goes to 1 and roughness drops — a cast bar is polished, not matte.
-const GOLD = { color: "#d4a017", metalness: 1, roughness: 0.16 } as const;
+const GOLD = { color: "#cfa264", metalness: 1, roughness: 0.16 } as const;
 const PLATINUM = { color: "#c9cdd6", metalness: 1, roughness: 0.2 } as const;
 
 function Ingot({ asset, gramsMg }: { asset: "XAU" | "XPT"; gramsMg: string }) {
@@ -32,7 +32,7 @@ function Ingot({ asset, gramsMg }: { asset: "XAU" | "XPT"; gramsMg: string }) {
   const scale = massScale(gramsMg);
 
   // Slow turn + a barely-there float: enough life to read as an object in
-  // space, never enough to read as celebration (the antipatterns line).
+  // space, never enough to read as celebration.
   useFrame((state, delta) => {
     if (!mesh.current) return;
     mesh.current.rotation.y += delta * 0.35;

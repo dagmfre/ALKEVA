@@ -6,17 +6,8 @@ import { Tabs as TabsPrimitive } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 /**
- * shadcn Tabs, re-tokenised for ALKEVA.
- *
- * Changed from the shadcn default, deliberately:
- *  - The boxed-pill TabsList is gone. Tabs here are a compact underline strip
- *    sitting on a hairline — the selected tab carries a 2px gold underline,
- *    the one signal meaning "current selection" in this system.
- *  - Triggers are ≥44px tall (min-h-11); the stock 36px pill fails the
- *    touch-target floor.
- *  - Active state is `font-semibold text-foreground`, never a filled chip —
- *    gold stays reserved for the underline so the strip never competes with
- *    the primary action.
+ * Tabs, design v2: the segmented look. A recessed track, the selected tab is
+ * the raised thumb. Same vocabulary as `Segmented`, but switching content.
  */
 function Tabs({
   className,
@@ -38,7 +29,7 @@ function TabsList({
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
-      className={cn("flex gap-1 border-b border-border", className)}
+      className={cn("inline-flex w-fit max-w-full gap-0.5 overflow-x-auto rounded-[0.75rem] border border-border bg-panel-2 p-[3px] [scrollbar-width:none]", className)}
       {...props}
     />
   )
@@ -52,10 +43,8 @@ function TabsTrigger({
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "relative inline-flex min-h-11 items-center justify-center px-3.5 text-[0.9375rem] text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-50 data-[state=active]:font-semibold data-[state=active]:text-foreground",
-        // The 2px gold underline — inset from the edges so adjacent tabs
-        // never read as one continuous bar.
-        "after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-transparent data-[state=active]:after:bg-gold-500",
+        "inline-flex h-8 flex-none items-center justify-center gap-1.5 rounded-[0.5625rem] px-3 text-[0.8125rem] font-semibold whitespace-nowrap text-muted-foreground outline-none transition-[background-color,color,box-shadow] duration-150 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-45",
+        "data-[state=active]:bg-raised data-[state=active]:text-foreground data-[state=active]:shadow-(--shadow-thumb)",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}

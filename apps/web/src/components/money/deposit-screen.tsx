@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type {
   BalancesResponse,
@@ -10,12 +9,13 @@ import type {
   PaymentResponse,
 } from "@alkeva/shared";
 
+import { AmountField, KycGate, Steps, WalletNav } from "@/components/money/wallet-ui";
 import { Button } from "@/components/ui/button";
-import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
+import { Panel, PanelHeader } from "@/components/ui/panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SystemBanner } from "@/components/system/banner";
 import { api, ApiError } from "@/lib/api";
-import { money } from "@/lib/format";
+import { grams, money } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
 
 /** The top-ups people actually make, in whole birr. */
@@ -34,6 +34,9 @@ const KNOWN = new Set([
  * CBEBirr, bank, card) is chosen on Chapa's hosted checkout, so the channel
  * caps shown here are information, not validation: Chapa enforces them at
  * payment time (fact-check §6.5).
+ *
+ *   wallet nav
+ *   deposit form + how it works      │ your balance + channels
  */
 export function DepositScreen() {
   const t = useTranslations("deposit");
@@ -76,135 +79,85 @@ export function DepositScreen() {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-[64rem] grid-cols-1 items-start gap-3.5 lg:mx-0 lg:max-w-none lg:grid-cols-12 lg:gap-5">
-      {needsKyc ? (
-        <Panel className="flex flex-col gap-3 p-5 lg:col-span-7">
-          <h2 className="text-lg font-semibold">{t("kycGateTitle")}</h2>
-          <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
-            {t("kycGateBody")}
-          </p>
-          <Button size="cta" asChild>
-            <Link href="/kyc">{t("kycGateCta")}</Link>
-          </Button>
-        </Panel>
-      ) : (
-        <Panel className="lg:col-span-7">
-          <PanelHeader title={t("amountLabel")} />
-          <PanelBody>
-            <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-4">
-              <label className="flex flex-col gap-1.5">
-                <span className="sr-only">{t("amountLabel")}</span>
-                <div className="well flex items-center rounded-md">
-                  <input
-                    inputMode="decimal"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="tnum min-h-14 w-full bg-transparent px-3.5 text-[1.375rem] font-semibold outline-none"
-                    disabled={busy}
-                  />
-                  <span className="pe-3.5 text-[0.9375rem] text-muted-foreground">
-                    {tc("birr")}
-                  </span>
-                </div>
-                {channels.data && (
-                  <span className="text-[0.8125rem] text-subtle">
-                    {t("minimum", { amount: money(channels.data.minDepositCents) })}
-                  </span>
+    <div className="flex flex-col gap-3">
+      <WalletNav />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_25.25rem]">
+        {needsKyc ? (
+          <KycGate title={t("kycGateTitle")} body={t("kycGateBody")} cta={t("kycGateCta")} />
+        ) : (
+          <Panel aria-label={t("amountLabel")}>
+            <PanelHeader title={t("formTitle")} hint={t("viaChapa")} />
+            <form
+              onSubmit={(e) => void submit(e)}
+              className="grid flex-1 grid-cols-1 gap-x-8 gap-y-5 px-[1.125rem] pb-[1.125rem] xl:grid-cols-[minmax(0,1fr)_17rem]"
+            >
+              <div className="flex flex-col gap-4">
+                <AmountField
+                  label={t("amountLabel")}
+                  value={amount}
+                  onChange={setAmount}
+                  unit={tc("birr")}
+                  disabled={busy}
+                  chips={QUICK_ETB}
+                  foot={channels.data ? t("minimum", { amount: money(channels.data.minDepositCents) }) : undefined}
+                />
+                {error && (
+                  <SystemBanner tone="critical" className="mb-0">
+                    {KNOWN.has(error) || error === "amount_too_small"
+                      ? t(`errors.${error}` as never)
+                      : t("errors.generic")}
+                  </SystemBanner>
                 )}
-              </label>
-
-              {/* The amounts people actually top up with — one tap instead of
-                  five digits typed on a phone keypad. */}
-              <div className="flex flex-wrap gap-2">
-                {QUICK_ETB.map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setAmount(v)}
-                    className="tnum min-h-11 rounded-full border border-input px-4 text-[0.9375rem] text-muted-foreground transition-colors hover:border-gold-400 hover:text-gold-400"
-                  >
-                    {Number(v).toLocaleString("en-US")}
-                  </button>
-                ))}
+                <div className="mt-auto flex flex-col gap-2">
+                  <Button type="submit" size="cta" disabled={busy}>
+                    {busy ? tc("loading") : t("cta")}
+                  </Button>
+                  <p className="text-[0.75rem] leading-relaxed text-subtle">{t("redirectNote")}</p>
+                </div>
               </div>
-
-              {error && (
-                <SystemBanner tone="critical">
-                  {KNOWN.has(error) || error === "amount_too_small"
-                    ? t(`errors.${error}` as never)
-                    : t("errors.generic")}
-                </SystemBanner>
-              )}
-
-              <Button type="submit" size="cta" disabled={busy}>
-                {busy ? tc("loading") : t("cta")}
-              </Button>
-              <p className="text-[0.8125rem] leading-relaxed text-subtle">{t("redirectNote")}</p>
+              <div className="flex flex-col gap-4 border-t border-border pt-4 xl:border-t-0 xl:border-s xl:ps-8 xl:pt-0">
+                <Steps title={t("howTitle")} items={[t("how1"), t("how2"), t("how3")]} />
+              </div>
             </form>
-          </PanelBody>
-        </Panel>
-      )}
+          </Panel>
+        )}
 
-      <div className="flex flex-col gap-3.5 lg:col-span-5 lg:gap-5">
-        <Panel>
+        <Panel aria-label={t("balanceTitle")}>
           <PanelHeader title={t("balanceTitle")} />
-          <PanelBody>
+          <div className="flex flex-1 flex-col gap-4 px-[1.125rem] pb-[1.125rem]">
             {balances.data ? (
-              <span className="flex items-baseline gap-2">
-                <span className="tnum text-[1.625rem] font-semibold">
-                  {money(balances.data.etbCents)}
+              <div className="flex flex-col gap-2">
+                <span className="flex items-baseline gap-2">
+                  <span className="tnum text-[1.875rem] leading-none font-semibold tracking-[-0.02em]">
+                    {money(balances.data.etbCents)}
+                  </span>
+                  <span className="text-[0.875rem] text-muted-foreground">{tc("birr")}</span>
                 </span>
-                <span className="text-[0.9375rem] text-muted-foreground">{tc("birr")}</span>
-              </span>
+                <span className="tnum text-[0.75rem] text-subtle">
+                  {tc("gold")} {grams(balances.data.xauMg)} {tc("g")} · {tc("platinum")} {grams(balances.data.xptMg)}{" "}
+                  {tc("g")}
+                </span>
+              </div>
             ) : (
-              <Skeleton className="h-7 w-40" />
+              <Skeleton className="h-12 w-48" />
             )}
-          </PanelBody>
-        </Panel>
-
-        <Panel>
-          <PanelHeader title={t("howTitle")} />
-          <PanelBody>
-            <ol className="flex flex-col gap-3">
-              {[t("how1"), t("how2"), t("how3")].map((step, i) => (
-                <li key={step} className="flex gap-3">
-                  <span className="tnum grid size-6 flex-none place-items-center rounded-full border border-input text-[0.8125rem] font-semibold text-gold-400">
-                    {i + 1}
-                  </span>
-                  <span className="text-[0.9375rem] leading-relaxed text-muted-foreground">
-                    {step}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </PanelBody>
-        </Panel>
-
-        <Panel>
-          <PanelHeader title={t("channelsTitle")} />
-          <PanelBody>
-            {channels.data ? (
-              <div className="flex flex-col">
-                {channels.data.channels.map((c, i) => (
-                  <div
-                    key={c.key}
-                    className={`flex items-center justify-between gap-3 py-2.5 ${
-                      i === 0 ? "" : "border-t border-border"
-                    }`}
-                  >
-                    <span className="text-[0.9375rem]">{t(`channels.${c.key}` as never)}</span>
-                    <span className="tnum text-[0.9375rem] text-muted-foreground">
+            <div className="flex flex-col border-t border-border pt-3">
+              <span className="mb-1.5 text-[0.8125rem] font-bold">{t("channelsTitle")}</span>
+              {channels.data ? (
+                channels.data.channels.map((c) => (
+                  <div key={c.key} className="flex items-baseline justify-between gap-3 py-1.5 text-[0.8125rem]">
+                    <span>{t(`channels.${c.key}` as never)}</span>
+                    <span className="tnum text-muted-foreground">
                       {c.maxInCents ? t("upTo", { amount: money(c.maxInCents) }) : "—"}
                     </span>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <Skeleton className="h-24" />
-            )}
-            <p className="mt-3 text-[0.8125rem] leading-relaxed text-subtle">{t("channelsNote")}</p>
-          </PanelBody>
+                ))
+              ) : (
+                <Skeleton className="h-24" />
+              )}
+            </div>
+            <p className="mt-auto text-[0.75rem] leading-relaxed text-subtle">{t("channelsNote")}</p>
+          </div>
         </Panel>
       </div>
     </div>

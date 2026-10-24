@@ -44,7 +44,7 @@ export function Field({
 
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[0.9375rem] font-medium">{label}</span>
+      <span className="data-label">{label}</span>
       <span className="relative flex items-center">
         <input
           name={name}
@@ -52,7 +52,7 @@ export function Field({
           {...props}
           className={
             className ??
-            `well min-h-12 w-full rounded-md border-input px-3.5 text-base outline-none transition-colors focus:border-gold-400 ${
+            `h-12 w-full rounded-md border border-border bg-panel-2 px-3.5 text-[0.9375rem] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-subtle hover:border-input focus:border-gold-500 focus:shadow-[0_0_0_3px_oklch(0.717_0.098_73.3/0.18)] ${
               isPassword ? "pe-12" : ""
             }`
           }
@@ -65,7 +65,7 @@ export function Field({
             aria-label={revealed ? t("hidePassword") : t("showPassword")}
             title={revealed ? t("hidePassword") : t("showPassword")}
             // 44px target: the same minimum the rest of the product holds to.
-            className="absolute end-1 flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400"
+            className="absolute end-1 flex size-10 items-center justify-center rounded-[0.5625rem] text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-400"
           >
             {revealed ? (
               <EyeOff className="size-[1.125rem]" aria-hidden="true" />

@@ -1,48 +1,57 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { MetalAsset, PriceRange } from "@alkeva/shared";
 
 import { useAssetPrice } from "@/components/market/price-provider";
+import { Coin, Panel, PanelHeader } from "@/components/ui/panel";
+import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
-import { axisLabel, money } from "@/lib/format";
+import { axisLabel, eatStamp, money } from "@/lib/format";
 import { usePriceSeries } from "@/lib/use-price-series";
 import { cn } from "@/lib/utils";
 
 const RANGES: PriceRange[] = ["24h", "7d", "30d", "1y"];
-const W = 796;
-const H = 320;
-const PAD = 14;
+const W = 1000;
+const H = 400;
+const PAD = 18;
 
 /**
- * One metal, one range, one line — with the axes a price chart owes its reader.
+ * One metal, one range, one line, with the axes a price chart owes its reader:
+ * a labelled price axis on human steps, the live price tagged on it, a time
+ * axis, the window's real open/high/low/close, and a crosshair that reads any
+ * point back. No candles — they imply an order book this dealer does not have.
  *
- * No categorical palette and no candlesticks: a single series does not need
- * five colours, and OHLC candles imply an intraday order book this product
- * does not have. What it does have is a real y-axis, the current price tagged
- * on it, a time axis, and the window's true open/high/low — all read off the
- * ticks the worker stored (`design/design.md` §4).
+ * The chart region is the panel's elastic body: give the panel a height (or
+ * let a grid row stretch it) and the plot fills it.
  */
 export function PriceChart({
   asset,
+  onAssetChange,
+  actions,
   className,
-  chartClassName,
-  showOhlc = true,
+  compact = false,
+  footer = true,
 }: {
   asset: MetalAsset;
+  /** When given, the title becomes a Gold / Platinum selector. */
+  onAssetChange?: (a: MetalAsset) => void;
+  /** Extra controls beside the range selector (e.g. a price-alert button). */
+  actions?: React.ReactNode;
   className?: string;
-  chartClassName?: string;
-  showOhlc?: boolean;
+  /** Phone: no OHLC row, a fixed-height plot, a narrower axis. */
+  compact?: boolean;
+  footer?: boolean;
 }) {
   const t = useTranslations("home");
+  const tm = useTranslations("market");
   const tc = useTranslations("common");
   const [range, setRange] = useState<PriceRange>("24h");
   const series = usePriceSeries(asset, range);
-  // "Current" is the shared store's latest raw tick — the buckets only draw
-  // the line. Before the first snapshot lands, fall back to the last bucket
-  // so the chart never shows an empty cell.
   const live = useAssetPrice(asset);
+  // "Current" is the shared store's latest raw tick; the buckets only draw
+  // the line. Before the first snapshot lands, fall back to the last bucket.
   const current = live?.etbCentsPerGram ?? series.lastBucket;
 
   const isGold = asset === "XAU";
@@ -57,262 +66,277 @@ export function PriceChart({
     const mid = (min + max) / 2;
 
     /**
-     * The axis always spans at least ±0.5% of the price.
-     *
-     * Without this floor the axis fits itself to whatever the data did, so a
-     * quiet day — gold moved 0.07% — renders as a dramatic cliff from the
-     * bottom of the frame to the top. On a savings product that is a lie told
-     * with geometry: the shape says "something happened" when nothing did.
+     * The axis always spans at least 0.4% of the price. Without this floor a
+     * quiet day (gold moved 0.07%) renders as a cliff from the bottom of the
+     * frame to the top — a lie told with geometry on a savings product.
      */
-    const MIN_SPAN_RATIO = 0.004;
-    const minSpan = Math.max(1, mid * MIN_SPAN_RATIO);
+    const minSpan = Math.max(1, mid * 0.004);
     const lo = max - min < minSpan ? mid - minSpan / 2 : min;
     const hi = max - min < minSpan ? mid + minSpan / 2 : max;
     const span = hi - lo;
 
     const x = (i: number) => (i / (points.length - 1)) * W;
     const y = (v: number) => H - PAD - ((v - lo) / span) * (H - PAD * 2);
-
     const line = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" L");
-    const last = values[values.length - 1] ?? mid;
 
     return {
+      values,
       line: `M${line}`,
       area: `M${line} L${W},${H} L0,${H} Z`,
-      lastX: x(values.length - 1),
-      lastY: y(last),
       lo,
       span,
+      x,
+      y,
       ticks: niceTicks(lo, hi).map((v) => ({ value: v, y: y(v) })),
-      xLabels: pickIndices(points.length).map((i) => ({
+      xLabels: pickIndices(points.length, compact ? 4 : 6).map((i) => ({
         key: i,
-        x: x(i),
         label: axisLabel(points[i]!.at, range),
       })),
     };
-  }, [points, range]);
+  }, [points, range, compact]);
 
-  // Pin the current-price tag where the LIVE tick sits on the chart's own
-  // scale, clamped into the frame when the tick has moved outside the window.
   const tagY = useMemo(() => {
     if (!geometry) return 0;
-    if (!current) return geometry.lastY;
-    const v = Number(BigInt(current));
-    const raw = H - PAD - ((v - geometry.lo) / geometry.span) * (H - PAD * 2);
+    if (!current) return geometry.y(geometry.values.at(-1) ?? 0);
+    const raw = geometry.y(Number(BigInt(current)));
     return Math.min(Math.max(raw, PAD), H - PAD);
   }, [geometry, current]);
 
-  const gradientId = `fade-${asset}`;
+  // Crosshair: the index under the pointer, or null.
+  const [hover, setHover] = useState<number | null>(null);
+  const plotRef = useRef<HTMLDivElement>(null);
+  function onMove(e: React.PointerEvent) {
+    const el = plotRef.current;
+    if (!el || !geometry) return;
+    const r = el.getBoundingClientRect();
+    const f = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    setHover(Math.round(f * (points.length - 1)));
+  }
+
+  const change =
+    series.open && current
+      ? ((Number(BigInt(current)) - Number(BigInt(series.open))) / Number(BigInt(series.open))) * 100
+      : null;
+
+  const gradientId = `fade-${asset}-${compact ? "c" : "f"}`;
+  const axisW = compact ? "4.5rem" : "4.75rem";
 
   return (
-    <section
-      className={cn(
-        "flex flex-col rounded-lg border bg-card px-4 pb-3 pt-4 lg:px-5",
-        isGold ? "border-gold-500/30" : "border-border",
-        className,
-      )}
-    >
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <span className="flex items-center gap-2.5 text-[1.125rem] font-semibold">
-          <span
-            className={cn("size-2.5 flex-none rounded-full", isGold ? "bg-gold-500" : "bg-platinum-400")}
-          />
-          {isGold ? tc("gold") : tc("platinum")}
-          <span className="text-[0.9375rem] font-normal text-muted-foreground">
-            · {tc("perGram")}
-          </span>
-        </span>
-        {/* Timeframe navigation — a compact tab strip, not big buttons: the
-            active range carries a 2px gold underline (Tradeo reference §19). */}
-        <span className="flex items-center gap-1">
-          {RANGES.map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setRange(r)}
-              aria-pressed={range === r}
-              className={cn(
-                "font-latin relative min-h-9 px-3 text-[0.8125rem] transition-colors",
-                range === r
-                  ? "font-semibold text-foreground"
-                  : "font-medium text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {r}
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "absolute inset-x-2.5 bottom-0.5 h-0.5 rounded-full",
-                  range === r ? "bg-gold-500" : "bg-transparent",
-                )}
+    <Panel className={cn(compact ? "" : "min-h-[22rem]", className)} aria-label={tm("chartTitle")}>
+      <PanelHeader
+        title={
+          <span className="flex min-w-0 items-center gap-4">
+            {onAssetChange ? (
+              <Segmented
+                value={asset}
+                onValueChange={onAssetChange}
+                size={compact ? "sm" : "md"}
+                aria-label={tm("selector")}
+                options={(["XAU", "XPT"] as const).map((a) => ({
+                  value: a,
+                  label: (
+                    <span className="flex items-center gap-1.5 font-sans">
+                      <Coin metal={a} size="sm" />
+                      {a === "XAU" ? tc("gold") : tc("platinum")}
+                    </span>
+                  ),
+                }))}
               />
-            </button>
-          ))}
-        </span>
-      </div>
-
-      {showOhlc && (
-        <div className="mb-2.5 flex flex-wrap gap-x-6 gap-y-1.5">
-          <Ohlc label={t("open")} value={series.open} />
-          <Ohlc label={t("high")} value={series.high} />
-          <Ohlc label={t("low")} value={series.low} />
-          <Ohlc label={t("current")} value={current} accent={isGold ? "gold" : "platinum"} />
-        </div>
-      )}
+            ) : (
+              <span>{tm("chartTitle")}</span>
+            )}
+            {!compact && (
+              <span className="tnum hidden items-center gap-3.5 text-[0.75rem] font-medium text-subtle xl:flex">
+                <Ohlc k="O" v={series.open} />
+                <Ohlc k="H" v={series.high} />
+                <Ohlc k="L" v={series.low} />
+                <Ohlc k="C" v={current} />
+                {change !== null && (
+                  <span className={change >= 0 ? "text-gain" : "text-loss"}>
+                    {change >= 0 ? "+" : "−"}
+                    {Math.abs(change).toFixed(2)}%
+                  </span>
+                )}
+              </span>
+            )}
+          </span>
+        }
+        action={
+          <span className="flex items-center gap-2">
+            {actions}
+            <Segmented
+              value={range}
+              onValueChange={setRange}
+              size={compact ? "sm" : "md"}
+              aria-label={tm("range")}
+              options={RANGES.map((r) => ({ value: r, label: <span className="tnum">{r}</span> }))}
+            />
+          </span>
+        }
+      />
 
       {series.loading ? (
-        <Skeleton className={cn("h-40 flex-1 rounded-md", chartClassName)} />
+        <div className={cn("px-4 pb-4", compact ? "h-[14rem]" : "min-h-0 flex-1")}>
+          <Skeleton className="size-full min-h-40" />
+        </div>
       ) : geometry ? (
-        <>
-          <div className={cn("grid min-h-0 flex-1 grid-cols-[1fr_5.375rem]", chartClassName)}>
+        <div
+          className={cn("grid", compact ? "h-[15rem]" : "min-h-0 flex-1")}
+          style={{ gridTemplateColumns: `minmax(0,1fr) ${axisW}`, gridTemplateRows: "minmax(0,1fr) 1.875rem" }}
+        >
+          <div
+            ref={plotRef}
+            className="relative min-h-0 touch-none border-y border-border"
+            onPointerMove={onMove}
+            onPointerDown={onMove}
+            onPointerLeave={() => setHover(null)}
+          >
+            {geometry.ticks.map((tick) => (
+              <div
+                key={tick.value}
+                aria-hidden="true"
+                className="absolute inset-x-0 border-t border-dashed border-white/5"
+                style={{ top: `${(tick.y / H) * 100}%` }}
+              />
+            ))}
             <svg
               viewBox={`0 0 ${W} ${H}`}
-              width="100%"
-              height="100%"
               preserveAspectRatio="none"
+              className="absolute inset-0 size-full overflow-visible"
               role="img"
               aria-label={`${asset} ${range}`}
             >
               <defs>
-                {/* The fill states "this is the area below the price", then
-                    gets out of the way. At a flat 0.18 it read as a solid
-                    olive block filling half the panel. */}
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={stroke} stopOpacity="0.16" />
-                  <stop offset="45%" stopColor={stroke} stopOpacity="0.05" />
-                  <stop offset="100%" stopColor={stroke} stopOpacity="0" />
+                  <stop offset="0" stopColor={stroke} stopOpacity="0.16" />
+                  <stop offset="0.55" stopColor={stroke} stopOpacity="0.04" />
+                  <stop offset="1" stopColor={stroke} stopOpacity="0" />
                 </linearGradient>
-                <filter id={`${gradientId}-glow`} x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="4" />
-                </filter>
               </defs>
-              {geometry.ticks.map((tick) => (
-                <line
-                  key={tick.value}
-                  x1="0"
-                  y1={tick.y}
-                  x2={W}
-                  y2={tick.y}
-                  stroke="var(--border)"
-                  strokeOpacity="0.75"
-                  strokeWidth="1"
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))}
-              {/* Time gridlines under the axis labels — a quiet grid, so a
-                  flat stretch of price still reads as a measured window. */}
-              {geometry.xLabels.slice(1, -1).map((l) => (
-                <line
-                  key={`v-${l.key}`}
-                  x1={l.x}
-                  y1="0"
-                  x2={l.x}
-                  y2={H}
-                  stroke="var(--border)"
-                  strokeOpacity="0.5"
-                  strokeWidth="1"
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))}
               <path d={geometry.area} fill={`url(#${gradientId})`} />
-              {/* Soft glow: the same path blurred at low opacity BEHIND the
-                  crisp line — the sanctioned live-indicator glow, applied to
-                  the market line itself (Gauld reference §12). */}
-              <path
-                d={geometry.line}
-                fill="none"
-                stroke={stroke}
-                strokeOpacity="0.45"
-                strokeWidth="6"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                filter={`url(#${gradientId}-glow)`}
-              />
               <path
                 d={geometry.line}
                 fill="none"
                 stroke={stroke}
                 strokeWidth="2"
                 strokeLinejoin="round"
-                strokeLinecap="round"
                 vectorEffect="non-scaling-stroke"
               />
-              <circle cx={geometry.lastX} cy={geometry.lastY} r="4" fill={stroke} vectorEffect="non-scaling-stroke" />
             </svg>
-
-            <div className="font-latin relative text-xs text-subtle">
-              {geometry.ticks.map((tick) => (
-                <span
-                  key={tick.value}
-                  className="absolute end-0 -translate-y-1/2 tabular-nums"
-                  style={{ top: `${(tick.y / H) * 100}%` }}
-                >
-                  {money(BigInt(Math.round(tick.value)))}
-                </span>
-              ))}
-              <span
-                className={cn(
-                  "absolute end-0 -translate-y-1/2 rounded-sm px-2 py-0.5 font-semibold tabular-nums text-primary-foreground",
-                  isGold ? "glow-gold bg-gold-500" : "bg-platinum-400",
-                )}
-                style={{ top: `${(tagY / H) * 100}%` }}
-              >
-                {current ? money(current) : ""}
-              </span>
-            </div>
+            {/* The live price level, dashed across the plot. */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 border-t border-dashed opacity-55"
+              style={{ top: `${(tagY / H) * 100}%`, borderColor: stroke }}
+            />
+            {hover !== null && geometry.values[hover] !== undefined && (
+              <Crosshair
+                left={(geometry.x(hover) / W) * 100}
+                top={(geometry.y(geometry.values[hover]!) / H) * 100}
+                stroke={stroke}
+                when={eatStamp(points[hover]!.at)}
+                value={money(points[hover]!.etbCentsPerGram)}
+              />
+            )}
           </div>
 
-          <div className="font-latin flex justify-between pe-[5.375rem] pt-2 text-xs text-subtle">
+          <div className="relative border-y border-border">
+            {geometry.ticks.map((tick) => (
+              <span
+                key={tick.value}
+                className="tnum absolute start-2.5 -translate-y-1/2 text-[0.6875rem] text-subtle"
+                style={{ top: `${(tick.y / H) * 100}%` }}
+              >
+                {money(BigInt(Math.round(tick.value)))}
+              </span>
+            ))}
+            {current && (
+              <span
+                className="tnum absolute inset-x-1 -translate-y-1/2 rounded-[0.375rem] px-1.5 py-[3px] text-center text-[0.6875rem] font-semibold text-[#141006]"
+                style={{ top: `${(tagY / H) * 100}%`, background: stroke }}
+              >
+                {money(current)}
+              </span>
+            )}
+          </div>
+
+          <div className="tnum flex items-center justify-between ps-3 pe-1 text-[0.6875rem] text-subtle">
             {geometry.xLabels.map((l) => (
               <span key={l.key}>{l.label}</span>
             ))}
           </div>
-        </>
+          <div />
+        </div>
       ) : (
-        <p className="px-4 py-10 text-center text-[0.9375rem] text-muted-foreground">
+        <p className="flex flex-1 items-center justify-center px-4 py-10 text-center text-[0.875rem] text-muted-foreground">
           {t("noChartData")}
         </p>
       )}
-    </section>
+
+      {footer && !compact && live && (
+        <div className="tnum flex flex-none flex-wrap justify-between gap-x-3 gap-y-1 border-t border-border px-[1.125rem] py-2.5 text-[0.6875rem] text-subtle">
+          <span className="truncate">
+            {tm("chartSource", { source: live.source, fxSource: live.fxSource })}
+          </span>
+          <span className="font-sans">{tm("tickEvery")}</span>
+        </div>
+      )}
+    </Panel>
   );
 }
 
-function Ohlc({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string | null;
-  accent?: "gold" | "platinum";
-}) {
+function Ohlc({ k, v }: { k: string; v: string | null }) {
   return (
-    <span className="flex items-baseline gap-2">
-      <span className="text-[0.9375rem] text-muted-foreground">{label}</span>
-      {value ? (
-        <span
-          className={cn(
-            "tnum text-sm font-semibold",
-            accent === "gold" && "text-gold-400",
-            accent === "platinum" && "text-platinum-400",
-          )}
-        >
-          {money(value)}
-        </span>
-      ) : (
-        <Skeleton className="h-4 w-16" />
-      )}
+    <span>
+      {k} <b className="font-medium text-foreground">{v ? money(v) : "—"}</b>
     </span>
   );
 }
 
+function Crosshair({
+  left,
+  top,
+  stroke,
+  when,
+  value,
+}: {
+  left: number;
+  top: number;
+  stroke: string;
+  when: string;
+  value: string;
+}) {
+  const flip = left > 62;
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-y-0 border-s border-dashed border-white/25"
+        style={{ left: `${left}%` }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -ms-[5px] -mt-[5px] size-[10px] rounded-full border-2 bg-background"
+        style={{ left: `${left}%`, top: `${top}%`, borderColor: stroke }}
+      />
+      <div
+        className={cn(
+          "tnum pointer-events-none absolute top-3 rounded-[0.5rem] border border-input bg-raised px-2.5 py-1.5 text-[0.75rem] whitespace-nowrap shadow-(--shadow-pop)",
+          flip ? "-translate-x-[calc(100%+12px)]" : "translate-x-3",
+        )}
+        style={{ left: `${left}%` }}
+      >
+        <span className="text-subtle">{when}</span>
+        <span className="ms-2.5 font-semibold">{value}</span>
+      </div>
+    </>
+  );
+}
+
 /**
- * Gridline values a human would have chosen: 1/2/2.5/5 × a power of ten inside
- * the visible span. Dividing the span into equal thirds instead would print
- * axis labels like 22,183.33 — arithmetically fine, unreadable on a chart.
- *
- * The steps are chosen in BIRR and converted back to cents, so the axis lands
- * on 22,700 / 22,750 rather than on round numbers of cents nobody reads.
+ * Gridline values a human would have chosen: 1/2/2.5/5 × a power of ten,
+ * chosen in BIRR so the axis lands on 20,700 / 20,750 rather than on round
+ * numbers of cents nobody reads.
  */
 function niceTicks(loCents: number, hiCents: number, target = 5): number[] {
   const lo = loCents / 100;
@@ -328,8 +352,8 @@ function niceTicks(loCents: number, hiCents: number, target = 5): number[] {
   return out;
 }
 
-/** ~5 evenly spaced sample indices for the time axis, endpoints included. */
-function pickIndices(length: number, count = 5): number[] {
+/** Evenly spaced sample indices for the time axis, endpoints included. */
+function pickIndices(length: number, count: number): number[] {
   if (length <= count) return Array.from({ length }, (_, i) => i);
   return Array.from({ length: count }, (_, i) => Math.round((i / (count - 1)) * (length - 1)));
 }

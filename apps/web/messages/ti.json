@@ -144,7 +144,27 @@
     "receiptFeeLabel": "ኮሚሽን",
     "receiptTotalLabel": "ጠቕላላ ዝተኸፍለ",
     "receiptSourceLabel": "ምንጪ ዋጋ",
-    "copyrightCta": "ናይ ቅዳሕ መሰል ምዝገባ ርአ"
+    "copyrightCta": "ናይ ቅዳሕ መሰል ምዝገባ ርአ",
+    "siteNav": "መርበብ",
+    "navPrices": "ዋጋታት",
+    "navHow": "ብኸመይ ይሰርሕ",
+    "navRules": "ድሕንነት",
+    "navTiers": "ደረጃታት",
+    "navFaq": "ሕቶታት",
+    "kicker": "መዝኖ። ውነኖ። ሽጦ።",
+    "heroTrust1Title": "ብካዝና ዝድገፍ",
+    "heroTrust1Body": "ካዝና ዘይሓዘቶ ግራም ኣይሽየጥን",
+    "heroTrust2Title": "ዋጋ ን30 s ይትሓዝ",
+    "heroTrust2Body": "ዝረኣኻዮ ዋጋ ኢኻ ተረጋግጽ",
+    "heroTrust3Title": "ሓሙሽተ ቋንቋታት",
+    "heroTrust3Body": "ኣምሓርኛ፣ እንግሊዝኛ፣ ትግርኛ፣ ኦሮምኛ፣ ሶማልኛ",
+    "formulaTitle": "ናይ ብር ዋጋ ብኸመይ ይሕሰብ",
+    "formulaSpot": "ዓለም ለኻዊ ዋጋ",
+    "formulaOunce": "÷ 31.1035 ግ ንሓደ ትሮይ ኣውንስ",
+    "formulaFx": "× USD → ETB · {source}",
+    "formulaResult": "ብር ንሓደ ግራም",
+    "tierDelivery": "ኣካላዊ ምርካብ",
+    "tierLevel": "ደረጃ {n}"
   },
   "nav": {
     "home": "መእተዊ",
@@ -160,7 +180,11 @@
     "sectionMarket": "ዕዳጋ",
     "sectionAccount": "ሕሳብ",
     "adminConsole": "መቆጻጸሪ ኣመሓደርቲ",
-    "sectionMoney": "ገንዘብ"
+    "sectionMoney": "ገንዘብ",
+    "markets": "ዕዳጋታት",
+    "wallet": "ዋሌት",
+    "more": "ተወሳኺ",
+    "primary": "ቀንዲ መዘዋወሪ"
   },
   "home": {
     "totalLabel": "ጠቕላላ ንብረት",
@@ -196,7 +220,12 @@
     "openPortfolio": "ንብረት",
     "youHold": "ትሕዝቶኻ",
     "buyShort": "ግዛእ",
-    "sellShort": "ሽጥ"
+    "sellShort": "ሽጥ",
+    "vsCost": "ምስ ዝኸፈልካዮ ተነጻጺሩ",
+    "vaultFoot": "እቲ መስመር ካብ ነፍሲ ወከፍ ካዝና ክንደይ ድሮ ንዓማዊል ከም ዝወጽአ የርኢ።",
+    "floatTitle": "ጥረ ገንዘብ ንምምላስ",
+    "floatCash": "ተቐማጢ ጥረ ገንዘብ",
+    "floatHeadroom": "ሎሚ ገና ክኽፈል ዝኽእል"
   },
   "trade": {
     "title": "ንግዲ",
@@ -266,7 +295,45 @@
       "conflict": "እዚ ሕቶ ምስ ናይ ቀደም ይጋጮ። ሓድሽ ዋጋ ሕተት።",
       "rate_limited": "ብዙሓት ሕቶታት — በጃኻ ቁሩብ ተጸበ እሞ እንደገና ፈትን።",
       "generic": "ጸገም ኣጋጢሙ። በጃኻ እንደገና ፈትን።"
-    }
+    },
+    "orderTitle": "ትእዛዝ",
+    "orderHint": "ብዝተትሓዘ ዋጋ",
+    "unitGrams": "ግራም",
+    "unitBirr": "ብር",
+    "birrNote": "ዋጋ ማዕድን — ኮሚሽን ኣብቲ ዝወሃብ ዋጋ ይውሰኽ።",
+    "yourPrice": "ናትካ ዋጋ",
+    "expiredShort": "ግዜኡ ወዲኡ",
+    "estimate": "ግምት",
+    "heldFor": "ዋጋ ምስ ተራእየ ን30 s ተዓጽዩ ይጸንሕ",
+    "changeAmount": "መጠን ቀይር",
+    "confirmBuy": "{grams} ግ {metal} ግዛእ",
+    "confirmSell": "{grams} ግ {metal} ሽጥ",
+    "yourMetal": "ማዕድንካ",
+    "tabHoldings": "ትሕዝቶ",
+    "tabOrders": "ትእዛዛት",
+    "tabRefused": "ዝተነጽጉ",
+    "tabReceipts": "ደረሰኛት",
+    "colAsset": "ንብረት",
+    "colGrams": "ግራም",
+    "colAvgCost": "ማእከላይ ዋጋ / ግ",
+    "colMark": "ሕጂ ዘሎ ዋጋ / ግ",
+    "colValue": "ዋጋ ETB",
+    "colGainLoss": "ረብሓ / ክሳራ",
+    "colShare": "ክፋል",
+    "cash": "ጥረ ገንዘብ",
+    "cashReady": "ንንግዲ ድሉው",
+    "vaultBacked": "{code} · ብካዝና ዝድገፍ",
+    "account": "ሕሳብ",
+    "metalValue": "ዋጋ ማዕድን",
+    "verified": "ተረጋጊጹ",
+    "verifyNow": "ኣረጋግጽ",
+    "emptyHoldings": "ገና ማዕድን ኣይሓዝካን። ቀዳመይቲ ግራምካ ካብ ናይ ትእዛዝ ሰሌዳ ክትገዝኣ ትኽእል።",
+    "emptyOrders": "ገና ትእዛዛት የልቦን።",
+    "emptyRefused": "ዝተነጸገ የልቦን — ዘቕረብካዮ ነፍሲ ወከፍ ትእዛዝ ሓሊፉ።",
+    "emptyReceipts": "ትእዛዝ ምስ ተዛዘመ ደረሰኛት ኣብዚ ይረኣዩ።",
+    "liveNotHeld": "ቀጥታ · ገና ኣይተትሓዘን",
+    "metalValueRow": "ዋጋ ማዕድን",
+    "onTheQuote": "ኣብቲ ዝወሃብ ዋጋ ይረአ"
   },
   "portfolio": {
     "title": "ንብረት",
@@ -296,7 +363,15 @@
         "amount_too_small": "እቲ መጠን ኣዝዩ ንእሽቶ እዩ።",
         "account_frozen": "ሕሳብካ ተዓጊቱ — ናይ ምርካብ ሕቶታት ተቋሪጾም።",
         "generic": "ጸገም ኣጋጢሙ። በጃኻ እንደገና ፈትን።"
-      }
+      },
+      "open": "ክፉት",
+      "lockedBadge": "ዕጹው",
+      "locked": "ኣካላዊ ምርካብ ኣብ ክልተ ዝለዓሉ ደረጃታት ይኽፈት። ትሕዝቶኻ እናዓበየ ምስ ከደ ኣብዚ ይኽፈት።",
+      "youHold": "ትሕዝቶኻ",
+      "step1": "ነቲ ግራም ሕተት፣ ስልክን ኣድራሻን ሃብ።",
+      "step2": "ጉጅለና ይርእዮ፣ ነቲ ምርካብ ድማ ምሳኻ የረጋግጽ።",
+      "step3": "ክሳብ እቲ ምርካብ ባዕሉ ካብ ሒሳብካ ዝወጽእ የልቦን።",
+      "unlocksLater": "ኣብ ዝለዓለ ደረጃ ይኽፈት"
     },
     "badges": {
       "title": "ባጃታት",
@@ -313,7 +388,8 @@
         "gold_holder": "እንተወሓደ 1 ግራም ወርቂ ሓዝ።",
         "platinum_holder": "ዝኾነ ፕላቲነም ሓዝ።",
         "early_adopter": "ኣብ እዋን ምጅማር ተጸምቢርካ።"
-      }
+      },
+      "earned": "ካብ {total} {n} ተረኺቦም"
     },
     "totalValue": "ጠቕላላ ዋጋ",
     "totalMetalValue": "ጠቕላላ ዋጋ ማዕድን",
@@ -337,7 +413,16 @@
       "yourGold": "ወርቂኹም",
       "openAria": "ሳንዱቕ ወርቂኹም ከፊትኩም ተረፍ ወርቂኹም ርአዩ",
       "closeAria": "ሳንዱቕ ወርቂኹም ዕጸዉ"
-    }
+    },
+    "allocation": "ምምቕራሕ",
+    "byLiveValue": "ብቐጥታዊ ዋጋ",
+    "summary": "ጽማቕ",
+    "totalLive": "ጠቕላላ ዋጋ · ብቐጥታዊ ዋጋ",
+    "costBasisMetal": "ናይ መጀመርታ ዋጋ ማዕድን",
+    "gainLossMetal": "ረብሓ / ክሳራ ኣብ ማዕድን",
+    "goldHeld": "ዝተሓዘ ወርቂ",
+    "platinumHeld": "ዝተሓዘ ፕላቲነም",
+    "cashEtb": "ጥረ ገንዘብ · ETB"
   },
   "tier": {
     "label": "ደረጃ",
@@ -355,7 +440,18 @@
       "Ruby": "ሩቢ",
       "Sapphire": "ሳፋየር",
       "Emerald": "ኤመራልድ"
-    }
+    },
+    "nextShort": "ዝቕጽል {name} — ዝለዓለ ደረት",
+    "perTxnCap": "ደረት ንሓደ ንግዲ",
+    "dailyCap": "መዓልታዊ ደረት",
+    "toNextShort": "ዝቕጽል፦ {name}",
+    "deliveryOn": "ምርካብ",
+    "noLimit": "ደረት የብሉን",
+    "delivery": "ኣካላዊ ምርካብ",
+    "yes": "እወ",
+    "notYet": "ገና",
+    "toNextLabel": "ናብ {name}",
+    "whatItUnlocks": "ደረጃኻ ዘፍቅዶ"
   },
   "history": {
     "title": "ታሪኽ",
@@ -440,8 +536,15 @@
       "balancedNo": "እዞም ኣታዊታት ዜሮ ኣይኮኑን። በጃኻ ሓብረና።",
       "quoteLock": "ዋጋ እተዓጽወሉ",
       "provenance": "ምንጪ ዋጋ",
-      "askAi": "ብቋንቋይ ኣብርሃለይ"
-    }
+      "askAi": "ብቋንቋይ ኣብርሃለይ",
+      "flowTitle": "ብኸመይ ከም ዝተንቀሳቐሰ"
+    },
+    "statCount": "ዝተውሃቡ ደረሰኛት",
+    "statLatest": "ናይ መወዳእታ ቁጽሪ",
+    "statBuys": "ዝተዛዘሙ ዕድጊታት",
+    "statSells": "ዝተዛዘሙ ሽያጣት",
+    "openFull": "ምሉእ ደረሰኝ ክፈት",
+    "listNote": "ደረሰኝ ንዝተዛዘመ ትእዛዝ ጥራይ እዩ ዘሎ — ቁጽሩ ኣብ ህሞት ምዝዛም ይወሃብ። ብምሉእ ቁጽሪ ወይ ብናይ መወዳእታ ኣሃዛቱ ድለ።"
   },
   "account": {
     "title": "ሕሳብ",
@@ -459,7 +562,8 @@
       "remove": "ኣወግድ",
       "removeTitle": "እዚ passkey ይወገድ?",
       "removeBody": "ብእኡ ኣብቲ መሳርሒ ክትኣቱ ኣይትኽእልን። መሕለፊ ቃልካ ግን ይሰርሕ።",
-      "failed": "ኣይተዛዘመን። በጃኻ እንደገና ፈትን።"
+      "failed": "ኣይተዛዘመን። በጃኻ እንደገና ፈትን።",
+      "foot": "passkey ኣብ መሳርሒኻ ይጸንሕ። ALKEVA ህዝባዊ ፍርቁ ጥራይ ትሕዝ፣ ስለዚ ኣብዚ ዝስረቕ የልቦን።"
     },
     "language": "ቋንቋ",
     "tierLabel": "ደረጃ",
@@ -482,7 +586,11 @@
       "administrator": "ኣመሓዳሪ",
       "compliance": "ተኸታታሊ ምርመራ",
       "finance": "ፋይናንስ"
-    }
+    },
+    "roleLabel": "ተራ ሰራሕተኛ",
+    "languageHint": "መርኣዪታት፣ ኢመይላትን እቲ ሓጋዚን ይኽተልዎ",
+    "passwordHint": "መሐደሲ መላግቦ ብኢመይል ንልእከልካ",
+    "moneyHint": "ብር ብChapa ይኣቱን ይወጽእን"
   },
   "deposit": {
     "title": "ገንዘብ ምእታው",
@@ -523,7 +631,9 @@
     "howTitle": "ገንዘብ ምእታው ብኸመይ ይሰርሕ",
     "how1": "መጠን ኣእቱ እሞ ናብ ውሑስ ናይ Chapa መኽፈሊ ቀጽል።",
     "how2": "ብቴሌብር፣ CBEBirr፣ ባንክ ወይ ካርድ ክፈል።",
-    "how3": "ALKEVA ነቲ ክፍሊት ምስ Chapa ኣረጋጊጻ ናብ ሒሳብካ ትውስኾ።"
+    "how3": "ALKEVA ነቲ ክፍሊት ምስ Chapa ኣረጋጊጻ ናብ ሒሳብካ ትውስኾ።",
+    "formTitle": "ብር ኣእቱ",
+    "viaChapa": "ብናይ Chapa መኽፈሊ"
   },
   "withdraw": {
     "title": "ገንዘብ ምውጻእ",
@@ -559,7 +669,8 @@
     "howTitle": "ገንዘብ ምውጻእ ብኸመይ ይሰርሕ",
     "how1": "ምስ ሓተትካ ብርካ ናብ ትሕዝቶ ይሰጋገር — ሒሳብካ ብቐጥታ ይንኪ።",
     "how2": "ፋይናንስ ንዓበይቲ ሕቶታት ይርኢ፤ ንኣሽቱ ብቐጥታ ናብ ባንክ ይለኣኹ።",
-    "how3": "እቲ ምስግጋር ምስ ተረጋገጸ እቲ ትሕዝቶ ናብ ናይ ባንክ ሕሳብካ ይለቀቕ።"
+    "how3": "እቲ ምስግጋር ምስ ተረጋገጸ እቲ ትሕዝቶ ናብ ናይ ባንክ ሕሳብካ ይለቀቕ።",
+    "formTitle": "ብር ናብ ባንክኻ ስደድ"
   },
   "assistant": {
     "emptyTitle": "ብዛዕባ ወርቅኻ ሕተት",
@@ -590,7 +701,16 @@
     "today": "ሎሚ",
     "exampleProve": "ናይ መወዳእታ ንግደይ ኣረጋግጸለይ",
     "languageNote": "ንALKEVA ብዝመረጽካዮ ቋንቋ ይምልስ።",
-    "proveQuestion": "ንግዲ {serial} ኣረጋግጸለይ። መዝገብ ኣታዊታቱ ኣርእየኒ።"
+    "proveQuestion": "ንግዲ {serial} ኣረጋግጸለይ። መዝገብ ኣታዊታቱ ኣርእየኒ።",
+    "title": "ሓጋዚ",
+    "canTitle": "ክትሓትቶ እትኽእል",
+    "canPrices": "ናይ ሎሚ ዋጋ ወርቅን ፕላቲነምን፣ ስለምንታይ ከም ዝተቐየረን",
+    "canHoldings": "እትሕዞ፣ ዝኸፈልካሉ፣ ረብሓኻ ወይ ክሳራኻ",
+    "canHistory": "ዝሓለፉ ትእዛዛትካ፣ ዝተነጽጉን ምኽንያቶምን ሓዊሱ",
+    "canProve": "መረጋገጺ ናይ ዝኾነ ደረሰኝ — ኣብ ድሕሪኡ ዘለዉ መዝገብ ኣታዊታት",
+    "canFees": "ኮሚሽንን ካልኦት ክፍሊታትን ብኸመይ ከም ዝሕሰቡ",
+    "neverTitle": "የንብብ እምበር ፈጺሙ ኣይሰርሕን",
+    "neverBody": "እቲ ሓጋዚ ክነግድ፣ ገንዘብ ከንቀሳቕስ ወይ ሕሳብካ ክቕይር ኣይክእልን፣ ናይ ወፍሪ ምኽሪ እውን ኣይህብን።"
   },
   "notifications": {
     "title": "መልእኽትታት",
@@ -620,7 +740,9 @@
     "listTitle": "ናይ ዋጋ መጠንቀቕታታት",
     "armed": "ንጡፍ",
     "fired": "ተላዒሉ",
-    "remove": "ኣወግድ"
+    "remove": "ኣወግድ",
+    "listEmpty": "ገና ናይ ዋጋ መጠንቀቕታታት የልቦን። ካብቲ ኣብ ዝኾነ ናይ ዋጋ ሰንጠረዥ ዘሎ ደወል ሓደ ኣቐምጥ።",
+    "listFoot": "መጠንቀቕታታት ሓንሳብ ይለዓሉ፣ መልእኽቲ ድማ ይሰዱ። ሓደስቲ ካብቲ ኣብ ዝኾነ ናይ ዋጋ ሰንጠረዥ ዘሎ ደወል ኣቐምጥ።"
   },
   "admin": {
     "confirmAction": "ይረጋገጽ?",
@@ -868,7 +990,25 @@
       "kyc_pending_exists": "ኣብ ምርመራ ዘሎ ምቕራብ ኣሎካ።",
       "file_required": "ቅድም ናይ ሰነድ ፋይል ምረጽ።",
       "generic": "ጸገም ኣጋጢሙ። በጃኻ እንደገና ፈትን።"
-    }
+    },
+    "formTitle": "መንነትካ ኣረጋግጽ",
+    "oneDocument": "ሓደ ሰነድ",
+    "dropTitle": "ስእሊ ወይ PDF ምረጽ",
+    "statusTitle": "ዘለኻሉ ኩነታት",
+    "stateVerified": "ተረጋጊጹ",
+    "stateReview": "ኣብ ምርመራ",
+    "stateNone": "ኣይጀመረን",
+    "unlocksTitle": "መረጋገጺ ዝኸፍቶ",
+    "unlockDeposit": "ብር ምእታው",
+    "unlockTrade": "ማዕድን ምግዛእን ምሻጥን",
+    "unlockWithdraw": "ናብ ባንክኻ ምውጻእ",
+    "reviewNote": "ሓደ ተኸታታሊ ምርመራ ሓላፊ ነፍሲ ወከፍ ሰነድ ብኢዱ ይርኢ። ምስ ተዛዘመ መልእኽቲ ይመጸካ።",
+    "stepSubmit": "ሓደ ሰነድ ስደድ",
+    "stepSubmitBody": "Fayda፣ ፓስፖርት፣ መዘወሪ ፍቓድ ወይ ናይ ቀበሌ መንነት።",
+    "stepReview": "ተኸታታሊ ምርመራ",
+    "stepReviewBody": "ሓደ ሰብ ነቲ ሰነድ ይምርምሮ — መብዛሕትኡ ግዜ ኣብ ውሽጢ ሓደ ናይ ስራሕ መዓልቲ።",
+    "stepVerified": "ተረጋጊጹ",
+    "stepVerifiedBody": "ገንዘብ ምእታው፣ ንግድን ምውጻእን ይኽፈቱ።"
   },
   "credential": {
     "eyebrow": "ዝተመዝገበ ስራሕ",
@@ -892,5 +1032,32 @@
     "termsLink": "ውዕላት",
     "privacyLink": "ውልቃውነት",
     "backToSite": "ናብ መርበብ ተመለስ"
+  },
+  "market": {
+    "selector": "ዕዳጋ",
+    "perGram24h": "ETB ንሓደ ግራም · 24 ሰዓት",
+    "perGramShort": "ETB / ግ",
+    "worldSpot": "ዓለም ለኻዊ ዋጋ · USD/oz",
+    "fx": "USD → ETB",
+    "high24h": "ናይ 24 ሰዓት ላዕለዋይ",
+    "low24h": "ናይ 24 ሰዓት ታሕተዋይ",
+    "lastTick": "ናይ መወዳእታ ምሕዳስ ዋጋ · {source}",
+    "heldBadge": "ነፍሲ ወከፍ ዋጋ ን30 s ይትሓዝ",
+    "ticks": "ምሕዳሳት ዋጋ",
+    "tickTime": "ሰዓት",
+    "tickPrice": "ETB / ግ",
+    "sessionTicks": "እዛ ገጽ ክፍትቲ ከላ ዝተቐበልናዮም",
+    "buckets": "ማእከላይ ዋጋ ናይ 5 ደቓይቕ · 24 ሰዓት",
+    "weekend": "ቀዳመ ሰንበት — ዓለም ለኻዊ ዕዳጋ ዕጹው እዩ። ክሳብ ዝኽፈት እቲ ዋጋ ከምዘሎ ይጸንሕ።",
+    "waitingTick": "ንዝቕጽል ምሕዳስ ዋጋ ይጽበ ኣሎ…",
+    "approxSpot": "≈ {spot} USD/oz",
+    "chartTitle": "ዋጋ",
+    "range": "ግዜ",
+    "chartSource": "ETB ንሓደ ግራም · {source} × {fxSource} USD→ETB",
+    "tickEvery": "ኣስታት ኣብ ነፍሲ ወከፍ 30 s ሓድሽ ዋጋ",
+    "tickerLabel": "ዋጋታት",
+    "worldGold": "ዓለም ለኻዊ ወርቂ · USD/oz",
+    "worldPlatinum": "ዓለም ለኻዊ ፕላቲነም · USD/oz",
+    "fxSource": "USD → ETB · {source}"
   }
 }

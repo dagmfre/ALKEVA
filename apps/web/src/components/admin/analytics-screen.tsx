@@ -13,30 +13,28 @@ import {
   YAxis,
 } from "recharts";
 
+import { FillChart } from "@/components/admin/ui";
+import { CHART, ChartTooltip, RechartsTooltip } from "@/components/ui/chart";
+import { Panel, PanelBody, PanelHeader, Stat, StatStrip } from "@/components/ui/panel";
+import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { CHART, ChartContainer, ChartTooltip, RechartsTooltip } from "@/components/ui/chart";
 import { money } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
-import { cn } from "@/lib/utils";
 
 const RANGES = ["7", "30", "90"] as const;
 type RangeDays = (typeof RANGES)[number];
 
 /**
- * The platform's pulse over a chosen window — trade volume, money in vs out,
- * and user growth, drawn from the same ledgered records the audit trail
- * proves. Moved off the overview onto its own destination (the API always
- * accepted 7–365 days; the UI used to pin 30 and hide the rest).
+ * The platform's pulse over a chosen window, drawn from the same ledgered
+ * records the audit trail proves:
+ *
+ *   window panel: range control + the five totals as one strip
+ *   trade volume (buy vs sell)   │ money in vs out
+ *   new users (full width)
  */
 export function AdminAnalyticsScreen() {
   const t = useTranslations("admin");
+  const tc = useTranslations("common");
   const [days, setDays] = useState<RangeDays>("30");
   const analytics = useResource<AdminAnalyticsResponse>(`/admin/analytics?days=${days}`, {
     intervalMs: 60_000,
@@ -57,33 +55,52 @@ export function AdminAnalyticsScreen() {
   const totals = analytics.data?.totals ?? null;
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">{t("nav.analytics")}</h1>
-        <Select value={days} onValueChange={(v) => setDays(v as RangeDays)}>
-          <SelectTrigger className="w-[12rem]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {RANGES.map((r) => (
-              <SelectItem key={r} value={r}>
-                {t(`analytics.days${r}` as never)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+    <div className="flex flex-col gap-3">
+      <h1 className="sr-only">{t("nav.analytics")}</h1>
+      <Panel aria-label={t("nav.analytics")}>
+        <PanelHeader
+          title={t("nav.analytics")}
+          action={
+            <div className="max-w-full overflow-x-auto [scrollbar-width:none]">
+              <Segmented
+                value={days}
+                onValueChange={setDays}
+                size="sm"
+                aria-label={t("nav.analytics")}
+                options={RANGES.map((r) => ({ value: r, label: t(`analytics.days${r}` as never) }))}
+              />
+            </div>
+          }
+        />
+        <StatStrip className="min-h-[5.25rem] border-t border-border lg:[&>*]:flex-auto">
+          <Stat
+            surface="strip"
+            size="lg"
+            label={t("overview.tradeVolume30d")}
+            value={totals ? money(totals.tradeCents) : null}
+            unit={tc("birr")}
+            tone="gold"
+          />
+          <Stat surface="strip" size="lg" label={t("overview.settledOrders30d")} value={totals ? String(totals.settledOrders) : null} />
+          <Stat
+            surface="strip"
+            size="lg"
+            label={t("overview.moneyIn30d")}
+            value={totals ? money(totals.depositCents) : null}
+            unit={tc("birr")}
+          />
+          <Stat
+            surface="strip"
+            size="lg"
+            label={t("overview.moneyOut30d")}
+            value={totals ? money(totals.payoutCents) : null}
+            unit={tc("birr")}
+          />
+          <Stat surface="strip" size="lg" label={t("overview.newUsers30d")} value={totals ? String(totals.newUsers) : null} />
+        </StatStrip>
+      </Panel>
 
-      {/* Window totals — the numbers a visitor asks for first. */}
-      <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-5">
-        <Stat label={t("overview.tradeVolume30d")} value={totals ? money(totals.tradeCents) : null} unit="ETB" gold />
-        <Stat label={t("overview.settledOrders30d")} value={totals ? String(totals.settledOrders) : null} />
-        <Stat label={t("overview.moneyIn30d")} value={totals ? money(totals.depositCents) : null} unit="ETB" />
-        <Stat label={t("overview.moneyOut30d")} value={totals ? money(totals.payoutCents) : null} unit="ETB" />
-        <Stat label={t("overview.newUsers30d")} value={totals ? String(totals.newUsers) : null} />
-      </div>
-
-      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2 lg:gap-5">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         {/* Trade volume: buy vs sell, stacked by day. */}
         <ChartPanel
           title={t("overview.chartTrade")}
@@ -96,7 +113,7 @@ export function AdminAnalyticsScreen() {
           emptyLabel={t("overview.noData")}
         >
           <BarChart data={points} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
-            <CartesianGrid stroke={CHART.grid} strokeOpacity={0.6} vertical={false} />
+            <CartesianGrid stroke={CHART.grid} vertical={false} />
             <XAxis
               dataKey="day"
               tickFormatter={shortDay}
@@ -113,7 +130,7 @@ export function AdminAnalyticsScreen() {
               width={72}
             />
             <RechartsTooltip
-              cursor={{ fill: "var(--popover)", opacity: 0.5 }}
+              cursor={{ fill: "var(--raised)", opacity: 0.5 }}
               content={<ChartTooltip formatter={etb} labelFormatter={shortDay} />}
             />
             <Bar dataKey="buy" name={t("overview.seriesBuy")} stackId="v" fill={CHART.gold} stroke="var(--card)" strokeWidth={1} />
@@ -133,7 +150,7 @@ export function AdminAnalyticsScreen() {
           emptyLabel={t("overview.noData")}
         >
           <BarChart data={points} barGap={2} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
-            <CartesianGrid stroke={CHART.grid} strokeOpacity={0.6} vertical={false} />
+            <CartesianGrid stroke={CHART.grid} vertical={false} />
             <XAxis
               dataKey="day"
               tickFormatter={shortDay}
@@ -150,7 +167,7 @@ export function AdminAnalyticsScreen() {
               width={72}
             />
             <RechartsTooltip
-              cursor={{ fill: "var(--popover)", opacity: 0.5 }}
+              cursor={{ fill: "var(--raised)", opacity: 0.5 }}
               content={<ChartTooltip formatter={etb} labelFormatter={shortDay} />}
             />
             <Bar dataKey="deposits" name={t("overview.seriesIn")} fill={CHART.gold} radius={[3, 3, 0, 0]} />
@@ -165,10 +182,10 @@ export function AdminAnalyticsScreen() {
           empty={points.length === 0}
           emptyLabel={t("overview.noData")}
           className="lg:col-span-2"
-          height={180}
+          min={180}
         >
           <LineChart data={points} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
-            <CartesianGrid stroke={CHART.grid} strokeOpacity={0.6} vertical={false} />
+            <CartesianGrid stroke={CHART.grid} vertical={false} />
             <XAxis
               dataKey="day"
               tickFormatter={shortDay}
@@ -186,9 +203,7 @@ export function AdminAnalyticsScreen() {
             />
             <RechartsTooltip
               cursor={{ stroke: CHART.grid }}
-              content={
-                <ChartTooltip formatter={(v) => String(v)} labelFormatter={shortDay} />
-              }
+              content={<ChartTooltip formatter={(v) => String(v)} labelFormatter={shortDay} />}
             />
             <Line
               type="monotone"
@@ -203,9 +218,7 @@ export function AdminAnalyticsScreen() {
         </ChartPanel>
       </div>
 
-      <p className="max-w-[640px] text-[0.875rem] leading-relaxed text-subtle">
-        {t("overview.note")}
-      </p>
+      <p className="max-w-[640px] text-[0.8125rem] leading-relaxed text-subtle">{t("overview.note")}</p>
     </div>
   );
 }
@@ -225,36 +238,6 @@ function etb(value: number): string {
   return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB`;
 }
 
-function Stat({
-  label,
-  value,
-  unit,
-  gold,
-}: {
-  label: string;
-  value: string | null;
-  unit?: string;
-  gold?: boolean;
-}) {
-  return (
-    <div className="well flex flex-col gap-0.5 rounded-md px-3.5 py-3">
-      <span className="text-[0.8125rem] leading-snug text-muted-foreground">{label}</span>
-      {value === null ? (
-        <Skeleton className="mt-1 h-5 w-20" />
-      ) : (
-        <span className={cn("tnum text-[1.0625rem] font-semibold", gold && "text-gold-400")}>
-          {value}
-          {unit && (
-            <span className="ms-1 font-sans text-[0.8125rem] font-normal text-muted-foreground">
-              {unit}
-            </span>
-          )}
-        </span>
-      )}
-    </div>
-  );
-}
-
 function ChartPanel({
   title,
   legend,
@@ -263,7 +246,7 @@ function ChartPanel({
   emptyLabel,
   children,
   className,
-  height = 220,
+  min = 240,
 }: {
   title: string;
   legend?: { label: string; color: string }[];
@@ -272,37 +255,36 @@ function ChartPanel({
   emptyLabel: string;
   children: React.ReactElement;
   className?: string;
-  height?: number;
+  min?: number;
 }) {
   return (
-    <section className={cn("rounded-lg border border-border bg-card p-4 lg:p-5", className)}>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-[1.0625rem] font-semibold">{title}</h2>
-        {legend && (
-          <span className="flex items-center gap-4">
-            {legend.map((item) => (
-              <span
-                key={item.label}
-                className="flex items-center gap-1.5 text-[0.8125rem] text-muted-foreground"
-              >
-                <span
-                  className="size-2 rounded-full"
-                  style={{ background: item.color }}
-                  aria-hidden="true"
-                />
-                {item.label}
-              </span>
-            ))}
-          </span>
+    <Panel aria-label={title} className={className}>
+      <PanelHeader
+        title={title}
+        action={
+          legend && (
+            <span className="flex items-center gap-4">
+              {legend.map((item) => (
+                <span key={item.label} className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground">
+                  <span className="size-2 rounded-full" style={{ background: item.color }} aria-hidden="true" />
+                  {item.label}
+                </span>
+              ))}
+            </span>
+          )
+        }
+      />
+      <PanelBody className="flex flex-col">
+        {loading ? (
+          <Skeleton className="rounded-md" style={{ height: min }} />
+        ) : empty ? (
+          <p className="py-10 text-center text-[0.875rem] text-muted-foreground">{emptyLabel}</p>
+        ) : (
+          <FillChart min={min} className="tnum">
+            {children}
+          </FillChart>
         )}
-      </div>
-      {loading ? (
-        <Skeleton className="rounded-md" style={{ height }} />
-      ) : empty ? (
-        <p className="py-10 text-center text-[0.9375rem] text-muted-foreground">{emptyLabel}</p>
-      ) : (
-        <ChartContainer height={height}>{children}</ChartContainer>
-      )}
-    </section>
+      </PanelBody>
+    </Panel>
   );
 }

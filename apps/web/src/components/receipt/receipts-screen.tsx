@@ -3,34 +3,25 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import type { OrderListResponse } from "@alkeva/shared";
+import { ArrowUpRight, Search } from "lucide-react";
+import type { OrderListResponse, ReceiptResponse } from "@alkeva/shared";
 
+import { ReceiptDocument } from "@/components/receipt/receipt-screen";
 import { Button } from "@/components/ui/button";
-import { Panel, PanelHeader } from "@/components/ui/panel";
+import { Coin, Panel, PanelHeader, Stat, StatStrip } from "@/components/ui/panel";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useTradeSheet } from "@/components/trade/trade-sheet-context";
-import { eatStamp, grams, money } from "@/lib/format";
+import { displaySerial, eatStamp, grams, money } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
 import { cn } from "@/lib/utils";
 
 /**
- * Every receipt this account holds, by serial.
+ * Every receipt this account holds, by serial — a list beside the document.
  *
- * Only settled orders appear here, because only settled orders have a serial —
- * the number is allocated at settle, so its presence is the answer to "is
- * there a receipt?" rather than a second flag that could disagree with the
- * ledger.
- *
- * The serial leads the row: it is what someone reads out on the phone when
- * they ask about a trade, so it is the column the eye lands on first.
+ * Only settled orders appear, because only settled orders have a serial: the
+ * number is allocated at settle, so its presence IS the answer to "is there a
+ * receipt?". On a desk the selected receipt renders beside the list, so
+ * finding one is reading it; on a phone each row opens the receipt page.
  */
 export function ReceiptsScreen() {
   const t = useTranslations("receipt");
@@ -38,160 +29,161 @@ export function ReceiptsScreen() {
   const th = useTranslations("history");
   const { revision } = useTradeSheet();
   const [query, setQuery] = useState("");
+  const [picked, setPicked] = useState<string | null>(null);
   const { data, loading } = useResource<OrderListResponse>("/orders?limit=50", { revision });
 
   const receipts = useMemo(
-    () => (data?.orders ?? []).filter((o) => o.receiptSerial !== null),
+    () =>
+      (data?.orders ?? [])
+        .filter((o) => o.receiptSerial !== null)
+        .map((o) => ({ ...o, serial: displaySerial(o.receiptSerial!, o.settledAt) })),
     [data],
   );
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return receipts;
-    return receipts.filter((o) => (o.receiptSerial ?? "").toLowerCase().includes(q));
+    return receipts.filter((o) => o.serial.toLowerCase().includes(q) || o.receiptSerial === q);
   }, [receipts, query]);
+
+  const selectedId = picked ?? shown[0]?.id ?? null;
+  const settledBuys = receipts.filter((o) => o.side === "buy").reduce((s, o) => s + BigInt(o.totalCents), 0n);
+  const settledSells = receipts.filter((o) => o.side === "sell").reduce((s, o) => s + BigInt(o.totalCents), 0n);
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-2.5">
-        <Skeleton className="h-16 rounded-lg" />
-        <Skeleton className="h-64 rounded-lg" />
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-[4.5rem] rounded-lg" />
+        <Skeleton className="h-96 rounded-lg" />
       </div>
     );
   }
 
   if (receipts.length === 0) {
     return (
-      <Panel className="mx-auto max-w-[36rem] p-5">
-        <h2 className="text-[1.125rem] font-semibold">{t("emptyTitle")}</h2>
-        <p className="mt-1 text-[0.9375rem] text-muted-foreground">{t("emptyBody")}</p>
+      <Panel className="flex-1 items-center justify-center gap-2 p-8 text-center">
+        <h2 className="text-[1.125rem] font-bold">{t("emptyTitle")}</h2>
+        <p className="max-w-sm text-[0.875rem] text-muted-foreground">{t("emptyBody")}</p>
       </Panel>
     );
   }
 
   return (
-    <Panel className="overflow-hidden">
-      <PanelHeader
-        title={t("title")}
-        hint={t("countNote", { count: receipts.length })}
-        action={
-          <label className="well flex min-h-11 items-center gap-2.5 rounded-md px-3.5">
-            <span aria-hidden="true" className="text-muted-foreground">
-              ⌕
-            </span>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("searchSerial")}
-              aria-label={t("searchSerial")}
-              className="font-latin w-[11rem] bg-transparent text-[0.9375rem] outline-none placeholder:text-muted-foreground"
-            />
-          </label>
-        }
-        className="border-b border-border"
-      />
+    <div className="flex flex-1 flex-col gap-3">
+      <section data-panel="" aria-label={t("title")} className="overflow-hidden rounded-lg border border-border bg-card">
+        <StatStrip className="lg:[&>*]:flex-auto">
+          <Stat surface="strip" size="lg" label={t("statCount")} value={String(receipts.length)} />
+          <Stat surface="strip" size="lg" label={t("statLatest")} value={receipts[0]?.serial ?? "—"} tone="gold" />
+          <Stat surface="strip" size="lg" label={t("statBuys")} value={money(settledBuys)} unit={tc("birr")} />
+          <Stat surface="strip" size="lg" label={t("statSells")} value={money(settledSells)} unit={tc("birr")} />
+        </StatStrip>
+      </section>
 
-      {shown.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 px-4 py-10 text-center lg:px-5">
-          <p className="text-[0.9375rem] text-muted-foreground">{t("noMatch")}</p>
-          <Button variant="outline" size="sm" onClick={() => setQuery("")}>
-            {t("clearSearch")}
-          </Button>
-        </div>
-      ) : (
-        <>
-          <div className="hidden md:block">
-            <Table className="table-fixed">
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead style={{ width: "16%" }}>{t("serialLabel")}</TableHead>
-                  <TableHead style={{ width: "26%" }}>{th("colOrder")}</TableHead>
-                  <TableHead className="text-end" style={{ width: "14%" }}>
-                    {th("colAmount")}
-                  </TableHead>
-                  <TableHead className="text-end" style={{ width: "18%" }}>
-                    {th("colValue")}
-                  </TableHead>
-                  <TableHead style={{ width: "26%" }}>{t("dateTime")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {shown.map((o) => {
-                  const metal = o.asset === "XAU" ? tc("gold") : tc("platinum");
-                  return (
-                    <TableRow key={o.id} className="cursor-pointer">
-                      <TableCell className="tnum font-semibold">
-                        <Link href={`/receipt/${o.id}`} className="hover:text-gold-400">
-                          {o.receiptSerial}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        <span className="flex items-center gap-2.5">
-                          <span
-                            aria-hidden="true"
-                            className={cn(
-                              "size-2 flex-none rounded-full",
-                              o.asset === "XAU" ? "bg-gold-500" : "bg-platinum-400",
-                            )}
-                          />
-                          {o.side === "buy"
-                            ? th("buyLabel", { metal })
-                            : th("sellLabel", { metal })}
+      <div className="grid flex-1 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,42rem)]">
+        {/* h-0 + min-h-full: the list takes the preview's height and scrolls,
+            so a long list never stretches the row and a short one never leaves
+            a hole beside the document. */}
+        <Panel aria-label={t("title")} className="lg:h-0 lg:min-h-full">
+          <PanelHeader
+            title={t("title")}
+            hint={t("countNote", { count: receipts.length })}
+            action={
+              <label className="flex h-9 items-center gap-2 rounded-[0.5625rem] border border-border bg-panel-2 px-3 transition-colors focus-within:border-gold-500">
+                <Search className="size-4 text-subtle" aria-hidden="true" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t("searchSerial")}
+                  aria-label={t("searchSerial")}
+                  className="tnum w-[10rem] bg-transparent text-[0.8125rem] outline-none placeholder:text-subtle"
+                />
+              </label>
+            }
+          />
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto border-t border-border">
+            {shown.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
+                <p className="text-[0.875rem] text-muted-foreground">{t("noMatch")}</p>
+                <Button variant="outline" size="sm" onClick={() => setQuery("")}>
+                  {t("clearSearch")}
+                </Button>
+              </div>
+            ) : (
+              shown.map((o) => {
+                const metal = o.asset === "XAU" ? tc("gold") : tc("platinum");
+                const active = o.id === selectedId;
+                const row = (
+                  <>
+                    <Coin metal={o.asset} size="lg" />
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="tnum text-[0.875rem] font-semibold text-gold-300">{o.serial}</span>
+                      <span className="truncate text-[0.75rem] text-muted-foreground">
+                        {o.side === "buy" ? th("buyLabel", { metal }) : th("sellLabel", { metal })} ·{" "}
+                        <span className="tnum">
+                          {grams(o.gramsMg)} {tc("g")}
                         </span>
-                      </TableCell>
-                      <TableCell className="tnum text-end text-muted-foreground">
-                        {grams(o.gramsMg)} <span className="font-sans">{tc("g")}</span>
-                      </TableCell>
-                      <TableCell className="tnum text-end font-semibold">
-                        {money(o.totalCents)}
-                      </TableCell>
-                      <TableCell className="font-latin text-[0.875rem] text-subtle">
+                      </span>
+                    </span>
+                    <span className="flex flex-col items-end gap-0.5">
+                      <span className="tnum text-[0.875rem] font-semibold">{money(o.totalCents)}</span>
+                      <span className="tnum text-[0.6875rem] text-subtle">
                         {o.settledAt ? eatStamp(o.settledAt) : "—"}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                      </span>
+                    </span>
+                  </>
+                );
+                const cls = cn(
+                  "relative flex w-full items-center gap-3 border-b border-border px-[1.125rem] py-3 text-start transition-colors last:border-b-0",
+                  active ? "bg-white/[0.035]" : "hover:bg-white/[0.02]",
+                );
+                return (
+                  <div key={o.id}>
+                    {/* Desk: select into the preview. Phone: open the receipt. */}
+                    <button
+                      type="button"
+                      onClick={() => setPicked(o.id)}
+                      aria-pressed={active}
+                      className={cn(cls, "hidden lg:flex")}
+                    >
+                      {active && (
+                        <span aria-hidden="true" className="absolute inset-y-2 start-0 w-0.5 rounded-e-full bg-gold-400" />
+                      )}
+                      {row}
+                    </button>
+                    <Link href={`/receipt/${o.id}`} className={cn(cls, "lg:hidden")}>
+                      {row}
+                    </Link>
+                  </div>
+                );
+              })
+            )}
+            <p className="mt-auto border-t border-border px-[1.125rem] py-3.5 text-[0.75rem] leading-relaxed text-subtle">
+              {t("listNote")}
+            </p>
           </div>
+        </Panel>
 
-          <div className="md:hidden">
-            {shown.map((o) => {
-              const metal = o.asset === "XAU" ? tc("gold") : tc("platinum");
-              return (
-                <Link
-                  key={o.id}
-                  href={`/receipt/${o.id}`}
-                  className="block border-b border-border px-4 py-3.5 last:border-0 active:bg-popover/60"
-                >
-                  <span className="flex items-center justify-between gap-3">
-                    <span className="tnum font-semibold">{o.receiptSerial}</span>
-                    <span className="tnum font-semibold">{money(o.totalCents)}</span>
-                  </span>
-                  <span className="mt-1.5 flex items-center justify-between gap-3 text-[0.875rem] text-muted-foreground">
-                    <span className="flex items-center gap-2.5">
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          "size-2 flex-none rounded-full",
-                          o.asset === "XAU" ? "bg-gold-500" : "bg-platinum-400",
-                        )}
-                      />
-                      {o.side === "buy" ? th("buyLabel", { metal }) : th("sellLabel", { metal })}
-                    </span>
-                    <span className="tnum">
-                      {grams(o.gramsMg)} {tc("g")}
-                    </span>
-                  </span>
-                  <span className="font-latin mt-1 block text-[0.8125rem] text-subtle">
-                    {o.settledAt ? eatStamp(o.settledAt) : "—"}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </>
-      )}
-    </Panel>
+        <div className="hidden min-w-0 flex-col lg:flex">
+          {selectedId && <Preview orderId={selectedId} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Preview({ orderId }: { orderId: string }) {
+  const t = useTranslations("receipt");
+  const { data, loading } = useResource<ReceiptResponse>(`/orders/${orderId}/receipt`);
+  if (loading || !data) return <Skeleton className="h-[34rem] rounded-xl" />;
+  return (
+    <div className="relative">
+      <ReceiptDocument data={data} />
+      <Button variant="ghost" size="sm" className="absolute end-3 bottom-3" asChild>
+        <Link href={`/receipt/${orderId}`}>
+          {t("openFull")}
+          <ArrowUpRight />
+        </Link>
+      </Button>
+    </div>
   );
 }

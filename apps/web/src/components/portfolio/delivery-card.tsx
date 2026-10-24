@@ -5,7 +5,10 @@ import { useTranslations } from "next-intl";
 import type { DeliveryListResponse, HoldingDto, MetalAsset } from "@alkeva/shared";
 
 import { Badge } from "@/components/ui/badge";
+import { Lock } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { Coin, Panel, PanelHeader } from "@/components/ui/panel";
 import {
   Dialog,
   DialogContent,
@@ -38,6 +41,9 @@ const DELIVERY_ERRORS = new Set([
  * Physical delivery (spec F18): eligible tiers request the handover of held
  * grams. A workflow record, not a trade — nothing moves in the ledger when a
  * request is filed, and the copy says the team confirms the handover.
+ *
+ * Always rendered: below the eligible tiers it states what unlocks delivery
+ * beside what you hold, instead of leaving a hole in the grid.
  */
 export function DeliveryCard({
   eligible,
@@ -62,8 +68,6 @@ export function DeliveryCard({
   const [address, setAddress] = useState("");
   const [busy, setBusy] = useState(false);
   const [errorCode, setErrorCode] = useState<string | null>(null);
-
-  if (!eligible) return null;
 
   const requests = data?.requests ?? [];
 
@@ -99,33 +103,59 @@ export function DeliveryCard({
   }
 
   return (
-    <section className={cn("rounded-lg border border-border bg-card p-4 lg:p-5", className)}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-[1.125rem] font-semibold">{t("delivery.title")}</h2>
-          <p className="mt-0.5 text-[0.9375rem] leading-relaxed text-muted-foreground">
-            {t("delivery.body")}
-          </p>
+    <Panel className={className} aria-label={t("delivery.title")}>
+      <PanelHeader
+        title={t("delivery.title")}
+        action={
+          <Badge variant={eligible ? "gain" : "muted"} dot>
+            {eligible ? t("delivery.open") : t("delivery.lockedBadge")}
+          </Badge>
+        }
+      />
+      <div className="flex flex-1 flex-col gap-3.5 px-[1.125rem] pb-[1.125rem]">
+        <p className="text-[0.84375rem] leading-relaxed text-muted-foreground">
+          {eligible ? t("delivery.body") : t("delivery.locked")}
+        </p>
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[0.75rem] border border-border bg-border">
+          {holdings.length === 0 ? (
+            <div className="col-span-2 bg-background p-3 text-[0.8125rem] text-subtle">—</div>
+          ) : (
+            holdings.map((h) => (
+              <div key={h.asset} className="flex flex-col gap-1 bg-background p-3">
+                <span className="flex items-center gap-1.5 text-[0.75rem] text-subtle">
+                  <Coin metal={h.asset} size="sm" />
+                  {t("delivery.youHold")}
+                </span>
+                <span className="tnum text-[0.9375rem] font-semibold">
+                  {grams(h.gramsMg)} <span className="font-sans text-[0.75rem] text-subtle">{tc("g")}</span>
+                </span>
+              </div>
+            ))
+          )}
         </div>
-        <Button variant="gold" onClick={() => setOpen(true)}>
-          {t("delivery.request")}
-        </Button>
-      </div>
+
+      {requests.length === 0 && (
+        <ol className="flex flex-col gap-2.5 border-t border-border pt-3.5">
+          {(["step1", "step2", "step3"] as const).map((k, i) => (
+            <li key={k} className="flex gap-3 text-[0.8125rem] leading-snug">
+              <span className="tnum grid size-5 flex-none place-items-center rounded-full bg-raised text-[0.6875rem] font-semibold text-gold-300">
+                {i + 1}
+              </span>
+              <span className="text-muted-foreground">{t(`delivery.${k}` as never)}</span>
+            </li>
+          ))}
+        </ol>
+      )}
 
       {requests.length > 0 && (
-        <div className="mt-3.5 flex flex-col border-t border-border">
+        <div className="flex flex-col border-t border-border">
           {requests.map((r) => (
             <div
               key={r.id}
               className="flex flex-wrap items-center justify-between gap-2 border-b border-border py-2.5 last:border-b-0"
             >
               <span className="flex items-center gap-2.5 text-[0.9375rem]">
-                <span
-                  className={cn(
-                    "size-2 rounded-full",
-                    r.asset === "XAU" ? "bg-gold-500" : "bg-platinum-400",
-                  )}
-                />
+                <Coin metal={r.asset} size="sm" />
                 <span className="tnum font-semibold">{grams(r.gramsMg)}</span> {tc("g")}{" "}
                 {r.asset === "XAU" ? tc("gold") : tc("platinum")}
               </span>
@@ -134,6 +164,7 @@ export function DeliveryCard({
                   <span className="text-[0.8125rem] text-muted-foreground">{r.reviewNote}</span>
                 )}
                 <Badge
+                  dot
                   variant={
                     r.status === "rejected"
                       ? "loss"
@@ -150,6 +181,18 @@ export function DeliveryCard({
         </div>
       )}
 
+        {eligible ? (
+          <Button variant="outline" className="mt-auto" onClick={() => setOpen(true)}>
+            {t("delivery.request")}
+          </Button>
+        ) : (
+          <Button variant="outline" className="mt-auto" disabled>
+            <Lock />
+            {t("delivery.unlocksLater")}
+          </Button>
+        )}
+      </div>
+
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
@@ -159,7 +202,7 @@ export function DeliveryCard({
 
           <div className="flex flex-col gap-4">
             <label className="flex flex-col gap-1.5">
-              <span className="text-[0.9375rem] font-medium">{t("delivery.metal")}</span>
+              <span className="data-label">{t("delivery.metal")}</span>
               <Select value={asset} onValueChange={(v) => setAsset(v as MetalAsset)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -176,8 +219,8 @@ export function DeliveryCard({
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-[0.9375rem] font-medium">{t("delivery.grams")}</span>
-              <div className="well flex min-h-12 items-center gap-2.5 rounded-md pe-3.5 ps-3.5">
+              <span className="data-label">{t("delivery.grams")}</span>
+              <div className="flex h-11 items-center gap-2.5 rounded-md border border-border bg-panel-2 px-3.5 focus-within:border-gold-500">
                 <input
                   value={gramsInput}
                   onChange={(e) => setGramsInput(e.target.value)}
@@ -190,23 +233,23 @@ export function DeliveryCard({
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-[0.9375rem] font-medium">{t("delivery.phone")}</span>
+              <span className="data-label">{t("delivery.phone")}</span>
               <input
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 inputMode="tel"
                 autoComplete="tel"
-                className="well min-h-12 rounded-md border-input px-3.5 text-base outline-none transition-colors focus:border-gold-400"
+                className="h-11 rounded-md border border-border bg-panel-2 px-3.5 text-[0.9375rem] outline-none transition-colors focus:border-gold-500"
               />
             </label>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-[0.9375rem] font-medium">{t("delivery.address")}</span>
+              <span className="data-label">{t("delivery.address")}</span>
               <textarea
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 rows={3}
-                className="well rounded-md border-input px-3.5 py-2.5 text-base outline-none transition-colors focus:border-gold-400"
+                className="rounded-md border border-border bg-panel-2 px-3.5 py-2.5 text-[0.9375rem] outline-none transition-colors focus:border-gold-500"
               />
             </label>
 
@@ -227,6 +270,6 @@ export function DeliveryCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section>
+    </Panel>
   );
 }

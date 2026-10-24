@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { ExternalLink } from "lucide-react";
 import type { AdminKycItem } from "@alkeva/shared";
 
-import { AdminAction, AdminTable, Td } from "@/components/admin/ui";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AdminAction, AdminTable, StatusBadge, Td } from "@/components/admin/ui";
+import { Segmented } from "@/components/ui/segmented";
 import { SystemBanner } from "@/components/system/banner";
 import { eatStamp } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
@@ -18,7 +18,7 @@ type KycStatus = (typeof STATUSES)[number];
  * The KYC queue with a status filter — the API always accepted
  * `?status=pending|approved|rejected`; the UI used to pin `pending`, which
  * made "what did we decide last week?" unanswerable from the console.
- * Approve/reject actions only render on the pending tab.
+ * Approve/reject actions only render on the pending filter.
  */
 export function AdminKycScreen() {
   const t = useTranslations("admin");
@@ -29,6 +29,7 @@ export function AdminKycScreen() {
     `/admin/kyc?status=${status}`,
     { revision },
   );
+  const rows = data?.submissions ?? [];
 
   const done = (err: string | null) => {
     setError(err);
@@ -36,74 +37,71 @@ export function AdminKycScreen() {
   };
 
   return (
-    <div>
-      <h1 className="mb-4 text-xl font-semibold">{t("nav.kyc")}</h1>
-
-      <Tabs value={status} onValueChange={(v) => setStatus(v as KycStatus)} className="mb-4">
-        <TabsList>
-          {STATUSES.map((s) => (
-            <TabsTrigger key={s} value={s}>
-              {t(`kyc.status.${s}` as never)}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-
+    <div className="flex flex-col gap-3">
+      <h1 className="sr-only">{t("nav.kyc")}</h1>
       {error && (
-        <SystemBanner tone="critical" className="mb-3">
+        <SystemBanner tone="critical" className="mb-0">
           {t("actionFailed", { code: error })}
         </SystemBanner>
       )}
-      {loading ? (
-        <Skeleton className="h-48 rounded-lg" />
-      ) : (data?.submissions.length ?? 0) === 0 ? (
-        <p className="text-[0.9375rem] text-muted-foreground">{t("kyc.empty")}</p>
-      ) : (
-        <AdminTable
-          headers={[t("users.email"), t("kyc.docType"), t("kyc.document"), t("orders.when"), ""]}
-        >
-          {(data?.submissions ?? []).map((s) => (
-            <tr key={s.id}>
-              <Td className="font-latin">{s.userEmail}</Td>
-              <Td>{t(`kyc.docTypes.${s.docType}` as never)}</Td>
-              <Td>
-                {/* The proxy path keeps the auth cookie first-party. */}
-                <a
-                  href={`/api/admin/kyc/${s.id}/file`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-gold-400 hover:text-gold-300"
-                >
-                  {t("kyc.viewDocument")} ↗
-                </a>
-              </Td>
-              <Td className="font-latin text-[0.8125rem] text-subtle">{eatStamp(s.createdAt)}</Td>
-              <Td>
-                {status === "pending" ? (
-                  <div className="flex justify-end gap-2">
-                    <AdminAction
-                      path={`/admin/kyc/${s.id}/approve`}
-                      label={t("approve")}
-                      onDone={done}
-                    />
-                    <AdminAction
-                      path={`/admin/kyc/${s.id}/reject`}
-                      body={{ note: "document_unreadable" }}
-                      label={t("reject")}
-                      tone="danger"
-                      onDone={done}
-                    />
-                  </div>
-                ) : (
-                  <span className="block text-end text-[0.8125rem] text-subtle">
-                    {t(`kyc.status.${s.status}` as never)}
-                  </span>
-                )}
-              </Td>
-            </tr>
-          ))}
-        </AdminTable>
-      )}
+      <AdminTable
+        title={t("nav.kyc")}
+        action={
+          <div className="max-w-full overflow-x-auto [scrollbar-width:none]">
+            <Segmented
+              value={status}
+              onValueChange={setStatus}
+              aria-label={t("nav.kyc")}
+              options={STATUSES.map((s) => ({
+                value: s,
+                label: t(`kyc.status.${s}` as never),
+                count: s === status && !loading ? rows.length : undefined,
+              }))}
+            />
+          </div>
+        }
+        loading={loading}
+        empty={rows.length === 0 ? t("kyc.empty") : null}
+        headers={[t("users.email"), t("kyc.docType"), t("kyc.document"), { label: t("orders.when"), end: true }, ""]}
+      >
+        {rows.map((s) => (
+          <tr key={s.id}>
+            <Td className="font-medium">{s.userEmail}</Td>
+            <Td>{t(`kyc.docTypes.${s.docType}` as never)}</Td>
+            <Td>
+              {/* The proxy path keeps the auth cookie first-party. */}
+              <a
+                href={`/api/admin/kyc/${s.id}/file`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-gold-400 hover:text-gold-300"
+              >
+                {t("kyc.viewDocument")}
+                <ExternalLink className="size-3.5" aria-hidden="true" />
+              </a>
+            </Td>
+            <Td className="tnum text-end text-[0.75rem] whitespace-nowrap text-subtle">{eatStamp(s.createdAt)}</Td>
+            <Td>
+              {status === "pending" ? (
+                <div className="flex justify-end gap-2">
+                  <AdminAction path={`/admin/kyc/${s.id}/approve`} label={t("approve")} onDone={done} />
+                  <AdminAction
+                    path={`/admin/kyc/${s.id}/reject`}
+                    body={{ note: "document_unreadable" }}
+                    label={t("reject")}
+                    tone="danger"
+                    onDone={done}
+                  />
+                </div>
+              ) : (
+                <div className="flex justify-end">
+                  <StatusBadge status={s.status} label={t(`kyc.status.${s.status}` as never)} />
+                </div>
+              )}
+            </Td>
+          </tr>
+        ))}
+      </AdminTable>
     </div>
   );
 }

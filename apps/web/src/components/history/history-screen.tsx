@@ -7,9 +7,9 @@ import type { OrderListItem, OrderListResponse } from "@alkeva/shared";
 
 import { OrdersTable, type OrderGroup } from "@/components/orders/orders-table";
 import { Button } from "@/components/ui/button";
-import { Panel, PanelHeader, Stat } from "@/components/ui/panel";
+import { Coin, Panel, PanelHeader, Stat, StatStrip } from "@/components/ui/panel";
+import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTradeSheet } from "@/components/trade/trade-sheet-context";
 import { dayKey, longDate, money } from "@/lib/format";
 import { useIsDesktop } from "@/lib/use-is-desktop";
@@ -96,10 +96,17 @@ export function HistoryScreen() {
     }));
   }, [shown, t, locale]);
 
+  const counts: Record<Filter, number> = {
+    all: orders.length,
+    buys: orders.filter((o) => o.side === "buy" && o.status !== "rejected").length,
+    sells: orders.filter((o) => o.side === "sell" && o.status !== "rejected").length,
+    refused: totals.refused,
+  };
+
   if (loading) {
     return (
-      <div className="flex flex-col gap-3.5">
-        <Skeleton className="h-24 rounded-lg" />
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-[4.5rem] rounded-lg" />
         <Skeleton className="h-72 rounded-lg" />
       </div>
     );
@@ -107,10 +114,14 @@ export function HistoryScreen() {
 
   if (orders.length === 0) {
     return (
-      <Panel className="mx-auto max-w-[36rem] p-5">
-        <h2 className="text-[1.125rem] font-semibold">{t("emptyTitle")}</h2>
-        <p className="mb-3.5 mt-1 text-[0.9375rem] text-muted-foreground">{t("emptyBody")}</p>
-        <Button size="cta" onClick={() => (isDesktop ? router.push("/trade") : open("XAU", "buy"))}>
+      <Panel className="flex-1 items-center justify-center gap-3 p-8 text-center">
+        <span className="flex gap-2">
+          <Coin metal="XAU" size="lg" />
+          <Coin metal="XPT" size="lg" />
+        </span>
+        <h2 className="text-[1.125rem] font-bold">{t("emptyTitle")}</h2>
+        <p className="max-w-sm text-[0.875rem] text-muted-foreground">{t("emptyBody")}</p>
+        <Button onClick={() => (isDesktop ? router.push("/trade") : open("XAU", "buy"))}>
           {th("buyGoldCta")}
         </Button>
       </Panel>
@@ -118,48 +129,44 @@ export function HistoryScreen() {
   }
 
   return (
-    <div className="flex flex-col gap-3.5 lg:gap-5">
-      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4 lg:gap-3.5">
-        <Stat label={t("statSettled")} value={String(totals.settled)} size="lg" />
-        <Stat
-          label={t("statBought")}
-          value={money(totals.bought)}
-          unit={tc("birr")}
-          size="lg"
-        />
-        <Stat label={t("statSold")} value={money(totals.sold)} unit={tc("birr")} size="lg" />
-        <Stat
-          label={t("statRefused")}
-          value={String(totals.refused)}
-          tone={totals.refused > 0 ? "loss" : undefined}
-          size="lg"
-        />
-      </div>
+    <div className="flex flex-col gap-3">
+      <section data-panel="" aria-label={t("title")} className="overflow-hidden rounded-lg border border-border bg-card">
+        <StatStrip className="lg:[&>*]:flex-auto">
+          <Stat surface="strip" size="lg" label={t("statSettled")} value={String(totals.settled)} />
+          <Stat surface="strip" size="lg" label={t("statBought")} value={money(totals.bought)} unit={tc("birr")} />
+          <Stat surface="strip" size="lg" label={t("statSold")} value={money(totals.sold)} unit={tc("birr")} />
+          <Stat
+            surface="strip"
+            size="lg"
+            label={t("statRefused")}
+            value={String(totals.refused)}
+            tone={totals.refused > 0 ? "loss" : undefined}
+          />
+        </StatStrip>
+      </section>
 
-      <Panel>
+      <Panel aria-label={t("title")}>
         <PanelHeader
           title={t("title")}
           hint={t("scopeNote", { count: orders.length })}
           action={
-            <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-              <TabsList className="border-b-0">
-                {FILTERS.map((f) => (
-                  <TabsTrigger key={f} value={f}>
-                    {t(`filter.${f}` as never)}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
+            <div className="max-w-full overflow-x-auto [scrollbar-width:none]">
+              <Segmented
+                value={filter}
+                onValueChange={setFilter}
+                aria-label={t("title")}
+                options={FILTERS.map((f) => ({ value: f, label: t(`filter.${f}` as never), count: counts[f] }))}
+              />
+            </div>
           }
-          className="border-b border-border pb-0 lg:pb-0"
         />
-        {shown.length === 0 ? (
-          <p className="px-4 py-10 text-center text-[0.9375rem] text-muted-foreground lg:px-5">
-            {t("filterEmpty")}
-          </p>
-        ) : (
-          <OrdersTable groups={groups} showSerial />
-        )}
+        <div className="border-t border-border">
+          {shown.length === 0 ? (
+            <p className="px-4 py-10 text-center text-[0.875rem] text-muted-foreground">{t("filterEmpty")}</p>
+          ) : (
+            <OrdersTable groups={groups} showSerial />
+          )}
+        </div>
       </Panel>
     </div>
   );

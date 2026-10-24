@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Download } from "lucide-react";
 import type { AdminAuditItem, MeResponse } from "@alkeva/shared";
 
 import { AdminTable, Td } from "@/components/admin/ui";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { eatStamp } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
@@ -41,45 +41,45 @@ export function AdminAuditScreen() {
   }
 
   return (
-    <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">{t("nav.audit")}</h1>
-        {(me.data?.role === "compliance" || me.data?.role === "administrator") && (
-          <a
-            href="/api/admin/compliance/export.csv"
-            className="text-[0.9375rem] text-gold-400 hover:text-gold-300"
-          >
-            {t("audit.exportCsv")} ↓
-          </a>
-        )}
-      </div>
-      {first.loading ? (
-        <Skeleton className="h-48 rounded-lg" />
-      ) : (
-        <>
-          <AdminTable
-            headers={[t("audit.actor"), t("audit.action"), t("audit.target"), t("orders.when")]}
-          >
-            {entries.map((e) => (
-              <tr key={e.id}>
-                <Td className="font-latin text-[0.875rem]">{e.actorLabel}</Td>
-                <Td className="font-latin">{e.action}</Td>
-                <Td className="font-latin text-[0.8125rem] text-subtle">
-                  {e.targetType ? `${e.targetType} ${e.targetId ?? ""}` : "—"}
-                </Td>
-                <Td className="font-latin text-[0.8125rem] text-subtle">{eatStamp(e.createdAt)}</Td>
-              </tr>
-            ))}
-          </AdminTable>
-          {nextCursor && (
-            <div className="mt-3">
-              <Button variant="outline" size="sm" disabled={busy} onClick={() => void loadMore()}>
-                {t("audit.loadMore")}
-              </Button>
-            </div>
-          )}
-        </>
-      )}
+    <div className="flex flex-col gap-3">
+      <h1 className="sr-only">{t("nav.audit")}</h1>
+      <AdminTable
+        title={t("nav.audit")}
+        hint={first.loading ? undefined : <span className="tnum">{entries.length}</span>}
+        action={
+          (me.data?.role === "compliance" || me.data?.role === "administrator") && (
+            <Button variant="gold" size="sm" asChild>
+              <a href="/api/admin/compliance/export.csv">
+                <Download />
+                {t("audit.exportCsv")}
+              </a>
+            </Button>
+          )
+        }
+        loading={first.loading}
+        minWidth={760}
+        headers={[t("audit.actor"), t("audit.action"), t("audit.target"), { label: t("orders.when"), end: true }]}
+        footer={
+          nextCursor && (
+            <Button variant="outline" size="sm" disabled={busy} onClick={() => void loadMore()}>
+              {t("audit.loadMore")}
+            </Button>
+          )
+        }
+      >
+        {entries.map((e) => (
+          <tr key={e.id}>
+            <Td className="tnum text-[0.8125rem]">{e.actorLabel}</Td>
+            <Td>
+              <span className="tnum inline-block rounded-[0.375rem] bg-panel-2 px-1.5 py-0.5 text-[0.75rem] leading-tight">{e.action}</span>
+            </Td>
+            <Td className="tnum text-[0.75rem] text-subtle">
+              {e.targetType ? `${e.targetType} ${e.targetId ?? ""}` : "—"}
+            </Td>
+            <Td className="tnum text-end text-[0.75rem] whitespace-nowrap text-subtle">{eatStamp(e.createdAt)}</Td>
+          </tr>
+        ))}
+      </AdminTable>
     </div>
   );
 }

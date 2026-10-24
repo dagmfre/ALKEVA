@@ -1,244 +1,151 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import type { BalancesResponse, MeResponse, MetalAsset } from "@alkeva/shared";
+import { ChevronDown } from "lucide-react";
 
 import { Mark } from "@/components/brand/mark";
-import { useAssetPrice, usePrices } from "@/components/market/price-provider";
-import { AssistantLink, NotificationsBell } from "@/components/shell/header-actions";
+import { LiveClock, NotificationsBell, UserMenu } from "@/components/shell/header-actions";
 import { LocaleToggle } from "@/components/shell/locale-toggle";
-import { usePageTitle } from "@/components/shell/page-title";
+import { NavIcon, isActive, useNav, usePageTitle } from "@/components/shell/nav-items";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
-import { eatStamp, money, pctMilli } from "@/lib/format";
-import { api } from "@/lib/api";
-import { useResource } from "@/lib/use-resource";
-import { useTradeSheet } from "@/components/trade/trade-sheet-context";
-import { cn } from "@/lib/utils";
 
 /**
- * The global header (≥1024px) — the Tradeo terminal composition: a full-width
- * ~80px bar with the brand block aligned over the sidebar, a market metrics
- * strip in the middle, and the utility cluster on the right.
+ * The V2 tab bar (≥1024px). The bar is the deepest surface; the active tab is
+ * filled with the page colour and grows concave feet at its base, so it reads
+ * as the top edge of the page you are on rather than a highlighted button.
  *
- * The ticker is the reason this bar exists — on a trading desk the price is
- * never more than one glance away, on every screen. Both metals and their real
- * 24-hour change are derived from stored ticks, so a quiet day shows a small
- * number rather than a decorative one.
+ * Labels show from 1280px; between 1024 and 1280 the tabs are icon-only with
+ * the label kept for screen readers and as a tooltip.
  */
 export function TopBar() {
-  const tc = useTranslations("common");
-  const title = usePageTitle();
-  const { revision } = useTradeSheet();
-
-  const balances = useResource<BalancesResponse>("/ledger/balances", { revision });
-  const me = useResource<MeResponse>("/auth/me");
+  const t = useTranslations("nav");
+  const pathname = usePathname();
+  const { main } = useNav();
 
   return (
-    <header className="hidden min-h-[80px] items-stretch border-b border-border lg:flex">
-      {/* Brand block — same width and end-border as the sidebar beneath it. */}
+    <header
+      className="sticky top-0 z-(--z-index-sticky) hidden h-[3.75rem] items-end bg-bg-deep px-5 lg:flex"
+      data-print="hide"
+    >
       <Link
         href="/"
-        className="flex w-[240px] flex-none items-center gap-2.5 border-e border-border px-5"
+        className="me-3 flex items-center gap-2.5 self-center rounded-md outline-none focus-visible:outline-2 focus-visible:outline-ring xl:me-5"
       >
-        <Mark size={28} />
-        <span className="flex flex-col leading-[1.15]">
-          <span className="font-latin text-[1.0625rem] font-semibold tracking-[0.02em]">
-            ALKEVA
-          </span>
-          <span className="font-latin text-[0.6875rem] tracking-[0.08em] text-subtle">
-            XAU · XPT
-          </span>
+        <Mark size={30} />
+        <span className="hidden font-latin text-[0.9375rem] font-extrabold tracking-[0.22em] xl:inline">
+          ALKEVA
         </span>
       </Link>
 
-      <div className="flex min-w-0 flex-1 items-center gap-6 px-7">
-        <span className="flex flex-col">
-          <span className="text-lg font-semibold leading-[1.4]">{title}</span>
-          <Clock />
+      <nav aria-label={t("primary")} className="flex items-end gap-0.5">
+        {main.map((item) => {
+          const active = isActive(pathname, item.href);
+          return (
+            <Link
+              key={item.key}
+              href={item.href}
+              className="v2-tab outline-none focus-visible:[&>.v2-pill]:outline-2 focus-visible:[&>.v2-pill]:outline-ring"
+              data-active={active}
+              aria-current={active ? "page" : undefined}
+              title={item.label}
+            >
+              <span className="v2-pill">
+                <NavIcon name={item.key} />
+                <span className="sr-only xl:not-sr-only">{item.label}</span>
+              </span>
+            </Link>
+          );
+        })}
+        <span aria-hidden="true" className="mx-2 mb-3 h-[22px] w-px bg-input" />
+        <WalletTab />
+      </nav>
+
+      <div className="ms-auto flex items-center gap-1 self-center">
+        <span className="hidden xl:flex">
+          <LiveClock withLabel />
         </span>
-
-        <span className="h-9 w-px bg-border" aria-hidden="true" />
-
-        {/* Market metrics strip — icon/label/value groups on one baseline. */}
-        <Ticker asset="XAU" label={tc("gold")} />
-        <Ticker asset="XPT" label={tc("platinum")} />
-        <LiveDot />
-
-        <span className="ms-auto flex items-center gap-2.5">
-          <AssistantLink />
-          <NotificationsBell />
-          <LocaleToggle />
-          <span className="inline-flex min-h-10 items-center gap-2.5 rounded-full border border-input px-3.5 text-[0.9375rem]">
-            <span className="text-muted-foreground">{tc("birr")}</span>
-            {balances.data ? (
-              <span className="tnum font-semibold">{money(balances.data.etbCents)}</span>
-            ) : (
-              <Skeleton className="h-4 w-20" />
-            )}
-          </span>
-          <UserMenu me={me.data ?? null} />
+        <span className="flex xl:hidden">
+          <LiveClock withLabel={false} />
         </span>
+        <NotificationsBell />
+        <LocaleToggle />
+        <UserMenu showName />
       </div>
     </header>
   );
 }
 
-/**
- * The user pill is a menu, not a decoration: Account, the staff console when
- * this identity holds a staff role (the API's RolesGuard stays the real
- * boundary — this is a door, not a lock), and the desktop's sign-out, which
- * previously existed only on the Account page.
- */
-function UserMenu({ me }: { me: MeResponse | null }) {
-  const tn = useTranslations("nav");
-  const tc = useTranslations("common");
+/** Wallet: one tab that opens Deposit / Withdraw / Identity check. */
+function WalletTab() {
+  const pathname = usePathname();
   const router = useRouter();
-
-  const isStaff =
-    me?.role === "administrator" || me?.role === "compliance" || me?.role === "finance";
-
-  async function signOut() {
-    try {
-      await api("/auth/logout", { method: "POST" });
-    } finally {
-      router.replace("/login");
-      router.refresh();
-    }
-  }
+  const { wallet, walletLabel } = useNav();
+  const active = wallet.some((i) => isActive(pathname, i.href));
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="inline-flex min-h-10 items-center gap-2.5 rounded-full border border-border py-1 pe-3 ps-1 outline-none transition-colors hover:border-input data-[state=open]:border-gold-500">
-        <span className="grid size-8 place-items-center rounded-full border border-input bg-popover text-[0.9375rem] font-semibold">
-          {me?.fullName?.trim().charAt(0) ?? "·"}
+      <DropdownMenuTrigger
+        className="v2-tab outline-none focus-visible:[&>.v2-pill]:outline-2 focus-visible:[&>.v2-pill]:outline-ring data-[state=open]:[&>.v2-pill]:bg-white/5"
+        data-active={active}
+        title={walletLabel}
+      >
+        <span className="v2-pill">
+          <NavIcon name="wallet" />
+          <span className="sr-only xl:not-sr-only">{walletLabel}</span>
+          <ChevronDown className="size-3.5" aria-hidden="true" />
         </span>
-        <span className="max-w-[9rem] truncate text-[0.9375rem]">{me?.fullName ?? ""}</span>
-        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true">
-          <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[13rem]">
-        {me && (
-          <>
-            <DropdownMenuLabel className="max-w-[16rem] truncate">{me.email}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-          </>
-        )}
-        <DropdownMenuItem onSelect={() => router.push("/account")}>
-          {tn("account")}
-        </DropdownMenuItem>
-        {isStaff && (
-          <DropdownMenuItem onSelect={() => router.push("/admin")}>
-            {tn("adminConsole")}
+      <DropdownMenuContent align="start" sideOffset={4} className="min-w-[13rem]">
+        {wallet.map((item) => (
+          <DropdownMenuItem
+            key={item.key}
+            onSelect={() => router.push(item.href)}
+            className={isActive(pathname, item.href) ? "text-gold-300 [&_svg]:!text-gold-400" : undefined}
+          >
+            <NavIcon name={item.key} />
+            {item.label}
           </DropdownMenuItem>
-        )}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onSelect={() => void signOut()}>
-          {tc("logout")}
-        </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
 /**
- * Rendered only after mount: the server has no viewer clock, and stamping one
- * during SSR is a hydration mismatch waiting to happen. Ticks each minute.
+ * The phone header (<1024px): the deep bar with the brand on Markets and the
+ * screen's name everywhere else. Language stays in the same corner on every
+ * screen — someone who cannot read the current language must find the escape.
  */
-function Clock() {
-  const [now, setNow] = useState<string | null>(null);
-
-  useEffect(() => {
-    const write = () => setNow(eatStamp(new Date()));
-    write();
-    const id = setInterval(write, 30_000);
-    return () => clearInterval(id);
-  }, []);
+export function MobileHeader() {
+  const pathname = usePathname();
+  const title = usePageTitle();
 
   return (
-    <span className="font-latin whitespace-nowrap text-[0.71875rem] text-subtle">
-      {now ?? " "}
-    </span>
-  );
-}
-
-/**
- * The live-feed indicator — the one sanctioned outer glow in the system
- * (`.glow-gold`, live indicators only). Gold while the shared price store is
- * fresh; flat and muted once the staleness ratchet trips.
- */
-function LiveDot() {
-  const tc = useTranslations("common");
-  const { anyStale } = usePrices();
-
-  return (
-    <span className="flex items-center gap-2">
-      <span
-        aria-hidden="true"
-        className={cn(
-          "size-2 rounded-full",
-          anyStale ? "bg-subtle" : "glow-gold bg-gold-500",
-        )}
-      />
-      <span className="text-[0.8125rem] text-subtle">
-        {anyStale ? tc("delayed") : tc("live")}
+    <header
+      className="sticky top-0 z-(--z-index-sticky) flex h-[3.75rem] items-center justify-between gap-2 bg-bg-deep ps-4 pe-2 lg:hidden"
+      data-print="hide"
+    >
+      {pathname === "/" ? (
+        <Link href="/" className="flex items-center gap-2.5">
+          <Mark size={28} />
+          <span className="font-latin text-[0.9375rem] font-extrabold tracking-[0.22em]">ALKEVA</span>
+        </Link>
+      ) : (
+        <h1 className="truncate text-[1.0625rem] font-bold">{title}</h1>
+      )}
+      <span className="flex flex-none items-center">
+        <LiveClock withLabel={false} />
+        <NotificationsBell />
+        <LocaleToggle className="[&>span]:hidden" />
+        <UserMenu />
       </span>
-    </span>
-  );
-}
-
-function Ticker({ asset, label }: { asset: MetalAsset; label: string }) {
-  const tc = useTranslations("common");
-  // The shared store: this is the identical latest tick every other surface
-  // renders — never a bucket average, never an out-of-phase poll.
-  const price = useAssetPrice(asset);
-  const milli = price?.change24hPctMilli ?? null;
-  const pct = pctMilli(milli);
-  const up = milli !== null && BigInt(milli) > 0n;
-  const down = milli !== null && BigInt(milli) < 0n;
-
-  return (
-    <span className="flex items-center gap-2.5">
-      <span
-        aria-hidden="true"
-        className={cn(
-          "size-2.5 flex-none rounded-full",
-          asset === "XAU" ? "bg-gold-500" : "bg-platinum-400",
-        )}
-      />
-      <span className="flex flex-col gap-px">
-        <span className="text-[0.8125rem] leading-normal text-muted-foreground">
-          {label} · {tc("perGram")}
-        </span>
-        {price ? (
-          <span className="flex items-baseline gap-2">
-            <span className="tnum text-base font-semibold">{money(price.etbCentsPerGram)}</span>
-            {pct && (
-              <span
-                className={cn(
-                  "tnum text-[0.8125rem] font-semibold",
-                  up ? "text-gain" : down ? "text-loss" : "text-muted-foreground",
-                )}
-              >
-                {up ? "↑" : down ? "↓" : "·"} {up ? "+" : down ? "−" : ""}{pct}%
-              </span>
-            )}
-          </span>
-        ) : (
-          <Skeleton className="h-5 w-28" />
-        )}
-      </span>
-    </span>
+    </header>
   );
 }

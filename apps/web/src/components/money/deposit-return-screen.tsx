@@ -70,12 +70,12 @@ export function DepositReturnScreen() {
 
   return (
     <div className="mx-auto flex max-w-[28rem] flex-col gap-4">
-      <Card className="flex flex-col items-center gap-3 p-6 text-center">
+      <Card className="flex flex-col items-center gap-3 rounded-xl p-8 text-center">
         {settled ? (
           <>
-            <span className="text-3xl text-gain">✓</span>
-            <h1 className="text-xl font-semibold">{t("returnSettledTitle")}</h1>
-            <p className="tnum text-2xl font-semibold text-gold-400">
+            <span className="grid size-14 place-items-center rounded-full bg-gain/12 text-[1.5rem] text-gain">✓</span>
+            <h1 className="text-[1.25rem] font-bold">{t("returnSettledTitle")}</h1>
+            <p className="tnum text-2xl font-semibold text-gold-300">
               {payment ? money(payment.amountCents) : ""}{" "}
               <span className="text-base font-normal text-muted-foreground">{tc("birr")}</span>
             </p>
@@ -88,8 +88,8 @@ export function DepositReturnScreen() {
           </>
         ) : failed ? (
           <>
-            <span className="text-3xl text-loss">✕</span>
-            <h1 className="text-xl font-semibold">{t("returnFailedTitle")}</h1>
+            <span className="grid size-14 place-items-center rounded-full bg-loss/8 text-[1.5rem] text-loss">✕</span>
+            <h1 className="text-[1.25rem] font-bold">{t("returnFailedTitle")}</h1>
             <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
               {t("returnFailedBody")}
             </p>
@@ -101,7 +101,7 @@ export function DepositReturnScreen() {
           <>
             {/* No spinner theatrics: an honest "verifying with Chapa" line. */}
             <Skeleton className="size-9 rounded-full" />
-            <h1 className="text-xl font-semibold">{t("returnPendingTitle")}</h1>
+            <h1 className="text-[1.25rem] font-bold">{t("returnPendingTitle")}</h1>
             <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
               {t("returnPendingBody")}
             </p>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-import { Wordmark } from "@/components/brand/mark";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SystemBanner } from "@/components/system/banner";
 import { api } from "@/lib/api";
@@ -48,9 +48,8 @@ export function GoogleCallbackScreen() {
   }, [params, router]);
 
   return (
-    <main className="flex min-h-dvh w-full items-center justify-center px-4 py-10">
-      <div className="flex w-full max-w-[27rem] flex-col gap-6 lg:rounded-lg lg:border lg:border-border lg:bg-card lg:px-8 lg:py-9">
-        <Wordmark size={30} />
+    <AuthShell>
+      <div className="flex flex-col gap-6">
         {failed ? (
           <>
             <SystemBanner tone="critical">{t("googleFailed")}</SystemBanner>
@@ -68,6 +67,6 @@ export function GoogleCallbackScreen() {
           </>
         )}
       </div>
-    </main>
+    </AuthShell>
   );
 }

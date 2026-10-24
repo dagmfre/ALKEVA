@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { AdminReviewItem } from "@alkeva/shared";
 
-import { AdminAction, AdminTable, Td } from "@/components/admin/ui";
-import { Skeleton } from "@/components/ui/skeleton";
+import { AdminAction, AdminTable, MetalLabel, Td } from "@/components/admin/ui";
 import { SystemBanner } from "@/components/system/banner";
 import { eatStamp, grams, money } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
@@ -23,6 +22,7 @@ export function AdminReviewsScreen() {
   const { data, loading } = useResource<{ reviews: AdminReviewItem[] }>("/admin/reviews", {
     revision,
   });
+  const rows = data?.reviews ?? [];
 
   const done = (err: string | null) => {
     setError(err);
@@ -30,62 +30,56 @@ export function AdminReviewsScreen() {
   };
 
   return (
-    <div>
-      <h1 className="mb-1 text-xl font-semibold">{t("nav.reviews")}</h1>
-      <p className="mb-4 max-w-[640px] text-[0.875rem] leading-relaxed text-muted-foreground">
-        {t("reviews.explain")}
-      </p>
+    <div className="flex flex-col gap-3">
+      <h1 className="sr-only">{t("nav.reviews")}</h1>
       {error && (
-        <SystemBanner tone="critical" className="mb-3">
+        <SystemBanner tone="critical" className="mb-0">
           {t("actionFailed", { code: error })}
         </SystemBanner>
       )}
-      {loading ? (
-        <Skeleton className="h-48 rounded-lg" />
-      ) : (data?.reviews.length ?? 0) === 0 ? (
-        <p className="text-[0.9375rem] text-muted-foreground">{t("reviews.empty")}</p>
-      ) : (
-        <AdminTable
-          headers={[
-            t("users.email"),
-            t("orders.side"),
-            t("orders.amount"),
-            t("orders.total"),
-            t("orders.when"),
-            "",
-          ]}
-        >
-          {(data?.reviews ?? []).map((r) => (
-            <tr key={r.orderId}>
-              <Td className="font-latin">{r.userEmail}</Td>
-              <Td>
-                {r.side === "buy" ? t("orders.buy") : t("orders.sell")}{" "}
-                {r.asset === "XAU" ? tc("gold") : tc("platinum")}
-              </Td>
-              <Td className="tnum">
-                {grams(r.gramsMg)} {tc("g")}
-              </Td>
-              <Td className="tnum font-semibold text-gold-400">{money(r.totalCents)}</Td>
-              <Td className="font-latin text-[0.8125rem] text-subtle">{eatStamp(r.createdAt)}</Td>
-              <Td>
-                <div className="flex justify-end gap-2">
-                  <AdminAction
-                    path={`/admin/orders/${r.orderId}/approve-review`}
-                    label={t("approve")}
-                    onDone={done}
-                  />
-                  <AdminAction
-                    path={`/admin/orders/${r.orderId}/reject-review`}
-                    label={t("reject")}
-                    tone="danger"
-                    onDone={done}
-                  />
-                </div>
-              </Td>
-            </tr>
-          ))}
-        </AdminTable>
-      )}
+      <AdminTable
+        title={t("nav.reviews")}
+        hint={loading ? undefined : <span className="tnum">{rows.length}</span>}
+        intro={t("reviews.explain")}
+        loading={loading}
+        empty={rows.length === 0 ? t("reviews.empty") : null}
+        headers={[
+          t("users.email"),
+          t("orders.side"),
+          { label: t("orders.amount"), end: true },
+          { label: t("orders.total"), end: true },
+          { label: t("orders.when"), end: true },
+          "",
+        ]}
+      >
+        {rows.map((r) => (
+          <tr key={r.orderId}>
+            <Td className="font-medium">{r.userEmail}</Td>
+            <Td>
+              <MetalLabel
+                asset={r.asset}
+                label={`${r.side === "buy" ? t("orders.buy") : t("orders.sell")} ${r.asset === "XAU" ? tc("gold") : tc("platinum")}`}
+              />
+            </Td>
+            <Td className="tnum text-end">
+              {grams(r.gramsMg)} <span className="text-subtle">{tc("g")}</span>
+            </Td>
+            <Td className="tnum text-end font-semibold whitespace-nowrap text-gold-300">{money(r.totalCents)}</Td>
+            <Td className="tnum text-end text-[0.75rem] whitespace-nowrap text-subtle">{eatStamp(r.createdAt)}</Td>
+            <Td>
+              <div className="flex justify-end gap-2">
+                <AdminAction path={`/admin/orders/${r.orderId}/approve-review`} label={t("approve")} onDone={done} />
+                <AdminAction
+                  path={`/admin/orders/${r.orderId}/reject-review`}
+                  label={t("reject")}
+                  tone="danger"
+                  onDone={done}
+                />
+              </div>
+            </Td>
+          </tr>
+        ))}
+      </AdminTable>
     </div>
   );
 }

@@ -7,18 +7,9 @@ import { Dialog as DialogPrimitive } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 /**
- * shadcn Dialog, re-tokenised for ALKEVA.
- *
- * Changed from the shadcn default, deliberately:
- *  - Scrim only, no backdrop blur — glassmorphism is banned and it costs
- *    frames on the mid-range Android this app targets (same rule as the
- *    sheet).
- *  - Content sits on `bg-card` (a dialog is a panel, not a floating menu)
- *    with the system's one soft large shadow — never a small hard one.
- *  - z-order comes from the semantic scale: scrim at --z-index-scrim,
- *    content at --z-index-dialog.
- *  - Default width is 26rem — dialogs here are confirmations and small
- *    forms; anything larger is a page or a sheet.
+ * Dialog, design v2: a panel lifted off the page. Scrim without blur (blur
+ * costs frames on the mid-range phones this ships to), the pop shadow, a 12%
+ * hairline. Dialogs are confirmations and small forms; larger is a page.
  */
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
@@ -50,7 +41,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 z-(--z-index-scrim) bg-black/60 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+        "fixed inset-0 z-(--z-index-scrim) bg-black/70 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
         className
       )}
       {...props}
@@ -72,7 +63,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-(--z-index-dialog) grid w-full max-w-[26rem] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-lg border border-border bg-card p-5 shadow-[0_20px_50px_rgba(0,0,0,0.35)] duration-200",
+          "fixed top-1/2 left-1/2 z-(--z-index-dialog) grid w-full max-w-[26rem] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl border border-input bg-card p-5 shadow-(--shadow-pop) duration-200",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
           className
         )}
@@ -82,7 +73,7 @@ function DialogContent({
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            className="absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none"
+            className="absolute top-3.5 right-3.5 grid size-8 place-items-center rounded-[0.5625rem] text-muted-foreground transition-colors hover:bg-white/6 hover:text-foreground disabled:pointer-events-none"
           >
             <XIcon className="size-4" />
             <span className="sr-only">Close</span>
@@ -123,7 +114,7 @@ function DialogTitle({
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("text-lg font-semibold text-foreground", className)}
+      className={cn("text-[1.0625rem] font-bold text-foreground", className)}
       {...props}
     />
   )
@@ -136,7 +127,7 @@ function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("text-[0.875rem] leading-relaxed text-muted-foreground", className)}
       {...props}
     />
   )

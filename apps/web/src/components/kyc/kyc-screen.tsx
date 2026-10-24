@@ -2,15 +2,20 @@
 
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Check, FileUp, IdCard } from "lucide-react";
 import type { KycDocType, KycMeResponse } from "@alkeva/shared";
 
+import { KycTimeline } from "@/components/kyc/kyc-timeline";
+import { WalletNav } from "@/components/money/wallet-ui";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Panel, PanelHeader } from "@/components/ui/panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SystemBanner } from "@/components/system/banner";
 import { ApiError } from "@/lib/api";
 import { eatStamp } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
+import { cn } from "@/lib/utils";
 
 const KNOWN = new Set([
   "unsupported_file_type",
@@ -42,6 +47,9 @@ const DOC_TYPES = Object.keys(DOC_TYPE_ORDER) as KycDocType[];
  * Identity verification. One document, reviewed by a compliance officer;
  * approval unlocks deposits, withdrawals, and trading. The file input carries
  * `capture` so a phone offers the camera directly.
+ *
+ *   wallet nav
+ *   status / document form            │ where you are + what it unlocks
  */
 export function KycScreen() {
   const t = useTranslations("kyc");
@@ -91,85 +99,136 @@ export function KycScreen() {
     }
   }
 
-  if (me.loading) return <Skeleton className="mx-auto h-64 max-w-[36rem] rounded-lg" />;
+  const stage = verified ? "verified" : pending ? "review" : "submit";
 
   return (
-    <div className="mx-auto flex max-w-[36rem] flex-col gap-3.5">
-      {verified ? (
-        <Card className="flex flex-col items-center gap-2 p-6 text-center">
-          <span className="text-3xl text-gain">✓</span>
-          <h1 className="text-xl font-semibold">{t("verifiedTitle")}</h1>
-          <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
-            {t("verifiedBody")}
-          </p>
-        </Card>
-      ) : pending ? (
-        <Card className="flex flex-col items-center gap-2 p-6 text-center">
-          <span className="text-3xl text-platinum-400">◑</span>
-          <h1 className="text-xl font-semibold">{t("pendingTitle")}</h1>
-          <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
-            {t("pendingBody")}
-          </p>
-          {submission && (
-            <p className="font-latin text-[0.8125rem] text-subtle">
-              {eatStamp(submission.createdAt)}
+    <div className="flex flex-col gap-3">
+      <WalletNav />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_25.25rem]">
+        {me.loading ? (
+          <Skeleton className="h-80 rounded-lg" />
+        ) : verified || pending ? (
+          <Panel className="items-center justify-center gap-3 p-8 text-center">
+            <span
+              className={cn(
+                "grid size-14 place-items-center rounded-full",
+                verified ? "bg-gain/12 text-gain" : "bg-platinum-400/12 text-platinum-400",
+              )}
+            >
+              {verified ? <Check className="size-6" /> : <IdCard className="size-6" />}
+            </span>
+            <h1 className="text-[1.25rem] font-bold">{verified ? t("verifiedTitle") : t("pendingTitle")}</h1>
+            <p className="max-w-md text-[0.875rem] leading-relaxed text-muted-foreground">
+              {verified ? t("verifiedBody") : t("pendingBody")}
             </p>
-          )}
-        </Card>
-      ) : (
-        <Card className="p-5">
-          {submission?.status === "rejected" && (
-            <SystemBanner tone="critical" className="mb-4">
-              {t("rejectedBanner")}
-              {submission.reviewNote ? ` — ${submission.reviewNote}` : ""}
-            </SystemBanner>
-          )}
-          <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-4">
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[0.9375rem] font-medium">{t("docTypeLabel")}</span>
-              <select
-                value={docType}
-                onChange={(e) => setDocType(e.target.value as KycDocType)}
-                className="well min-h-12 rounded-md px-3 text-base outline-none"
-                disabled={busy}
-              >
-                {DOC_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {t(`docTypes.${type}` as never)}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[0.9375rem] font-medium">{t("fileLabel")}</span>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,application/pdf"
-                capture="environment"
-                onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
-                className="well min-h-12 rounded-md px-3.5 py-3 text-[0.9375rem] file:me-3 file:rounded file:border-0 file:bg-popover file:px-3 file:py-1.5 file:text-foreground"
-                disabled={busy}
-              />
-              <span className="text-[0.8125rem] text-subtle">
-                {fileName ?? t("fileHint")}
-              </span>
-            </label>
-
-            {error && (
-              <SystemBanner tone="critical">
-                {KNOWN.has(error) ? t(`errors.${error}` as never) : t("errors.generic")}
-              </SystemBanner>
+            {pending && submission && (
+              <p className="tnum text-[0.75rem] text-subtle">{eatStamp(submission.createdAt)}</p>
             )}
+          </Panel>
+        ) : (
+          <Panel aria-label={t("formTitle")}>
+            <PanelHeader title={t("formTitle")} hint={t("oneDocument")} />
+            <form onSubmit={(e) => void submit(e)} className="flex flex-1 flex-col gap-5 px-[1.125rem] pb-[1.125rem]">
+              {submission?.status === "rejected" && (
+                <SystemBanner tone="critical" className="mb-0">
+                  {t("rejectedBanner")}
+                  {submission.reviewNote ? ` — ${submission.reviewNote}` : ""}
+                </SystemBanner>
+              )}
 
-            <Button type="submit" size="cta" disabled={busy}>
-              {busy ? tc("loading") : t("cta")}
-            </Button>
-            <p className="text-[0.8125rem] leading-relaxed text-subtle">{t("privacyNote")}</p>
-          </form>
-        </Card>
-      )}
+              <fieldset className="flex flex-col gap-2">
+                <legend className="data-label mb-2">{t("docTypeLabel")}</legend>
+                <div role="radiogroup" className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+                  {DOC_TYPES.map((type) => {
+                    const on = docType === type;
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        role="radio"
+                        aria-checked={on}
+                        disabled={busy}
+                        onClick={() => setDocType(type)}
+                        className={cn(
+                          "flex min-h-[4.5rem] flex-col items-start justify-between gap-2 rounded-[0.75rem] border p-3 text-start text-[0.8125rem] font-semibold transition-colors",
+                          on
+                            ? "border-gold-400/50 bg-gold-400/8 text-gold-300"
+                            : "border-border bg-panel-2 text-foreground hover:border-input",
+                        )}
+                      >
+                        <IdCard className={cn("size-4", on ? "text-gold-400" : "text-subtle")} />
+                        {t(`docTypes.${type}` as never)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
+              <label className="flex flex-col gap-2">
+                <span className="data-label">{t("fileLabel")}</span>
+                <span className="relative flex min-h-[8.5rem] flex-col items-center justify-center gap-2 rounded-[0.75rem] border border-dashed border-input bg-panel-2/60 px-4 text-center transition-colors focus-within:border-gold-500 hover:border-gold-400/50">
+                  <FileUp className="size-6 text-gold-400" aria-hidden="true" />
+                  <span className="text-[0.875rem] font-semibold">{fileName ?? t("dropTitle")}</span>
+                  <span className="text-[0.75rem] text-subtle">{t("fileHint")}</span>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    capture="environment"
+                    onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                    disabled={busy}
+                  />
+                </span>
+              </label>
+
+              {error && (
+                <SystemBanner tone="critical" className="mb-0">
+                  {KNOWN.has(error) ? t(`errors.${error}` as never) : t("errors.generic")}
+                </SystemBanner>
+              )}
+
+              <div className="mt-auto flex flex-col gap-2">
+                <Button type="submit" size="cta" disabled={busy}>
+                  {busy ? tc("loading") : t("cta")}
+                </Button>
+                <p className="text-[0.75rem] leading-relaxed text-subtle">{t("privacyNote")}</p>
+              </div>
+            </form>
+          </Panel>
+        )}
+
+        <Panel aria-label={t("statusTitle")}>
+          <PanelHeader
+            title={t("statusTitle")}
+            action={
+              <Badge dot variant={verified ? "gain" : pending ? "platinum" : "muted"}>
+                {verified ? t("stateVerified") : pending ? t("stateReview") : t("stateNone")}
+              </Badge>
+            }
+          />
+          <div className="flex flex-1 flex-col gap-5 px-[1.125rem] pb-[1.125rem]">
+            <KycTimeline stage={stage} />
+            <div className="flex flex-col gap-2 border-t border-border pt-3.5">
+              <span className="text-[0.8125rem] font-bold">{t("unlocksTitle")}</span>
+              {(["unlockDeposit", "unlockTrade", "unlockWithdraw"] as const).map((k) => (
+                <div key={k} className="flex items-center gap-2.5 text-[0.8125rem]">
+                  <span
+                    className={cn(
+                      "grid size-4 place-items-center rounded-full",
+                      verified ? "bg-gain/15 text-gain" : "bg-raised text-subtle",
+                    )}
+                  >
+                    <Check className="size-2.5" strokeWidth={3} />
+                  </span>
+                  <span className={verified ? "text-foreground" : "text-muted-foreground"}>{t(k)}</span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-auto text-[0.75rem] leading-relaxed text-subtle">{t("reviewNote")}</p>
+          </div>
+        </Panel>
+      </div>
     </div>
   );
 }

@@ -3,31 +3,33 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { KeyRound, LogOut, ShieldCheck } from "lucide-react";
 import type { MeResponse, PortfolioResponse } from "@alkeva/shared";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
-import { Skeleton } from "@/components/ui/skeleton";
 import { AlertsList } from "@/components/account/alerts-list";
 import { PasskeysCard } from "@/components/account/passkeys-card";
+import { useTierName } from "@/components/portfolio/tier-gauge";
+import { isStaffRole } from "@/components/shell/header-actions";
 import { LocaleToggle } from "@/components/shell/locale-toggle";
 import { TierMark } from "@/components/shell/nav-items";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Panel, PanelHeader, Stat, StatStrip } from "@/components/ui/panel";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { useResource } from "@/lib/use-resource";
 
 /**
  * Quiet by design: nothing to explore, everything easy to find.
  *
- * On a wide screen it is two columns — identity and money on the left, the
- * things you configure on the right — rather than a phone column stranded in
- * the middle of a 1440px desk.
+ *   profile (who you are · tier · identity · session)
+ *   preferences      │ passkeys        │ price alerts
  */
 export function AccountScreen() {
   const t = useTranslations("account");
-  const tt = useTranslations("tier");
   const tn = useTranslations("nav");
   const router = useRouter();
+  const tierName = useTierName();
   const me = useResource<MeResponse>("/auth/me");
   const portfolio = useResource<PortfolioResponse>("/portfolio");
 
@@ -40,29 +42,28 @@ export function AccountScreen() {
     }
   }
 
-  const tierName = portfolio.data?.tier.name ?? null;
-  const localizedTier =
-    tierName && tt.has(`names.${tierName}` as never) ? tt(`names.${tierName}` as never) : tierName;
-  const isStaff =
-    me.data?.role === "administrator" ||
-    me.data?.role === "compliance" ||
-    me.data?.role === "finance";
+  const staff = isStaffRole(me.data?.role);
+  const initials =
+    me.data?.fullName
+      ?.trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w.charAt(0))
+      .join("")
+      .toUpperCase() || "·";
 
   return (
-    <div className="grid grid-cols-1 items-start gap-3.5 lg:grid-cols-12 lg:gap-5">
-      {/* ── Who you are ──────────────────────────────────────────── */}
-      <Panel className="lg:col-span-7">
-        <PanelBody className="flex flex-wrap items-center gap-4 pt-4">
-          <span className="grid size-14 flex-none place-items-center rounded-full border border-input bg-popover text-[1.375rem] font-semibold">
-            {me.data?.fullName?.trim().charAt(0) ?? "·"}
+    <div className="flex flex-col gap-3">
+      <section data-panel="" aria-label={tn("account")} className="flex flex-col overflow-hidden rounded-lg border border-border bg-card lg:flex-row lg:items-stretch">
+        <div className="flex flex-none items-center gap-4 px-[1.125rem] py-4 lg:pe-8">
+          <span className="grid size-14 flex-none place-items-center rounded-full bg-raised font-latin text-[1.125rem] font-bold text-gold-300">
+            {initials}
           </span>
-          <span className="flex min-w-0 flex-col gap-1">
+          <span className="flex min-w-0 flex-col gap-0.5">
             {me.data ? (
               <>
-                <span className="truncate text-[1.125rem] font-semibold">{me.data.fullName}</span>
-                <span className="font-latin truncate text-[0.9375rem] text-muted-foreground">
-                  {me.data.email}
-                </span>
+                <span className="truncate text-[1.125rem] font-bold">{me.data.fullName}</span>
+                <span className="tnum truncate text-[0.8125rem] text-muted-foreground">{me.data.email}</span>
               </>
             ) : (
               <>
@@ -71,119 +72,104 @@ export function AccountScreen() {
               </>
             )}
           </span>
-          <span className="ms-auto flex flex-wrap items-center gap-2">
-            {localizedTier && (
-              <Badge variant="platinum">
-                <TierMark size={14} />
-                {localizedTier}
-              </Badge>
-            )}
-            {me.data &&
-              (me.data.kycTier > 0 ? (
-                <Badge variant="gain">✓ {t("verified")}</Badge>
-              ) : (
-                <Badge variant="muted">{t("kycPending")}</Badge>
-              ))}
-            {isStaff && me.data && (
-              <Badge variant="gold">{t(`roles.${me.data.role}` as never)}</Badge>
-            )}
-          </span>
-        </PanelBody>
+        </div>
+        <StatStrip className="border-t border-border lg:flex-1 lg:border-t-0 lg:border-s">
+          <Stat
+            surface="strip"
+            label={t("tierLabel")}
+            value={
+              portfolio.data ? (
+                <span className="flex items-center gap-2 font-sans">
+                  <TierMark size={16} />
+                  {tierName(portfolio.data.tier.name) ?? "—"}
+                </span>
+              ) : null
+            }
+          />
+          <Stat
+            surface="strip"
+            label={t("kyc")}
+            value={
+              me.data ? (
+                me.data.kycTier > 0 ? (
+                  <span className="font-sans text-gain">✓ {t("verified")}</span>
+                ) : (
+                  <Link href="/kyc" className="font-sans text-gold-400 hover:text-gold-300">
+                    {t("kycStart")} →
+                  </Link>
+                )
+              ) : null
+            }
+          />
+          {staff && me.data && (
+            <Stat
+              surface="strip"
+              label={t("roleLabel")}
+              value={
+                <Badge variant="gold" dot>
+                  {t(`roles.${me.data.role}` as never)}
+                </Badge>
+              }
+            />
+          )}
+        </StatStrip>
+        <div className="flex flex-none flex-wrap items-center gap-2 border-t border-border px-[1.125rem] py-3 lg:border-t-0 lg:border-s lg:px-5">
+          {staff && (
+            <Button variant="gold" size="sm" asChild>
+              <Link href="/admin">
+                <ShieldCheck />
+                {tn("adminConsole")}
+              </Link>
+            </Button>
+          )}
+          <Button variant="destructive" size="sm" onClick={() => void logout()}>
+            <LogOut />
+            {t("logout")}
+          </Button>
+        </div>
+      </section>
 
-        <div className="border-t border-border">
-          <Line label={t("kyc")}>
-            {me.data ? (
-              me.data.kycTier > 0 ? (
-                <span className="text-[0.9375rem] text-gain">✓ {t("verified")}</span>
-              ) : (
-                <Link href="/kyc" className="text-[0.9375rem] text-gold-400 hover:text-gold-300">
-                  {t("kycStart")} →
+      <div className="grid flex-1 grid-cols-1 gap-3 lg:grid-cols-3">
+        <Panel aria-label={t("preferencesTitle")}>
+          <PanelHeader title={t("preferencesTitle")} />
+          <div className="flex flex-1 flex-col border-t border-border">
+            <Line label={t("language")} hint={t("languageHint")}>
+              <LocaleToggle className="border border-border" />
+            </Line>
+            <Line label={t("passwordLabel")} hint={t("passwordHint")}>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/forgot-password">
+                  <KeyRound />
+                  {t("passwordAction")}
                 </Link>
-              )
-            ) : (
-              <Skeleton className="h-5 w-20" />
-            )}
-          </Line>
-          <Line label={t("tierLabel")} last>
-            {localizedTier ? (
-              <span className="flex items-center gap-2 text-[0.9375rem] text-muted-foreground">
-                <TierMark size={16} />
-                {localizedTier}
+              </Button>
+            </Line>
+            <Line label={t("moneyTitle")} hint={t("moneyHint")}>
+              <span className="flex gap-1.5">
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/deposit">{tn("deposit")}</Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/withdraw">{tn("withdraw")}</Link>
+                </Button>
               </span>
-            ) : (
-              <Skeleton className="h-5 w-20" />
-            )}
-          </Line>
-        </div>
-      </Panel>
-
-      {/* ── What you can change ──────────────────────────────────── */}
-      <Panel className="lg:col-span-5">
-        <PanelHeader title={t("preferencesTitle")} />
-        <div className="border-t border-border">
-          <Line label={t("language")}>
-            <LocaleToggle />
-          </Line>
-          <Line label={t("passwordLabel")} last>
-            <Link
-              href="/forgot-password"
-              className="text-[0.9375rem] text-gold-400 hover:text-gold-300"
-            >
-              {t("passwordAction")} →
-            </Link>
-          </Line>
-        </div>
-      </Panel>
-
-      {/* ── Money doors ──────────────────────────────────────────── */}
-      <Panel className="lg:col-span-7">
-        <PanelHeader title={t("moneyTitle")} />
-        <PanelBody className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-          <Button variant="flat" size="cta" asChild>
-            <Link href="/deposit">{t("depositLink")}</Link>
-          </Button>
-          <Button variant="outline" size="cta" asChild>
-            <Link href="/withdraw">{t("withdrawLink")}</Link>
-          </Button>
-        </PanelBody>
-      </Panel>
-
-      <PasskeysCard className="lg:col-span-5" />
-
-      <AlertsList className="lg:col-span-5" />
-
-      <div className="flex flex-col gap-2.5 lg:col-span-5">
-        {/* Staff reach the console from here on a phone — the header user menu
-            that carries this link is desktop-only. RolesGuard stays the boundary. */}
-        {isStaff && (
-          <Button variant="outline" size="cta" asChild>
-            <Link href="/admin">{tn("adminConsole")} →</Link>
-          </Button>
-        )}
-        <Button variant="outline" size="cta" className="text-loss" onClick={() => void logout()}>
-          {t("logout")}
-        </Button>
+            </Line>
+          </div>
+        </Panel>
+        <PasskeysCard />
+        <AlertsList />
       </div>
     </div>
   );
 }
 
-function Line({
-  label,
-  children,
-  last,
-}: {
-  label: string;
-  children: React.ReactNode;
-  last?: boolean;
-}) {
+function Line({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div
-      className={`flex min-h-14 items-center justify-between gap-3 px-4 py-2.5 lg:px-5 ${
-        last ? "" : "border-b border-border"
-      }`}
-    >
-      <span className="text-[0.9375rem] font-medium">{label}</span>
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-[1.125rem] py-3.5 last:border-b-0">
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-[0.875rem] font-semibold">{label}</span>
+        {hint && <span className="text-[0.75rem] text-subtle">{hint}</span>}
+      </span>
       {children}
     </div>
   );

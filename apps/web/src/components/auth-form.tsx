@@ -6,8 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { Wordmark } from "@/components/brand/mark";
-import { LocaleToggle } from "@/components/shell/locale-toggle";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { Field } from "@/components/auth/field";
 import { PasskeyLoginButton } from "@/components/auth/passkey-login-button";
 import { SystemBanner } from "@/components/system/banner";
@@ -94,24 +93,13 @@ export function AuthForm({ mode }: { mode: "register" | "login" }) {
   }
 
   return (
-    /*
-     * Signing in is a focused task, so it stays one column at every width —
-     * but on a desk the column sits in a panel on the ground rather than
-     * floating bare, which is what made the old shell read as a phone
-     * screenshot pasted into a browser.
-     */
-    <main className="flex min-h-dvh w-full items-center justify-center px-4 py-10">
-      <div className="flex w-full max-w-[27rem] flex-col gap-7 lg:gap-6 lg:rounded-lg lg:border lg:border-border lg:bg-card lg:px-8 lg:py-9">
-        <div className="flex items-center justify-between">
-          <Wordmark size={30} />
-          <LocaleToggle />
-        </div>
-
+    <AuthShell>
+      <div className="flex flex-col gap-6">
         <div>
-          <h1 className="text-2xl font-semibold">
+          <h1 className="text-[1.75rem] leading-tight font-extrabold tracking-[-0.02em]">
             {mode === "register" ? t("registerTitle") : t("loginTitle")}
           </h1>
-          <p className="mt-1 text-[0.9375rem] text-muted-foreground">{tc("tagline")}</p>
+          <p className="mt-1.5 text-[0.875rem] text-muted-foreground">{tc("tagline")}</p>
         </div>
 
         {resetDone && <SystemBanner tone="info">{t("resetOk")}</SystemBanner>}
@@ -133,20 +121,20 @@ export function AuthForm({ mode }: { mode: "register" | "login" }) {
           {mode === "login" && (
             <Link
               href="/forgot-password"
-              className="-mt-1 self-end text-[0.9375rem] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              className="-mt-1 self-end text-[0.8125rem] font-semibold text-gold-400 hover:text-gold-300"
             >
               {t("forgotPassword")}
             </Link>
           )}
 
           {mode === "register" && (
-            <label className="flex items-start gap-3 text-[0.9375rem] leading-relaxed">
+            <label className="flex items-start gap-3 text-[0.8125rem] leading-relaxed">
               <input
                 type="checkbox"
                 required
                 checked={consented}
                 onChange={(e) => setConsented(e.target.checked)}
-                className="mt-1 size-4.5 flex-none accent-(--gold-500)"
+                className="mt-0.5 size-4.5 flex-none accent-(--gold-400)"
               />
               <span className="text-muted-foreground">
                 {t("acceptTerms")}{" "}
@@ -172,7 +160,7 @@ export function AuthForm({ mode }: { mode: "register" | "login" }) {
           <>
             <div className="flex items-center gap-3.5" aria-hidden="true">
               <span className="h-px flex-1 bg-border" />
-              <span className="text-[0.8125rem] text-subtle">{t("orDivider")}</span>
+              <span className="data-label">{t("orDivider")}</span>
               <span className="h-px flex-1 bg-border" />
             </div>
             {googleReady && (
@@ -200,12 +188,12 @@ export function AuthForm({ mode }: { mode: "register" | "login" }) {
 
         <Link
           href={mode === "register" ? "/login" : "/register"}
-          className="text-center text-[0.9375rem] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          className="text-center text-[0.8125rem] font-semibold text-muted-foreground transition-colors hover:text-foreground"
         >
           {mode === "register" ? t("haveAccount") : t("needAccount")}
         </Link>
       </div>
-    </main>
+    </AuthShell>
   );
 }
 

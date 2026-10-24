@@ -2,130 +2,96 @@
 @import "tw-animate-css";
 
 /**
- * ALKEVA design tokens — production-stage Gauld palette (2026-08-15 decision:
- * "Full Gauld palette", `design/UI & UX ULTIMATE INSPIRATION.md` §2 of the
- * coloring guide + `design/previews/goodl coloring….jpg`).
+ * ALKEVA design system v2 (2026-10-24) — replaces every earlier rule.
  *
- * Dark only: the palette is declared once on :root, no media query.
+ * Layout and component craft follow RabbitX: a dense terminal of rounded
+ * panels on a near-black ground, mono numbers, segmented controls with a
+ * raised thumb. Colour follows FBS: black with muted champagne gold. Navigation
+ * is the "V2" folder tab — the active tab is the page colour and flows into it.
  *
- * The surface ramp is near-neutral charcoal (#0A0A0A → #252525 territory,
- * chroma ≤ 0.003) — the reference's "deep graphite" ground, replacing the
- * earlier warm-tinted ramp. Gold now supplies ALL the warmth. Direction still
- * matters: the WELL is darker than the page, not lighter — a fee breakdown or
- * an amount field is sunk into the panel, not a chip raised off it.
+ * The approved comps live on the Design canvas "ALKEVA Redesign"
+ * (claude.ai/artifact/PRjiDfuMxrHApTRGn8tjxf); this file is their tokens.
  *
- * Caution states remain built from the cool platinum family (see --caution) —
- * a separate amber caution color would collide with the one signal meaning
- * "asset / action".
+ * Variable names that predate v2 (--card, --well, --popover…) are kept so
+ * every screen re-skins at once; their meaning is restated below.
  */
 :root {
-  /* Surface ladder: well (sunk) < background (ground) < card (panel) < popover
-     (raised) < control (input surface). Every ratio below is measured, not
-     estimated — `pnpm verify:contrast` recomputes them from these values. */
-  --well: oklch(0.145 0.002 85); /* ≈ #0a0a0a */
-  --background: oklch(0.173 0.002 85); /* ≈ #101010 */
-  --card: oklch(0.209 0.003 85); /* ≈ #181818 */
-  --popover: oklch(0.244 0.003 85); /* ≈ #202020 */
-  /* The control surface (#252525 in the reference): dropdowns, selects,
-     dark input fills that are NOT wells. */
-  --control: oklch(0.264 0.003 85); /* ≈ #252525 */
-  --muted: var(--popover);
+  /* Ground → surfaces. Near-neutral, a hair warm toward the champagne. */
+  --bg-deep: oklch(0.123 0.002 75); /* #060607 — nav bar, deepest */
+  --background: oklch(0.15 0.002 75); /* #0b0b0c — page; the active tab's colour */
+  --card: oklch(0.187 0.002 75); /* #131314 — panels */
+  --panel-2: oklch(0.219 0.003 75); /* #1a1a1c — fields, rows, segmented track */
+  --raised: oklch(0.262 0.004 75); /* #242427 — hover, segmented thumb, menus */
+  --popover: var(--raised);
+  --control: var(--panel-2);
+  /* A recessed read-out inside a panel (quote box, vault figures): the page
+     colour showing through. Flat — depth comes from contrast, not shadow. */
+  --well: var(--background);
+  --muted: var(--panel-2);
 
-  --foreground: oklch(0.961 0 0); /* ≈ #f2f2f2 */
+  --foreground: oklch(0.956 0.006 84.6); /* #f2f0ec */
   --card-foreground: var(--foreground);
   --popover-foreground: var(--foreground);
-  --muted-foreground: oklch(0.735 0 0); /* ≈ #a8a8a8 */
-  /* Timestamps only, ≥13px — nothing is quieter than this; low-contrast text
-     is unreadable in the Ethiopian sun this app is used in. Quieter means
-     smaller or removed, never greyer. (The reference's #6F6F6F tertiary is
-     ~3.5:1 on card and fails WCAG — deliberately NOT adopted.) */
-  --subtle: oklch(0.64 0 0);
+  --muted-foreground: oklch(0.716 0.009 84.6); /* #a6a39d */
+  /* Labels and timestamps. Still ≥4.5:1 on --card — quieter means smaller,
+     never fainter. */
+  --subtle: oklch(0.647 0.009 84.6); /* #918e88 */
 
-  /* Borders are alpha-white hairlines (the reference relies on contrast +
-     elevation, not outlines). --input is the raised/interactive border. */
-  --border: oklch(1 0 0 / 0.08);
-  --input: oklch(1 0 0 / 0.16);
-  --border-gold-active: oklch(0.868 0.175 96.5 / 0.3);
+  --border: oklch(1 0 0 / 0.07);
+  --input: oklch(1 0 0 / 0.12);
 
-  /* Gold — XAU, primary action, current selection.
-     The 300–500 steps are the Gauld luminous golds (#FFE45C / #FFD92E /
-     #F5D21A); 600/700 are the metallic deep golds (#D9A900 / #C99600). The
-     client's brand hexes #d4a017 / #b8860b stay anchored in the CTA gradient's
-     deep stops — the identity survives inside the brighter family.
-     Gold as TEXT uses 400; gold as a FILL uses 500 with the dark ink on top.
-     White on gold never ships. All values round-trip verified to their hex. */
-  --gold-300: oklch(0.917 0.155 98); /* #ffe45c */
-  --gold-400: oklch(0.892 0.173 95.2); /* #ffd92e */
-  --gold-500: oklch(0.868 0.175 96.5); /* #f5d21a */
-  --gold-600: oklch(0.758 0.155 88.1); /* #d9a900 */
-  --gold-700: oklch(0.703 0.144 84.2); /* #c99600 */
+  /* Champagne gold — FBS. Text uses 400, fills use the CTA gradient,
+     selected outlines use 400 at low alpha. */
+  --gold-300: oklch(0.877 0.068 82.2); /* #edd3a4 */
+  --gold-400: oklch(0.797 0.09 78.1); /* #ddb679 */
+  --gold-500: oklch(0.717 0.098 73.3); /* #c99a5b */
+  --gold-600: oklch(0.616 0.09 69.8); /* #a87b45 */
+  --gold-700: oklch(0.485 0.072 67.7); /* #7a5730 */
 
-  /* Platinum — XPT, and the silver half of the identity. Cool and low-chroma:
-     a different metal, and deliberately not navy (navy-and-gold is the fintech
-     reflex this design avoids). */
-  --platinum-400: oklch(0.86 0.018 240);
-  --platinum-500: oklch(0.79 0.02 242);
-  --platinum-600: oklch(0.68 0.022 244);
+  /* Platinum — a cool silver, the second metal. */
+  --platinum-400: oklch(0.862 0.012 259.8); /* #cdd2da */
+  --platinum-500: oklch(0.787 0.016 260.7); /* #b4bac4 */
+  --platinum-600: oklch(0.71 0.018 259.4); /* #9ba2ad */
 
   --primary: var(--gold-500);
-  --primary-foreground: oklch(0.16 0.01 84);
-  --secondary: var(--popover);
+  --primary-foreground: oklch(0.19 0.027 74.3); /* #1b1206 — ink on gold */
+  --secondary: var(--panel-2);
   --secondary-foreground: var(--foreground);
-  --accent: var(--popover);
+  --accent: var(--raised);
   --accent-foreground: var(--foreground);
   --ring: var(--gold-400);
 
-  /* State. Gain/loss never rely on colour alone — every use pairs them with a
-     sign and an arrow (~8% of male users cannot separate this red and green). */
-  --gain: oklch(0.76 0.115 152);
-  --loss: oklch(0.7 0.16 25);
-  --destructive: oklch(0.7 0.16 25);
-  --destructive-foreground: oklch(0.16 0.01 25);
+  /* Up and down. Only for price moves and P/L, always with ↑/↓ or a sign. */
+  --gain: oklch(0.741 0.159 151.9); /* #4cc777 */
+  --loss: oklch(0.711 0.159 16.8); /* #f4737e — tints stay ≤ 8% so loss text on them clears 4.5:1 */
+  --destructive: var(--loss);
+  --destructive-foreground: oklch(0.18 0.03 18);
   --caution: var(--platinum-400);
 
-  /**
-   * The one glossy surface in the product: the primary action.
-   *
-   * Four stops — Gauld highlight → Gauld primary → the client's #d4a017 →
-   * the client's #b8860b. The brand hexes are anchored at 72% and 100% so the
-   * identity is never diluted by the brighter top. Dark ink clears 4.5:1 at
-   * every stop (verify:contrast asserts all four). Gloss is an INNER specular
-   * edge and an inner bottom shade. The one sanctioned OUTER glow in the
-   * system is `.glow-gold`, reserved for live indicators — never for buttons.
-   */
-  --gold-gradient: linear-gradient(
-    180deg,
-    oklch(0.917 0.155 98) 0%,
-    oklch(0.868 0.175 96.5) 40%,
-    oklch(0.735 0.146 84.3) 72%,
-    oklch(0.652 0.132 81.6) 100%
-  );
-  --gold-gradient-hover: linear-gradient(
-    180deg,
-    oklch(0.94 0.13 99) 0%,
-    oklch(0.892 0.173 95.2) 40%,
-    oklch(0.77 0.15 86) 72%,
-    oklch(0.69 0.138 83) 100%
-  );
-  --gold-gradient-active: linear-gradient(
-    180deg,
-    oklch(0.868 0.155 96) 0%,
-    oklch(0.81 0.16 92) 40%,
-    oklch(0.7 0.14 84) 72%,
-    oklch(0.62 0.126 81) 100%
-  );
-  --gloss: inset 0 1px 0 oklch(0.97 0.09 100 / 0.55), inset 0 -1px 0 oklch(0 0 0 / 0.3);
-  --sunk: inset 0 1px 2px oklch(0 0 0 / 0.4);
+  /* Sell is bone, buy is champagne: two strong actions, neither red nor green. */
+  --bone: oklch(0.935 0.007 80.7); /* #ece9e4 */
+  --bone-foreground: oklch(0.184 0.005 67.5); /* #141210 */
 
-  --radius: 0.875rem;
+  --cta: linear-gradient(180deg, #ecd09c 0%, #d2a668 46%, #ad7f47 100%);
+  --cta-hover: linear-gradient(180deg, #f2d9aa 0%, #dbb174 46%, #b88a50 100%);
+  --cta-gloss: inset 0 1px 0 rgb(255 255 255 / 0.35), 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-pop: 0 18px 44px rgb(0 0 0 / 0.5), 0 2px 6px rgb(0 0 0 / 0.35);
+  --shadow-thumb: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 2px 6px rgb(0 0 0 / 0.35);
+
+  --radius: 1rem; /* panels 16 · controls 10 · chips full */
+
+  --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-bg-deep: var(--bg-deep);
   --color-well: var(--well);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-panel-2: var(--panel-2);
+  --color-raised: var(--raised);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-muted: var(--muted);
@@ -144,6 +110,8 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-bone: var(--bone);
+  --color-bone-foreground: var(--bone-foreground);
 
   --color-gold-300: var(--gold-300);
   --color-gold-400: var(--gold-400);
@@ -157,17 +125,22 @@
   --color-loss: var(--loss);
   --color-caution: var(--caution);
 
-  /* Ethiopic first: Amharic is the default locale and must never fall back to
-     a system face with poor Ethiopic hinting. */
-  --font-sans: var(--font-ethiopic), var(--font-inter), system-ui, sans-serif;
-  --font-latin: var(--font-inter), system-ui, sans-serif;
+  /* Manrope carries Latin; Noto Sans Ethiopic catches every Ethiopic glyph
+     Manrope lacks, so Amharic and Tigrinya never fall to a system face.
+     Numbers are mono everywhere (.tnum). These stacks are inlined into the
+     font-* utilities — next/font defines --font-manrope etc. on <body>, so
+     custom CSS below names the stacks directly rather than var(--font-sans). */
+  --font-sans: var(--font-manrope), var(--font-ethiopic), system-ui, sans-serif;
+  --font-latin: var(--font-manrope), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), var(--font-ethiopic), ui-monospace, monospace;
 
-  --radius-sm: calc(var(--radius) - 6px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 6px);
+  --radius-xl: 1.25rem;
 
-  /* Semantic z-scale — never arbitrary 999s. */
+  --shadow-pop: var(--shadow-pop);
+
   --z-index-dropdown: 10;
   --z-index-sticky: 20;
   --z-index-scrim: 30;
@@ -181,22 +154,23 @@
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground antialiased;
-    font-family: var(--font-sans);
+  html {
+    background: var(--background);
+    color-scheme: dark;
   }
 
-  /* Focus-visible is never removed — admins drive this with a keyboard. */
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-manrope), var(--font-ethiopic), system-ui, sans-serif;
+  }
+
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
 
-  /* Ethiopic carries far more internal detail than Latin: it needs more
-     leading, and it must never be letter-spaced. Ethiopic has no uppercase,
-     so no ALL-CAPS pattern exists anywhere in this app. Amharic and Tigrinya
-     both use it; Afaan Oromoo and Somali are written in Latin and keep the
-     Latin metrics. */
+  /* Ethiopic needs more leading and must never be letter-spaced or
+     upper-cased. Afaan Oromoo and Somali are Latin and keep Latin metrics. */
   :lang(am),
   :lang(ti) {
     letter-spacing: 0 !important;
@@ -219,84 +193,90 @@
   p {
     text-wrap: pretty;
   }
+
+  ::selection {
+    background: oklch(0.797 0.09 78.1 / 0.3);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--raised) transparent;
+  }
 }
 
 @layer utilities {
-  /**
-   * Every money, gram, percentage and countdown value in this app.
-   * Prices refresh every 30 seconds; proportional digits make the whole
-   * balance shuffle sideways on each tick. Latin face because Ethiopic has
-   * no separate figures — Amharic uses Western numerals for currency.
-   */
+  /** Every number in the product — money, grams, percent, time. */
   .tnum {
-    font-family: var(--font-latin);
+    font-family: var(--font-jetbrains), var(--font-ethiopic), ui-monospace, monospace;
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
   }
 
-  /**
-   * A sunk surface: the amount field, the fee breakdown, the vault figures.
-   * Darker than its parent plus an inner top shade, so it reads as cut into
-   * the panel. Anything the user reads a number OUT of gets this; anything
-   * they act ON is raised instead.
-   */
+  /** Small mono data label: "World spot · USD/oz", column heads. */
+  .data-label {
+    font-family: var(--font-jetbrains), var(--font-ethiopic), ui-monospace, monospace;
+    font-size: 0.75rem;
+    line-height: 1.3;
+    color: var(--subtle);
+  }
+  :lang(am) .data-label,
+  :lang(ti) .data-label {
+    font-size: 0.8125rem;
+  }
+
+  /** A recessed read-out inside a panel: quote box, fee lines, vault figures. */
   .well {
     background: var(--well);
     border: 1px solid var(--border);
-    box-shadow: var(--sunk);
   }
 
-  /** The primary action, and the only gradient on an interactive surface. */
+  /** The primary action: champagne gradient, dark ink, inner highlight. */
   .cta-gold {
-    background: var(--gold-gradient);
-    box-shadow: var(--gloss);
+    background: var(--cta);
+    box-shadow: var(--cta-gloss);
     color: var(--primary-foreground);
   }
   .cta-gold:hover:not(:disabled) {
-    background: var(--gold-gradient-hover);
+    background: var(--cta-hover);
   }
   .cta-gold:active:not(:disabled) {
-    background: var(--gold-gradient-active);
-    box-shadow: inset 0 2px 4px oklch(0 0 0 / 0.35);
-  }
-  .cta-gold:disabled {
-    background: var(--gold-700);
-    box-shadow: none;
-    opacity: 0.45;
+    filter: brightness(0.94);
   }
 
-  /** The selected item in a segmented control or sidebar: raised + gold rim. */
+  /** The selected thumb of a segmented control. */
   .pill-active {
-    background: var(--popover);
-    box-shadow: inset 0 0 0 1px var(--gold-600);
-    color: var(--gold-400);
+    background: var(--raised);
+    box-shadow: var(--shadow-thumb);
+    color: var(--foreground);
   }
 
-  /**
-   * The one sanctioned outer glow (2026-08-15 "Full Gauld palette" decision,
-   * revising the earlier blanket ban): LIVE indicators only — the SSE live
-   * dot and the chart's current-price tag/point. Never on buttons, cards,
-   * text, or anything the user acts on; those keep the flat/inner-gloss rule.
-   */
+  /** Live indicator dot: a soft ring, not a glow. */
   .glow-gold {
-    box-shadow: 0 0 8px oklch(0.868 0.175 96.5 / 0.35);
+    box-shadow: 0 0 0 3px oklch(0.797 0.09 78.1 / 0.18);
+  }
+  .live-dot {
+    box-shadow: 0 0 0 3px oklch(0.741 0.159 151.9 / 0.18);
   }
 
-  /**
-   * The landing page's one entrance move (the marketing surface is allowed a
-   * first-load; the app is not — a tool should already be there when you
-   * arrive).
-   *
-   * It is an `animation`, never a class toggled by JS: the element's default
-   * state is visible, so a headless renderer, a paused tab, or a reader with
-   * animations disabled all see the finished page rather than a blank one.
-   */
+  /** A horizontal strip of facts: never stacks on a desk, scrolls on a phone. */
+  .stat-strip {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .stat-strip > * + * {
+    border-inline-start: 1px solid var(--border);
+  }
+
+  /** Landing entrance — an animation, so a paused tab still sees the page. */
   .rise {
     animation: alkeva-rise 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   .rise-late {
     animation-delay: 140ms;
   }
-
   @keyframes alkeva-rise {
     from {
       opacity: 0;
@@ -308,17 +288,157 @@
     }
   }
 
+  .float-slow {
+    animation: alkeva-float 6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  }
+  @keyframes alkeva-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  /** A price that just ticked: a brief tint, then back. */
+  .tick-up {
+    animation: alkeva-tick-up 900ms var(--ease-out);
+  }
+  .tick-down {
+    animation: alkeva-tick-down 900ms var(--ease-out);
+  }
+  @keyframes alkeva-tick-up {
+    from {
+      color: var(--gain);
+    }
+  }
+  @keyframes alkeva-tick-down {
+    from {
+      color: var(--loss);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .rise {
+    .rise,
+    .float-slow,
+    .tick-up,
+    .tick-down {
       animation: none;
     }
   }
 }
 
 /**
- * A receipt is a document, and a document gets printed. Everything that is
- * chrome — nav, top bar, buttons — leaves the page; the document itself drops
- * to ink on paper rather than gold on near-black.
+ * V2 folder tabs. The active tab is filled with the page colour and grows two
+ * concave "feet" at its base, so it reads as the top of the page itself.
+ * `.v2-tab` hangs from a top bar; `.v2-tab-b` rises from a bottom bar.
+ */
+@layer components {
+  .v2-tab {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 2.875rem;
+    padding: 0 0.375rem;
+    border-radius: 0.75rem 0.75rem 0 0;
+    color: var(--muted-foreground);
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .v2-tab > .v2-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.625rem;
+    transition:
+      background-color 180ms var(--ease-out),
+      color 180ms var(--ease-out);
+  }
+  .v2-tab:hover > .v2-pill {
+    background: oklch(1 0 0 / 0.05);
+    color: var(--foreground);
+  }
+  .v2-tab[data-active="true"] {
+    background: var(--background);
+    color: var(--foreground);
+  }
+  .v2-tab[data-active="true"]:hover > .v2-pill {
+    background: transparent;
+  }
+  .v2-tab[data-active="true"] svg {
+    color: var(--gold-400);
+  }
+  .v2-tab[data-active="true"]::before,
+  .v2-tab[data-active="true"]::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    width: 0.75rem;
+    height: 0.75rem;
+    pointer-events: none;
+  }
+  .v2-tab[data-active="true"]::before {
+    left: -0.75rem;
+    background: radial-gradient(circle at 0 0, transparent 0.72rem, var(--background) 0.75rem);
+  }
+  .v2-tab[data-active="true"]::after {
+    right: -0.75rem;
+    background: radial-gradient(circle at 100% 0, transparent 0.72rem, var(--background) 0.75rem);
+  }
+
+  .v2-tab-b {
+    position: relative;
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+    height: 3.625rem;
+    padding-top: 0.625rem;
+    border-radius: 0 0 0.875rem 0.875rem;
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .v2-tab-b[data-active="true"] {
+    background: var(--background);
+    color: var(--foreground);
+  }
+  .v2-tab-b[data-active="true"] svg {
+    color: var(--gold-400);
+  }
+  .v2-tab-b[data-active="true"]::before,
+  .v2-tab-b[data-active="true"]::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 0.75rem;
+    height: 0.75rem;
+    pointer-events: none;
+  }
+  .v2-tab-b[data-active="true"]::before {
+    left: -0.75rem;
+    background: radial-gradient(circle at 0 100%, transparent 0.72rem, var(--background) 0.75rem);
+  }
+  .v2-tab-b[data-active="true"]::after {
+    right: -0.75rem;
+    background: radial-gradient(circle at 100% 100%, transparent 0.72rem, var(--background) 0.75rem);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .v2-tab > .v2-pill {
+      transition: none;
+    }
+  }
+}
+
+/**
+ * A receipt is a document, and a document gets printed: chrome leaves, the
+ * document drops to ink on paper.
  */
 @media print {
   [data-print="hide"] {

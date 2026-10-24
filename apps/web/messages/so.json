@@ -144,7 +144,27 @@
     "receiptFeeLabel": "Komishan",
     "receiptTotalLabel": "Wadarta la bixiyay",
     "receiptSourceLabel": "Isha qiimaha",
-    "copyrightCta": "Eeg diiwaangelinta xuquuqda daabacaadda"
+    "copyrightCta": "Eeg diiwaangelinta xuquuqda daabacaadda",
+    "siteNav": "Bogga",
+    "navPrices": "Qiimayaasha",
+    "navHow": "Sida uu u shaqeeyo",
+    "navRules": "Ammaanka",
+    "navTiers": "Heerarka",
+    "navFaq": "Su'aalaha",
+    "kicker": "Miisaan. Lahow. Iibi.",
+    "heroTrust1Title": "Khasnad ayaa taageeraysa",
+    "heroTrust1Body": "Lama iibiyo garaam aanay khasnaddu heysan",
+    "heroTrust2Title": "Qiimaha waa la hayaa 30 s",
+    "heroTrust2Body": "Waxaad xaqiijinaysaa qiimihii aad aragtay",
+    "heroTrust3Title": "Shan luqadood",
+    "heroTrust3Body": "Amxaari, Ingiriisi, Tigrinya, Oromo, Soomaali",
+    "formulaTitle": "Sida qiimaha Birr loo sameeyo",
+    "formulaSpot": "Qiimaha caalamka",
+    "formulaOunce": "÷ 31.1035 g wiqiyad troy kasta",
+    "formulaFx": "× USD → ETB · {source}",
+    "formulaResult": "Birr garaamkiiba",
+    "tierDelivery": "qaadis dhab ah",
+    "tierLevel": "heer {n}"
   },
   "nav": {
     "home": "Bogga hore",
@@ -160,7 +180,11 @@
     "sectionMarket": "Suuq",
     "sectionAccount": "Akoon",
     "adminConsole": "Konsoolka maamulka",
-    "sectionMoney": "Lacag"
+    "sectionMoney": "Lacag",
+    "markets": "Suuqyo",
+    "wallet": "Jeeb",
+    "more": "Wax kale",
+    "primary": "Hagaha guud"
   },
   "home": {
     "totalLabel": "Wadarta hantida",
@@ -196,7 +220,12 @@
     "openPortfolio": "Hanti",
     "youHold": "Waxaad haysataa",
     "buyShort": "Iibso",
-    "sellShort": "Iibi"
+    "sellShort": "Iibi",
+    "vsCost": "marka la barbardhigo waxa aad bixisay",
+    "vaultFoot": "Baarku wuxuu tusayaa inta khasnad kasta horey macaamiisha loogu bixiyay.",
+    "floatTitle": "Lacagta dib-u-iibinta",
+    "floatCash": "Lacagta caddaanka ah",
+    "floatHeadroom": "Weli maanta la bixin karo"
   },
   "trade": {
     "title": "Ganacsi",
@@ -266,7 +295,45 @@
       "conflict": "Codsigan wuxuu is-hor-taagayaa mid hore. Qiime cusub codso.",
       "rate_limited": "Codsiyo aad u badan — fadlan sug wax yar oo mar kale isku day.",
       "generic": "Khalad ayaa dhacay. Fadlan mar kale isku day."
-    }
+    },
+    "orderTitle": "Dalab",
+    "orderHint": "qiime la hayo",
+    "unitGrams": "Garaam",
+    "unitBirr": "Birr",
+    "birrNote": "Qiimaha macdanta — komishanka waxaa lagu daraa qiimaha.",
+    "yourPrice": "Qiimahaaga",
+    "expiredShort": "Wuu dhacay",
+    "estimate": "Qiyaas",
+    "heldFor": "Qiimuhu wuu go'an yahay 30 s marka la tuso",
+    "changeAmount": "Qadarka beddel",
+    "confirmBuy": "Iibso {grams} g {metal}",
+    "confirmSell": "Iibi {grams} g {metal}",
+    "yourMetal": "Macdantaada",
+    "tabHoldings": "Waxa aad haysato",
+    "tabOrders": "Dalabyo",
+    "tabRefused": "La diiday",
+    "tabReceipts": "Rasiidyo",
+    "colAsset": "Hanti",
+    "colGrams": "Garaam",
+    "colAvgCost": "Celceliska kharashka / g",
+    "colMark": "Qiimaha hadda / g",
+    "colValue": "Qiimaha ETB",
+    "colGainLoss": "Faa'iido / Khasaare",
+    "colShare": "Saami",
+    "cash": "Lacag caddaan",
+    "cashReady": "Diyaar u ah ganacsi",
+    "vaultBacked": "{code} · khasnad ayaa taageeraysa",
+    "account": "Akoon",
+    "metalValue": "Qiimaha macdanta",
+    "verified": "La xaqiijiyay",
+    "verifyNow": "Xaqiiji",
+    "emptyHoldings": "Weli macdan ma haysatid. Garaamkaaga koowaad waxaad ka iibsan kartaa guddiga dalabka.",
+    "emptyOrders": "Weli dalab ma jiro.",
+    "emptyRefused": "Waxba lama diidin — dalab kasta oo aad dirtay wuu dhammaaday.",
+    "emptyReceipts": "Rasiidyadu halkan ayay ka muuqdaan marka dalab dhammaado.",
+    "liveNotHeld": "toos · weli lama hayo",
+    "metalValueRow": "Qiimaha macdanta",
+    "onTheQuote": "qiimaha ayaa lagu tusaa"
   },
   "portfolio": {
     "title": "Hanti",
@@ -296,7 +363,15 @@
         "amount_too_small": "Qadarku aad buu u yar yahay.",
         "account_frozen": "Akoonkaaga waa la xannibay — codsiyada qaadista waa la joojiyay.",
         "generic": "Khalad ayaa dhacay. Fadlan mar kale isku day."
-      }
+      },
+      "open": "Furan",
+      "lockedBadge": "Xiran",
+      "locked": "Qaadista dhabta ah waxay ka furantaa labada heer ee ugu sarreeya. Marka hantidaadu kordho, halkan ayay ka furmaysaa.",
+      "youHold": "Waxaad haysataa",
+      "step1": "Codso garaamka oo bixi telefoon iyo cinwaan.",
+      "step2": "Kooxdayadu way eegaan waxayna kula xaqiijiyaan wareejinta.",
+      "step3": "Waxba xisaabtaada kama baxayaan ilaa wareejinta lafteeda.",
+      "unlocksLater": "Waxay ka furantaa heer sare"
     },
     "badges": {
       "title": "Calaamado",
@@ -313,7 +388,8 @@
         "gold_holder": "Hayso ugu yaraan 1 garaam oo dahab ah.",
         "platinum_holder": "Hayso balaatiin kasta.",
         "early_adopter": "Waxaad ku biirtay xilligii furitaanka."
-      }
+      },
+      "earned": "{n} ka mid ah {total} ayaa la helay"
     },
     "totalValue": "Wadarta qiimaha",
     "totalMetalValue": "Wadarta qiimaha macdanta",
@@ -337,7 +413,16 @@
       "yourGold": "Dahabkaaga",
       "openAria": "Fur sanduuqa dahabkaaga oo eeg haraagaaga dahabka",
       "closeAria": "Xir sanduuqa dahabkaaga"
-    }
+    },
+    "allocation": "Qaybinta",
+    "byLiveValue": "qiimaha tooska ah",
+    "summary": "Soo koobid",
+    "totalLive": "Wadarta qiimaha · qiimaha tooska ah",
+    "costBasisMetal": "Kharashka asalka ah ee macdanta",
+    "gainLossMetal": "Faa'iido / khasaare macdanta",
+    "goldHeld": "Dahabka la hayo",
+    "platinumHeld": "Balaatiinka la hayo",
+    "cashEtb": "Lacag caddaan · ETB"
   },
   "tier": {
     "label": "Heer",
@@ -355,7 +440,18 @@
       "Ruby": "Ruubi",
       "Sapphire": "Safiir",
       "Emerald": "Emerald"
-    }
+    },
+    "nextShort": "{name} ayaa xiga — xadad sare",
+    "perTxnCap": "Xadka daldalis kasta",
+    "dailyCap": "Xadka maalinlaha ah",
+    "toNextShort": "xiga: {name}",
+    "deliveryOn": "Qaadis",
+    "noLimit": "Xad ma leh",
+    "delivery": "Qaadis dhab ah",
+    "yes": "Haa",
+    "notYet": "Weli maya",
+    "toNextLabel": "Ilaa {name}",
+    "whatItUnlocks": "Waxa heerkaagu ogol yahay"
   },
   "history": {
     "title": "Taariikh",
@@ -440,8 +536,15 @@
       "balancedNo": "Qorshayaashani eber ma noqonayaan. Fadlan noo soo sheeg.",
       "quoteLock": "Qiimaha la xidhay",
       "provenance": "Isha qiimaha",
-      "askAi": "Luqaddayda igu sharax"
-    }
+      "askAi": "Luqaddayda igu sharax",
+      "flowTitle": "Sida ay u dhaqaaqday"
+    },
+    "statCount": "Rasiidyada la bixiyay",
+    "statLatest": "Lambarkii ugu dambeeyay",
+    "statBuys": "Iibsiyo la dhammaystiray",
+    "statSells": "Iibinno la dhammaystiray",
+    "openFull": "Fur rasiidka oo buuxa",
+    "listNote": "Rasiid wuxuu jiraa oo kaliya dalab la dhammaystiray — lambarkiisa waxaa la bixiyaa xilliga dhammaystirka. Ku raadi lambarka oo buuxa ama tirooyinkiisa u dambeeya."
   },
   "account": {
     "title": "Akoon",
@@ -459,7 +562,8 @@
       "remove": "Ka saar",
       "removeTitle": "Ma la saarayaa passkey-gan?",
       "removeBody": "Kuma geli kartid qalabkaas mar dambe. Furahaaga sirta ah wuu sii shaqaynayaa.",
-      "failed": "Ma dhammaystirmin. Fadlan mar kale isku day."
+      "failed": "Ma dhammaystirmin. Fadlan mar kale isku day.",
+      "foot": "Passkey wuxuu ku jiraa qalabkaaga. ALKEVA waxay haysaa oo kaliya qaybtiisa guud, sidaas darteed halkan wax la xadi karo ma jiraan."
     },
     "language": "Luqadda",
     "tierLabel": "Heer",
@@ -482,7 +586,11 @@
       "administrator": "Maamule",
       "compliance": "Baaris",
       "finance": "Maaliyad"
-    }
+    },
+    "roleLabel": "Doorka shaqaalaha",
+    "languageHint": "Shaashadaha, iimaylada iyo kaaliyuhu way raacaan",
+    "passwordHint": "Waxaan kuu soo diraynaa xiriiriye cusboonaysiin",
+    "moneyHint": "Birr gelin iyo bixin iyadoo loo marayo Chapa"
   },
   "deposit": {
     "title": "Lacag gelin",
@@ -523,7 +631,9 @@
     "howTitle": "Sida lacag gelintu u shaqeyso",
     "how1": "Geli qadarka oo u sii wad bogga ammaanka ah ee Chapa.",
     "how2": "Ku bixi Telebirr, CBEBirr, wareejin bangi ama kaar.",
-    "how3": "ALKEVA waxay Chapa kula xaqiijisaa lacag bixinta, kadibna xisaabtaada ayay ku dartaa."
+    "how3": "ALKEVA waxay Chapa kula xaqiijisaa lacag bixinta, kadibna xisaabtaada ayay ku dartaa.",
+    "formTitle": "Birr ku dar",
+    "viaChapa": "iyadoo loo marayo bogga lacag bixinta ee Chapa"
   },
   "withdraw": {
     "title": "Lacag bixin",
@@ -559,7 +669,8 @@
     "howTitle": "Sida bixintu u shaqeyso",
     "how1": "Birrkaagu wuxuu u guuraa hayn isla markaad codsato — xisaabtu isla markiiba way hoos u dhacdaa.",
     "how2": "Maaliyaddu way eegtaa codsiyada waaweyn; kuwa yaryar si toos ah ayaa bangiga loogu diraa.",
-    "how3": "Marka wareejinta la xaqiijiyo, haynta waxaa loo sii daayaa xisaabtaada bangiga."
+    "how3": "Marka wareejinta la xaqiijiyo, haynta waxaa loo sii daayaa xisaabtaada bangiga.",
+    "formTitle": "Birr u dir bangigaaga"
   },
   "assistant": {
     "emptyTitle": "Wax ka weydii dahabkaaga",
@@ -590,7 +701,16 @@
     "today": "Maanta",
     "exampleProve": "Caddee macaamilkaygii ugu dambeeyay",
     "languageNote": "Wuxuu kugu jawaabaa luqadda aad ALKEVA u dooratay.",
-    "proveQuestion": "Caddee macaamilka {serial}. I tus qorshayaasha diiwaanka."
+    "proveQuestion": "Caddee macaamilka {serial}. I tus qorshayaasha diiwaanka.",
+    "title": "Kaaliye",
+    "canTitle": "Waxa aad weydiin karto",
+    "canPrices": "Qiimaha dahabka iyo balaatiinka maanta, iyo sababta uu isu beddelay",
+    "canHoldings": "Waxa aad haysato, inta uu kugu kacay, iyo faa'iidadaada ama khasaarahaaga",
+    "canHistory": "Dalabyadaadii hore, oo ay ku jiraan kuwa la diiday iyo sababta",
+    "canProve": "Caddaynta rasiid kasta — qorshayaasha diiwaanka ee ka danbeeya",
+    "canFees": "Sida komishanka iyo khidmadaha kale loo xisaabiyo",
+    "neverTitle": "Wuu akhriyaa, waligiis ma qabto",
+    "neverBody": "Kaaliyuhu ma ganacsan karo, lacag ma dhaqaajin karo, akoonkaagana ma beddeli karo, talo maalgashina ma bixiyo."
   },
   "notifications": {
     "title": "Ogeysiisyo",
@@ -620,7 +740,9 @@
     "listTitle": "Digniinaha qiimaha",
     "armed": "Firfircoon",
     "fired": "Shaqeysay",
-    "remove": "Ka saar"
+    "remove": "Ka saar",
+    "listEmpty": "Weli digniin qiime ma jirto. Mid ka deji gambaleelka shaxda qiimaha kasta.",
+    "listFoot": "Digniinuhu hal mar ayay shaqeeyaan oo ogeysiis ayay dirayaan. Kuwa cusub ka deji gambaleelka shaxda qiimaha kasta."
   },
   "admin": {
     "confirmAction": "Ma xaqiijinaysaa?",
@@ -868,7 +990,25 @@
       "kyc_pending_exists": "Waxaad leedahay gudbin baaris ku jirta.",
       "file_required": "Marka hore dooro faylka dukumentiga.",
       "generic": "Khalad ayaa dhacay. Fadlan mar kale isku day."
-    }
+    },
+    "formTitle": "Xaqiiji aqoonsigaaga",
+    "oneDocument": "hal dukumenti",
+    "dropTitle": "Dooro sawir ama PDF",
+    "statusTitle": "Halka aad marayso",
+    "stateVerified": "La xaqiijiyay",
+    "stateReview": "Baaris ku jira",
+    "stateNone": "Lama bilaabin",
+    "unlocksTitle": "Xaqiijintu waxay furaysaa",
+    "unlockDeposit": "Shubista Birr",
+    "unlockTrade": "Iibsashada iyo iibinta macdanta",
+    "unlockWithdraw": "U bixinta bangigaaga",
+    "reviewNote": "Sarkaal baaris ayaa gacanta ku eegaya dukumenti kasta. Waxaa laguu soo diri doonaa ogeysiis marka la dhammeeyo.",
+    "stepSubmit": "Dir hal dukumenti",
+    "stepSubmitBody": "Fayda, baasaboor, shatiga darawalnimada ama aqoonsiga kebele.",
+    "stepReview": "Baarista",
+    "stepReviewBody": "Qof ayaa hubinaya dukumentiga — badanaa hal maalin shaqo gudaheed.",
+    "stepVerified": "La xaqiijiyay",
+    "stepVerifiedBody": "Lacag gelinta, ganacsiga iyo bixinta waa la furayaa."
   },
   "credential": {
     "eyebrow": "Shaqo diiwaangashan",
@@ -892,5 +1032,32 @@
     "termsLink": "Shuruudaha",
     "privacyLink": "Asturnaanta",
     "backToSite": "Ku noqo bogga"
+  },
+  "market": {
+    "selector": "Suuq",
+    "perGram24h": "ETB garaamkiiba · 24 saac",
+    "perGramShort": "ETB / g",
+    "worldSpot": "Qiimaha caalamka · USD/oz",
+    "fx": "USD → ETB",
+    "high24h": "Ugu sarreeya 24 saac",
+    "low24h": "Ugu hooseeya 24 saac",
+    "lastTick": "Qiimihii ugu dambeeyay · {source}",
+    "heldBadge": "Qiime kasta waa la hayaa 30 s",
+    "ticks": "Isbeddellada qiimaha",
+    "tickTime": "Waqti",
+    "tickPrice": "ETB / g",
+    "sessionTicks": "La helay intii boggu furnaa",
+    "buckets": "Celceliska 5-tii daqiiqo · 24 saac",
+    "weekend": "Dhammaadka toddobaadka — suuqa caalamku wuu xiran yahay. Qiimuhu sidiisa ayuu ahaanayaa ilaa uu dib u furmo.",
+    "waitingTick": "Waxaa la sugayaa qiimaha xiga…",
+    "approxSpot": "≈ {spot} USD/oz",
+    "chartTitle": "Qiimaha",
+    "range": "Muddo",
+    "chartSource": "ETB garaamkiiba · {source} × {fxSource} USD→ETB",
+    "tickEvery": "qiime cusub qiyaastii 30 s kasta",
+    "tickerLabel": "Qiimayaasha",
+    "worldGold": "Dahabka caalamka · USD/oz",
+    "worldPlatinum": "Balaatiinka caalamka · USD/oz",
+    "fxSource": "USD → ETB · {source}"
   }
 }

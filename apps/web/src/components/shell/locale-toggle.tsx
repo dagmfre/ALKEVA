@@ -57,12 +57,14 @@ export function LocaleToggle({ className }: { className?: string }) {
           disabled={pending}
           aria-label={t("language")}
           className={cn(
-            "inline-flex min-h-11 items-center gap-2 rounded-full border border-input px-3.5 text-[0.8125rem] font-medium text-muted-foreground transition-colors hover:border-foreground hover:text-foreground disabled:opacity-60",
+            "inline-flex h-9 items-center gap-1.5 rounded-[0.5625rem] px-2.5 text-[0.75rem] font-semibold text-muted-foreground outline-none transition-colors hover:bg-white/5 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-60 data-[state=open]:bg-white/5 data-[state=open]:text-foreground",
             className,
           )}
         >
           <Languages className="size-4" aria-hidden="true" />
-          <span>{current?.native ?? active}</span>
+          <span lang={active} className="max-w-[7rem] truncate">
+            {current?.native ?? active}
+          </span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-44">
@@ -74,7 +76,7 @@ export function LocaleToggle({ className }: { className?: string }) {
             className="flex items-center justify-between gap-3"
           >
             <span>{LOCALE_META[code].native}</span>
-            {code === active ? <Check className="size-4 text-gold-500" aria-hidden="true" /> : null}
+            {code === active ? <Check className="size-4 text-gold-400" aria-hidden="true" /> : null}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

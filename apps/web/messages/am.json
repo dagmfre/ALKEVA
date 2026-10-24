@@ -144,7 +144,27 @@
     "receiptFeeLabel": "ኮሚሽን",
     "receiptTotalLabel": "የተከፈለ ጠቅላላ",
     "receiptSourceLabel": "የዋጋ ምንጭ",
-    "copyrightCta": "የቅጂ መብት ምዝገባ ይመልከቱ"
+    "copyrightCta": "የቅጂ መብት ምዝገባ ይመልከቱ",
+    "siteNav": "ድረ-ገጽ",
+    "navPrices": "ዋጋዎች",
+    "navHow": "እንዴት እንደሚሠራ",
+    "navRules": "ደህንነት",
+    "navTiers": "ደረጃዎች",
+    "navFaq": "ጥያቄዎች",
+    "kicker": "ይመዝኑት። ይያዙት። ይሽጡት።",
+    "heroTrust1Title": "በካዝና የተደገፈ",
+    "heroTrust1Body": "ካዝናው የሌለው አንድም ግራም አይሸጥም",
+    "heroTrust2Title": "ዋጋ ለ30 s ይያዛል",
+    "heroTrust2Body": "የሚያረጋግጡት ያዩትን ዋጋ ነው",
+    "heroTrust3Title": "አምስት ቋንቋዎች",
+    "heroTrust3Body": "አማርኛ፣ እንግሊዝኛ፣ ትግርኛ፣ ኦሮምኛ፣ ሶማሊኛ",
+    "formulaTitle": "የብር ዋጋ እንዴት እንደሚሰላ",
+    "formulaSpot": "የዓለም ዋጋ",
+    "formulaOunce": "÷ 31.1035 ግ በአንድ ትሮይ አውንስ",
+    "formulaFx": "× USD → ETB · {source}",
+    "formulaResult": "ብር በግራም",
+    "tierDelivery": "አካላዊ አቅርቦት",
+    "tierLevel": "ደረጃ {n}"
   },
   "nav": {
     "home": "መነሻ",
@@ -160,7 +180,11 @@
     "sectionMarket": "ገበያ",
     "sectionAccount": "ሂሳብ",
     "adminConsole": "የአስተዳደር ኮንሶል",
-    "sectionMoney": "ገንዘብ"
+    "sectionMoney": "ገንዘብ",
+    "markets": "ገበያዎች",
+    "wallet": "ቦርሳ",
+    "more": "ተጨማሪ",
+    "primary": "ዋና ማውጫ"
   },
   "home": {
     "totalLabel": "ጠቅላላ ንብረት",
@@ -196,7 +220,12 @@
     "openPortfolio": "ፖርትፎሊዮ",
     "youHold": "የያዙት",
     "buyShort": "ግዛ",
-    "sellShort": "ሽጥ"
+    "sellShort": "ሽጥ",
+    "vsCost": "ከከፈሉት ጋር ሲነጻጸር",
+    "vaultFoot": "አሞሌው የእያንዳንዱ ካዝና ምን ያህል ለደንበኞች እንደተሰጠ ያሳያል።",
+    "floatTitle": "ለመልሶ ሽያጭ የሚሆን ገንዘብ",
+    "floatCash": "የገንዘብ መጠባበቂያ",
+    "floatHeadroom": "ዛሬ አሁንም ሊከፈል የሚችል"
   },
   "trade": {
     "title": "ግብይት",
@@ -266,7 +295,45 @@
       "conflict": "ይህ ጥያቄ ከቀደመ ጥያቄ ጋር ይጋጫል። አዲስ ዋጋ ይጠይቁ።",
       "rate_limited": "በጣም ብዙ ጥያቄዎች — እባክዎ ትንሽ ቆይተው እንደገና ይሞክሩ።",
       "generic": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።"
-    }
+    },
+    "orderTitle": "ትዕዛዝ",
+    "orderHint": "በተያዘ ዋጋ",
+    "unitGrams": "ግራም",
+    "unitBirr": "ብር",
+    "birrNote": "የማዕድኑ ዋጋ — ኮሚሽን በጥቅሱ ላይ ይጨመራል።",
+    "yourPrice": "የእርስዎ ዋጋ",
+    "expiredShort": "አብቅቷል",
+    "estimate": "ግምት",
+    "heldFor": "ዋጋው ከታየ በኋላ ለ30 s አይለወጥም",
+    "changeAmount": "መጠኑን ቀይር",
+    "confirmBuy": "{grams} ግ {metal} ግዛ",
+    "confirmSell": "{grams} ግ {metal} ሽጥ",
+    "yourMetal": "የእርስዎ ማዕድን",
+    "tabHoldings": "ይዞታዎች",
+    "tabOrders": "ትዕዛዞች",
+    "tabRefused": "ውድቅ የተደረጉ",
+    "tabReceipts": "ደረሰኞች",
+    "colAsset": "ንብረት",
+    "colGrams": "ግራም",
+    "colAvgCost": "አማካይ ዋጋ / ግ",
+    "colMark": "የአሁኑ ዋጋ / ግ",
+    "colValue": "ዋጋ (ብር)",
+    "colGainLoss": "ትርፍ / ኪሳራ",
+    "colShare": "ድርሻ",
+    "cash": "ጥሬ ገንዘብ",
+    "cashReady": "ለግብይት ዝግጁ",
+    "vaultBacked": "{code} · በካዝና የተደገፈ",
+    "account": "መለያ",
+    "metalValue": "የማዕድን ዋጋ",
+    "verified": "ተረጋግጧል",
+    "verifyNow": "አረጋግጥ",
+    "emptyHoldings": "እስካሁን ማዕድን የለዎትም። የመጀመሪያ ግራምዎን ከትዕዛዝ ክፍሉ መግዛት ይችላሉ።",
+    "emptyOrders": "እስካሁን ትዕዛዝ የለም።",
+    "emptyRefused": "ውድቅ የተደረገ የለም — ያቀረቧቸው ትዕዛዞች በሙሉ ተፈጽመዋል።",
+    "emptyReceipts": "ትዕዛዝ ሲፈጸም ደረሰኞች እዚህ ይታያሉ።",
+    "liveNotHeld": "ቀጥታ · ገና አልተያዘም",
+    "metalValueRow": "የማዕድን ዋጋ",
+    "onTheQuote": "በጥቅሱ ላይ ይታያል"
   },
   "portfolio": {
     "title": "ንብረቴ",
@@ -296,7 +363,15 @@
         "amount_too_small": "መጠኑ በጣም ትንሽ ነው።",
         "account_frozen": "መለያዎ ታግዷል — የአቅርቦት ጥያቄዎች ቆመዋል።",
         "generic": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።"
-      }
+      },
+      "open": "ክፍት",
+      "lockedBadge": "ተቆልፏል",
+      "locked": "አካላዊ አቅርቦት በሁለቱ ከፍተኛ ደረጃዎች ይከፈታል። ይዞታዎ ሲያድግ እዚህ ይከፈታል።",
+      "youHold": "የያዙት",
+      "step1": "ግራሞቹን ይጠይቁ፣ ስልክና አድራሻ ይስጡ።",
+      "step2": "ቡድናችን ጥያቄውን መርምሮ ርክክቡን ከእርስዎ ጋር ያረጋግጣል።",
+      "step3": "እስከ ርክክቡ ድረስ ከቀሪ ሂሳብዎ ምንም አይቀነስም።",
+      "unlocksLater": "በከፍተኛ ደረጃ ይከፈታል"
     },
     "badges": {
       "title": "ባጆች",
@@ -313,7 +388,8 @@
         "gold_holder": "ቢያንስ 1 ግራም ወርቅ ይያዙ።",
         "platinum_holder": "ማንኛውንም ፕላቲነም ይያዙ።",
         "early_adopter": "በጅምር ወቅት የተቀላቀሉ።"
-      }
+      },
+      "earned": "ከ{total} {n} ተገኝቷል"
     },
     "totalValue": "ጠቅላላ ዋጋ",
     "totalMetalValue": "ጠቅላላ የማዕድን ዋጋ",
@@ -337,7 +413,16 @@
       "yourGold": "የእርስዎ ወርቅ",
       "openAria": "የወርቅ ሳጥንዎን ከፍተው የወርቅ ቀሪ ሂሳብዎን ይመልከቱ",
       "closeAria": "የወርቅ ሳጥንዎን ይዝጉ"
-    }
+    },
+    "allocation": "ስርጭት",
+    "byLiveValue": "በቀጥታ ዋጋ",
+    "summary": "ማጠቃለያ",
+    "totalLive": "ጠቅላላ ዋጋ · በቀጥታ ዋጋ",
+    "costBasisMetal": "የማዕድን የግዢ ዋጋ",
+    "gainLossMetal": "በማዕድን ላይ ትርፍ / ኪሳራ",
+    "goldHeld": "የተያዘ ወርቅ",
+    "platinumHeld": "የተያዘ ፕላቲነም",
+    "cashEtb": "ጥሬ ገንዘብ · ETB"
   },
   "tier": {
     "label": "የመለያ ደረጃ",
@@ -355,7 +440,18 @@
       "Ruby": "ሩቢ",
       "Sapphire": "ሰንፔር",
       "Emerald": "ኤመራልድ"
-    }
+    },
+    "nextShort": "ቀጣይ {name} — ከፍ ያሉ ገደቦች",
+    "perTxnCap": "የአንድ ግብይት ገደብ",
+    "dailyCap": "የቀን ገደብ",
+    "toNextShort": "ቀጣይ፦ {name}",
+    "deliveryOn": "አቅርቦት",
+    "noLimit": "ገደብ የለም",
+    "delivery": "አካላዊ አቅርቦት",
+    "yes": "አዎ",
+    "notYet": "ገና ነው",
+    "toNextLabel": "ወደ {name}",
+    "whatItUnlocks": "ደረጃዎ የሚፈቅደው"
   },
   "history": {
     "title": "ታሪክ",
@@ -440,8 +536,15 @@
       "balancedNo": "እነዚህ ግቤቶች ዜሮ አይሆኑም። እባክዎ ያሳውቁን።",
       "quoteLock": "ዋጋ የተቆለፈበት",
       "provenance": "የዋጋ ምንጭ",
-      "askAi": "በቋንቋዬ አብራራልኝ"
-    }
+      "askAi": "በቋንቋዬ አብራራልኝ",
+      "flowTitle": "እንዴት እንደተንቀሳቀሰ"
+    },
+    "statCount": "የተሰጡ ደረሰኞች",
+    "statLatest": "የመጨረሻው ቁጥር",
+    "statBuys": "የተፈጸሙ ግዢዎች",
+    "statSells": "የተፈጸሙ ሽያጮች",
+    "openFull": "ሙሉውን ደረሰኝ ይክፈቱ",
+    "listNote": "ደረሰኝ የሚኖረው ለተፈጸመ ትዕዛዝ ብቻ ነው — ቁጥሩ የሚሰጠው ትዕዛዙ በተፈጸመበት ቅጽበት ነው። በሙሉ ቁጥሩ ወይም በመጨረሻዎቹ አሃዞቹ ይፈልጉ።"
   },
   "account": {
     "title": "መለያ",
@@ -459,7 +562,8 @@
       "remove": "አስወግድ",
       "removeTitle": "ይህን የይለፍ ቁልፍ ማስወገድ ይፈልጋሉ?",
       "removeBody": "በዚያ መሣሪያ ላይ በእሱ መግባት አይችሉም። የይለፍ ቃልዎ መስራቱን ይቀጥላል።",
-      "failed": "አልተጠናቀቀም። እባክዎ እንደገና ይሞክሩ።"
+      "failed": "አልተጠናቀቀም። እባክዎ እንደገና ይሞክሩ።",
+      "foot": "የይለፍ ቁልፍ በመሣሪያዎ ላይ ይቆያል። ALKEVA የሚይዘው ይፋዊ ግማሹን ብቻ ነው፤ ስለዚህ እዚህ የሚሰረቅ ነገር የለም።"
     },
     "language": "ቋንቋ",
     "tierLabel": "የመለያ ደረጃ",
@@ -482,7 +586,11 @@
       "administrator": "አስተዳዳሪ",
       "compliance": "ተገዢነት",
       "finance": "ፋይናንስ"
-    }
+    },
+    "roleLabel": "የሠራተኛ ሚና",
+    "languageHint": "ማያ ገጾች፣ ኢሜይሎች እና ረዳቱ ይህንን ይከተላሉ",
+    "passwordHint": "የመቀየሪያ አገናኝ በኢሜይል እንልክልዎታለን",
+    "moneyHint": "ብር ገቢና ወጪ በChapa በኩል"
   },
   "deposit": {
     "title": "ገቢ ማድረግ",
@@ -523,7 +631,9 @@
     "howTitle": "ገንዘብ ማስገባት እንዴት እንደሚሰራ",
     "how1": "መጠኑን ያስገቡና ወደ Chapa ደህንነቱ የተጠበቀ ክፍያ ገጽ ይቀጥሉ።",
     "how2": "በቴሌብር፣ በCBEBirr፣ በባንክ ማስተላለፍ ወይም በካርድ ይክፈሉ።",
-    "how3": "ALKEVA ክፍያውን ከChapa ጋር ካረጋገጠ በኋላ ቀሪ ሂሳብዎ ላይ ይጨመራል።"
+    "how3": "ALKEVA ክፍያውን ከChapa ጋር ካረጋገጠ በኋላ ቀሪ ሂሳብዎ ላይ ይጨመራል።",
+    "formTitle": "ብር ያስገቡ",
+    "viaChapa": "በChapa የክፍያ ገጽ በኩል"
   },
   "withdraw": {
     "title": "ወጪ ማድረግ",
@@ -559,7 +669,8 @@
     "howTitle": "ገንዘብ ማውጣት እንዴት እንደሚሰራ",
     "how1": "ጥያቄ ባቀረቡበት ቅጽበት ብርዎ ወደ መያዣ ይተላለፋል — ቀሪ ሂሳብዎ ወዲያውኑ ይቀንሳል።",
     "how2": "ትላልቅ ጥያቄዎችን ፋይናንስ ይመረምራል፤ ትንንሾቹ በቀጥታ ወደ ባንክ ይላካሉ።",
-    "how3": "ዝውውሩ ከተረጋገጠ በኋላ መያዣው ወደ ባንክ ሂሳብዎ ይለቀቃል።"
+    "how3": "ዝውውሩ ከተረጋገጠ በኋላ መያዣው ወደ ባንክ ሂሳብዎ ይለቀቃል።",
+    "formTitle": "ብር ወደ ባንክዎ ይላኩ"
   },
   "assistant": {
     "emptyTitle": "ስለ ወርቅዎ ይጠይቁ",
@@ -590,7 +701,16 @@
     "today": "ዛሬ",
     "exampleProve": "የመጨረሻውን ግብይቴን አረጋግጥልኝ",
     "languageNote": "ለALKEVA በመረጡት ቋንቋ ይመልሳል።",
-    "proveQuestion": "ግብይት {serial}ን አረጋግጥልኝ። የመዝገብ ግቤቶቹን አሳየኝ።"
+    "proveQuestion": "ግብይት {serial}ን አረጋግጥልኝ። የመዝገብ ግቤቶቹን አሳየኝ።",
+    "title": "ረዳት",
+    "canTitle": "መጠየቅ የሚችሉት",
+    "canPrices": "የዛሬው የወርቅና የፕላቲነም ዋጋ፣ እና ለምን እንደተለወጠ",
+    "canHoldings": "የያዙት፣ ያወጣው ወጪ፣ እና ትርፍዎ ወይም ኪሳራዎ",
+    "canHistory": "ያለፉ ትዕዛዞችዎ፣ ውድቅ የተደረጉትንና ምክንያታቸውን ጨምሮ",
+    "canProve": "የማንኛውም ደረሰኝ ማረጋገጫ — ከጀርባው ያሉት የመዝገብ ግቤቶች",
+    "canFees": "ኮሚሽንና ሌሎች ክፍያዎች እንዴት እንደሚሰሉ",
+    "neverTitle": "ያነባል እንጂ አይሠራም",
+    "neverBody": "ረዳቱ መገበያየት፣ ገንዘብ ማንቀሳቀስ ወይም መለያዎን መቀየር አይችልም፤ የኢንቨስትመንት ምክርም አይሰጥም።"
   },
   "notifications": {
     "title": "ማሳወቂያዎች",
@@ -620,7 +740,9 @@
     "listTitle": "የዋጋ ማንቂያዎች",
     "armed": "ንቁ",
     "fired": "ተነስቷል",
-    "remove": "አስወግድ"
+    "remove": "አስወግድ",
+    "listEmpty": "እስካሁን የዋጋ ማንቂያ የለም። በማንኛውም የዋጋ ገበታ ላይ ካለው ደወል አንዱን ያዘጋጁ።",
+    "listFoot": "ማንቂያዎች አንድ ጊዜ ብቻ ይነሳሉ፣ ማሳወቂያም ይልካሉ። አዲስ ማንቂያ በማንኛውም የዋጋ ገበታ ላይ ካለው ደወል ያዘጋጁ።"
   },
   "admin": {
     "confirmAction": "እርግጠኛ ነዎት?",
@@ -868,7 +990,25 @@
       "kyc_pending_exists": "አስቀድሞ በምርመራ ላይ ያለ ማስረከቢያ አለዎት።",
       "file_required": "መጀመሪያ የሰነድ ፋይል ይምረጡ።",
       "generic": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።"
-    }
+    },
+    "formTitle": "ማንነትዎን ያረጋግጡ",
+    "oneDocument": "አንድ ሰነድ",
+    "dropTitle": "ፎቶ ወይም PDF ይምረጡ",
+    "statusTitle": "ያሉበት ደረጃ",
+    "stateVerified": "ተረጋግጧል",
+    "stateReview": "በምርመራ ላይ",
+    "stateNone": "አልተጀመረም",
+    "unlocksTitle": "ማረጋገጫ የሚከፍተው",
+    "unlockDeposit": "ብር ገቢ ማድረግ",
+    "unlockTrade": "ማዕድን መግዛትና መሸጥ",
+    "unlockWithdraw": "ወደ ባንክዎ ወጪ ማድረግ",
+    "reviewNote": "የቁጥጥር ባለሙያ እያንዳንዱን ሰነድ በእጅ ይመረምራል። ሲጠናቀቅ ማሳወቂያ ይደርስዎታል።",
+    "stepSubmit": "አንድ ሰነድ ይላኩ",
+    "stepSubmitBody": "Fayda፣ ፓስፖርት፣ የመንጃ ፈቃድ ወይም የቀበሌ መታወቂያ።",
+    "stepReview": "የቁጥጥር ምርመራ",
+    "stepReviewBody": "አንድ ሰው ሰነዱን ይፈትሻል — አብዛኛውን ጊዜ በአንድ የሥራ ቀን ውስጥ።",
+    "stepVerified": "ተረጋግጧል",
+    "stepVerifiedBody": "ገቢ፣ ግብይት እና ወጪ ይከፈታሉ።"
   },
   "credential": {
     "eyebrow": "የተመዘገበ ሥራ",
@@ -892,5 +1032,32 @@
     "termsLink": "ውሎች",
     "privacyLink": "ግላዊነት",
     "backToSite": "ወደ ጣቢያው ተመለስ"
+  },
+  "market": {
+    "selector": "ገበያ",
+    "perGram24h": "ብር በግራም · 24 ሰዓት",
+    "perGramShort": "ብር / ግ",
+    "worldSpot": "የዓለም ዋጋ · USD/oz",
+    "fx": "USD → ETB",
+    "high24h": "የ24 ሰዓት ከፍተኛ",
+    "low24h": "የ24 ሰዓት ዝቅተኛ",
+    "lastTick": "የመጨረሻ ዋጋ · {source}",
+    "heldBadge": "በእያንዳንዱ ጥቅስ ዋጋው ለ30 s ይያዛል",
+    "ticks": "የዋጋ ዝማኔዎች",
+    "tickTime": "ሰዓት",
+    "tickPrice": "ብር / ግ",
+    "sessionTicks": "ገጹ ክፍት ሆኖ የደረሱ",
+    "buckets": "የ5 ደቂቃ አማካዮች · 24 ሰዓት",
+    "weekend": "ቅዳሜና እሁድ — የዓለም ገበያ ዝግ ነው። ገበያው እስኪከፈት ድረስ ዋጋው አይለወጥም።",
+    "waitingTick": "ቀጣዩን የዋጋ ዝማኔ በመጠበቅ ላይ…",
+    "approxSpot": "≈ {spot} USD/oz",
+    "chartTitle": "ዋጋ",
+    "range": "ጊዜ",
+    "chartSource": "ብር በግራም · {source} × {fxSource} USD→ETB",
+    "tickEvery": "አዲስ ዋጋ በግምት በየ30 s",
+    "tickerLabel": "ዋጋዎች",
+    "worldGold": "የዓለም ወርቅ · USD/oz",
+    "worldPlatinum": "የዓለም ፕላቲነም · USD/oz",
+    "fxSource": "USD → ETB · {source}"
   }
 }

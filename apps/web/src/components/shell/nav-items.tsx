@@ -1,14 +1,12 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 /**
- * One navigation vocabulary, two surfaces.
- *
- * The desktop sidebar shows all six destinations in two labelled sections;
- * the phone tab bar shows the five that fit a thumb (Trade is a sheet there,
- * not a route, and Receipts lives inside History). Both read from here so a
- * renamed destination can never drift between them.
+ * The single navigation source. The V2 top bar, the phone bottom bar, the
+ * More sheet and the page title all read from here, so a renamed or added
+ * destination can never drift between them.
  */
 export type NavKey =
   | "home"
@@ -16,11 +14,14 @@ export type NavKey =
   | "portfolio"
   | "history"
   | "receipts"
-  | "account"
+  | "assistant"
+  | "wallet"
   | "deposit"
   | "withdraw"
-  | "assistant"
-  | "kyc";
+  | "kyc"
+  | "account"
+  | "more"
+  | "admin";
 
 export interface NavItem {
   key: NavKey;
@@ -28,126 +29,175 @@ export interface NavItem {
   label: string;
 }
 
-export function useNavItems(): { market: NavItem[]; account: NavItem[]; money: NavItem[] } {
+export function useNav() {
   const t = useTranslations("nav");
-  return {
-    market: [
-      { key: "home", href: "/", label: t("home") },
-      { key: "trade", href: "/trade", label: t("trade") },
-      { key: "assistant", href: "/assistant", label: t("assistant") },
-    ],
-    account: [
-      { key: "portfolio", href: "/portfolio", label: t("portfolio") },
-      { key: "history", href: "/history", label: t("history") },
-      { key: "receipts", href: "/receipts", label: t("receipts") },
-      { key: "account", href: "/account", label: t("account") },
-    ],
-    // Money doors used to live only behind the Account page and the dashboard
-    // buttons; on a desk they are destinations like any other.
-    money: [
-      { key: "deposit", href: "/deposit", label: t("deposit") },
-      { key: "withdraw", href: "/withdraw", label: t("withdraw") },
-      { key: "kyc", href: "/kyc", label: t("kyc") },
-    ],
-  };
+  const main: NavItem[] = [
+    { key: "home", href: "/", label: t("markets") },
+    { key: "trade", href: "/trade", label: t("trade") },
+    { key: "portfolio", href: "/portfolio", label: t("portfolio") },
+    { key: "history", href: "/history", label: t("history") },
+    { key: "receipts", href: "/receipts", label: t("receipts") },
+    { key: "assistant", href: "/assistant", label: t("assistant") },
+  ];
+  const wallet: NavItem[] = [
+    { key: "deposit", href: "/deposit", label: t("deposit") },
+    { key: "withdraw", href: "/withdraw", label: t("withdraw") },
+    { key: "kyc", href: "/kyc", label: t("kyc") },
+  ];
+  const account: NavItem = { key: "account", href: "/account", label: t("account") };
+  return { main, wallet, account, walletLabel: t("wallet"), moreLabel: t("more") };
 }
 
-/** Line icons at 18px on an 18px grid — the comp's exact paths. */
+export function isActive(pathname: string, href: string): boolean {
+  if (href === "/") return pathname === "/";
+  if (href === "/receipts") return pathname.startsWith("/receipts") || pathname.startsWith("/receipt/");
+  if (href === "/deposit") return pathname.startsWith("/deposit");
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/** The name of the screen you are on, from the route alone. */
+export function usePageTitle(): string {
+  const pathname = usePathname();
+  const { main, wallet, account } = useNav();
+  const hit = [...main, ...wallet, account].find((i) => isActive(pathname, i.href));
+  return hit?.label ?? account.label;
+}
+
+/**
+ * Duotone line icons on a 24 grid: a 1.8 stroke plus a 14% fill on the main
+ * shape, so the active tab's champagne reads as a filled token, not a hairline.
+ */
 export function NavIcon({ name, size = 18 }: { name: NavKey; size?: number }) {
   const common = {
     width: size,
     height: size,
-    viewBox: "0 0 18 18",
+    viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
     "aria-hidden": true,
   } as const;
+  const tint = { fill: "currentColor", fillOpacity: 0.14 } as const;
 
   switch (name) {
     case "home":
       return (
-        <svg {...common} strokeWidth="1.7" strokeLinejoin="round">
-          <path d="M3 8.2 9 3.2l6 5v7H3z" />
+        <svg {...common}>
+          <path d="M3 17l5-5 4 4 8-8" />
+          <path d="M14 8h6v6" />
         </svg>
       );
     case "trade":
       return (
-        <svg {...common} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 6.4h11M11.6 4l2.4 2.4-2.4 2.4M15 11.6H4M6.4 9.2 4 11.6 6.4 14" />
+        <svg {...common}>
+          <path d="M7 4 3 8l4 4" />
+          <path d="M3 8h14" />
+          <path d="m17 20 4-4-4-4" />
+          <path d="M21 16H7" />
         </svg>
       );
     case "portfolio":
       return (
-        <svg {...common} strokeWidth="1.6">
-          <rect x="2.6" y="2.6" width="5.6" height="5.6" rx="1.3" />
-          <rect x="9.8" y="2.6" width="5.6" height="5.6" rx="1.3" />
-          <rect x="2.6" y="9.8" width="5.6" height="5.6" rx="1.3" />
-          <rect x="9.8" y="9.8" width="5.6" height="5.6" rx="1.3" />
+        <svg {...common}>
+          <rect x="3" y="5" width="18" height="15" rx="2.5" {...tint} />
+          <path d="M8 5V3.8A.8.8 0 0 1 8.8 3h6.4a.8.8 0 0 1 .8.8V5" />
+          <circle cx="12" cy="12.5" r="3" />
         </svg>
       );
     case "history":
       return (
-        <svg {...common} strokeWidth="1.6" strokeLinecap="round">
-          <circle cx="9" cy="9" r="6.4" />
-          <path d="M9 5.4V9l2.6 1.6" />
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" {...tint} />
+          <path d="M12 7v5l3 2" />
         </svg>
       );
     case "receipts":
       return (
-        <svg {...common} strokeWidth="1.6" strokeLinejoin="round">
-          <path d="M4.2 2.8h9.6v12.4l-2.4-1.2-2.4 1.2-2.4-1.2-2.4 1.2z" />
-          <path d="M6.8 6.6h4.4M6.8 9.6h4.4" />
-        </svg>
-      );
-    case "account":
-      return (
-        <svg {...common} strokeWidth="1.6">
-          <circle cx="9" cy="6.4" r="2.9" />
-          <path d="M3.7 15.2c0-2.8 2.4-4.5 5.3-4.5s5.3 1.7 5.3 4.5" />
-        </svg>
-      );
-    case "deposit":
-      return (
-        <svg {...common} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M9 3.2v7.4M6 7.8 9 10.8l3-3" />
-          <path d="M3.4 12.6v1.2a1 1 0 0 0 1 1h9.2a1 1 0 0 0 1-1v-1.2" />
-        </svg>
-      );
-    case "withdraw":
-      return (
-        <svg {...common} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M9 10.8V3.4M6 6.4 9 3.4l3 3" />
-          <path d="M3.4 12.6v1.2a1 1 0 0 0 1 1h9.2a1 1 0 0 0 1-1v-1.2" />
+        <svg {...common}>
+          <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" {...tint} />
+          <path d="M9 8h6M9 12h6" />
         </svg>
       );
     case "assistant":
       return (
-        <svg {...common} strokeWidth="1.6" strokeLinejoin="round">
-          <path d="M3 5.2a1.6 1.6 0 0 1 1.6-1.6h8.8A1.6 1.6 0 0 1 15 5.2v5.2a1.6 1.6 0 0 1-1.6 1.6H7.4L4.2 14.6V12H4.6A1.6 1.6 0 0 1 3 10.4z" />
+        <svg {...common}>
+          <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" {...tint} />
+          <path d="M19 16v4M17 18h4" />
+        </svg>
+      );
+    case "wallet":
+      return (
+        <svg {...common}>
+          <rect x="3" y="6" width="18" height="14" rx="2.5" {...tint} />
+          <path d="M3 10h18" />
+          <path d="M16 15h2" />
+        </svg>
+      );
+    case "deposit":
+      return (
+        <svg {...common}>
+          <path d="M12 3v11" />
+          <path d="m7.5 9.5 4.5 4.5 4.5-4.5" />
+          <path d="M4 17v1.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V17" />
+        </svg>
+      );
+    case "withdraw":
+      return (
+        <svg {...common}>
+          <path d="M12 14V3" />
+          <path d="M7.5 7.5 12 3l4.5 4.5" />
+          <path d="M4 17v1.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V17" />
         </svg>
       );
     case "kyc":
       return (
-        <svg {...common} strokeWidth="1.6" strokeLinejoin="round">
-          <rect x="2.8" y="4" width="12.4" height="10" rx="1.6" />
-          <circle cx="7" cy="8.2" r="1.7" />
-          <path d="M4.4 12.2c.5-1.3 1.5-2 2.6-2s2.1.7 2.6 2M11 7.6h2.6M11 10.2h2.6" />
+        <svg {...common}>
+          <rect x="3" y="5" width="18" height="14" rx="2.5" {...tint} />
+          <circle cx="9" cy="11" r="2.2" />
+          <path d="M5.8 16c.6-1.6 1.8-2.4 3.2-2.4s2.6.8 3.2 2.4M14.5 10h3.5M14.5 13.5h3.5" />
+        </svg>
+      );
+    case "account":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="8.5" r="3.8" {...tint} />
+          <path d="M5 20c0-3.6 3.1-5.8 7-5.8s7 2.2 7 5.8" />
+        </svg>
+      );
+    case "admin":
+      return (
+        <svg {...common}>
+          <path d="M12 3 4.5 6v5.5c0 4.5 3.2 8 7.5 9.5 4.3-1.5 7.5-5 7.5-9.5V6z" {...tint} />
+          <path d="m9 12 2 2 4-4" />
+        </svg>
+      );
+    case "more":
+      return (
+        <svg {...common}>
+          <rect x="4" y="4" width="6.5" height="6.5" rx="1.8" {...tint} />
+          <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8" />
+          <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8" />
+          <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8" {...tint} />
         </svg>
       );
   }
 }
 
-/** The faceted gemstone that carries tier identity — never gold-filled. */
+/** The faceted gemstone that carries tier identity. */
 export function TierMark({ size = 26 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 34 34" fill="none" aria-hidden="true">
       <path
         d="M17 3 28 12l-4.5 15h-13L6 12z"
-        stroke="var(--platinum-400)"
+        fill="var(--gold-400)"
+        fillOpacity="0.12"
+        stroke="var(--gold-300)"
         strokeWidth="1.6"
         strokeLinejoin="round"
       />
-      <path d="M6 12h22M17 3v24" stroke="var(--platinum-400)" strokeWidth="1" opacity="0.55" />
+      <path d="M6 12h22M17 3v24M11 12l6 15 6-15" stroke="var(--gold-300)" strokeWidth="1" opacity="0.5" />
     </svg>
   );
 }

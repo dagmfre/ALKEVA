@@ -17,6 +17,19 @@ function legAmount(leg: LedgerLegDto): string {
   return `${SIGN[direction(leg.amount)]}${leg.asset === "ETB" ? money(abs) : `${grams(abs)}`}`;
 }
 
+function FlowChip({ label, amount, out = false }: { label: string; amount: string; out?: boolean }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.75rem] ${
+        out ? "bg-white/[0.04] text-muted-foreground" : "bg-gold-400/10 text-gold-300"
+      }`}
+    >
+      {label}
+      <b className="tnum font-semibold">{amount}</b>
+    </span>
+  );
+}
+
 /**
  * The record behind the receipt.
  *
@@ -46,19 +59,19 @@ export function ProofPanel({ orderId, className }: { orderId: string; className?
   if (error && !loading) return null;
 
   return (
-    <Panel className={className} data-print="hide">
+    <Panel className={className} data-print="hide" aria-label={t("title")}>
       <PanelHeader title={t("title")} hint={t("hint")} />
-      <PanelBody>
+      <PanelBody className="flex flex-col">
         {!data ? (
           <Skeleton className="h-56 rounded-lg" />
         ) : (
-          <div className="flex flex-col gap-4">
-            <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">{t("intro")}</p>
+          <div className="flex flex-1 flex-col gap-4">
+            <p className="text-[0.84375rem] leading-relaxed text-muted-foreground">{t("intro")}</p>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[20rem] text-[0.9375rem]">
+              <table className="w-full min-w-[20rem] text-[0.84375rem]">
                 <thead>
-                  <tr className="border-b border-border text-start text-[0.8125rem] text-muted-foreground">
+                  <tr className="data-label border-b border-border text-start">
                     <th scope="col" className="py-2 text-start font-normal">
                       {t("accountCol")}
                     </th>
@@ -72,7 +85,7 @@ export function ProofPanel({ orderId, className }: { orderId: string; className?
                     <tr key={`${leg.account}-${leg.asset}-${i}`} className="border-b border-border">
                       <td className="py-2.5">
                         {accountLabel(leg)}
-                        <span className="ms-2 text-[0.8125rem] text-muted-foreground">
+                        <span className="tnum ms-2 text-[0.6875rem] text-subtle">
                           {leg.asset}
                         </span>
                       </td>
@@ -85,9 +98,9 @@ export function ProofPanel({ orderId, className }: { orderId: string; className?
 
             {/* The check itself, stated per asset. An unbalanced result would
                 be a defect in the ledger, so it is shown, never hidden. */}
-            <div className="well flex flex-col gap-1.5 rounded-lg p-3">
+            <div className="well flex flex-col gap-1.5 rounded-[0.75rem] p-3.5">
               {data.checks.map((c) => (
-                <p key={c.asset} className="flex items-baseline justify-between gap-3 text-[0.9375rem]">
+                <p key={c.asset} className="flex items-baseline justify-between gap-3 text-[0.8125rem]">
                   <span className="text-muted-foreground">
                     {t("checkLabel", { asset: c.asset })}
                   </span>
@@ -118,7 +131,30 @@ export function ProofPanel({ orderId, className }: { orderId: string; className?
               </div>
             </dl>
 
-            <Button asChild variant="outline" className="self-start">
+            {/* The same legs drawn as movement: per asset, what left which
+                account and where it arrived. Built from data.legs only. */}
+            <div className="flex flex-col gap-2.5">
+              <span className="text-[0.8125rem] font-bold">{t("flowTitle")}</span>
+              {[...new Set(data.legs.map((l) => l.asset))].map((asset) => {
+                const legs = data.legs.filter((l) => l.asset === asset);
+                const from = legs.filter((l) => BigInt(l.amount) < 0n);
+                const to = legs.filter((l) => BigInt(l.amount) > 0n);
+                return (
+                  <div key={asset} className="flex flex-wrap items-center gap-1.5">
+                    <span className="tnum w-9 flex-none text-[0.6875rem] text-subtle">{asset}</span>
+                    {from.map((l, i) => (
+                      <FlowChip key={`f${i}`} label={accountLabel(l)} amount={legAmount(l)} out />
+                    ))}
+                    <span aria-hidden="true" className="px-0.5 text-subtle">→</span>
+                    {to.map((l, i) => (
+                      <FlowChip key={`t${i}`} label={accountLabel(l)} amount={legAmount(l)} />
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+
+            <Button asChild variant="outline" className="mt-auto self-start">
               <Link href={`/assistant?prove=${encodeURIComponent(data.serial)}`}>{t("askAi")}</Link>
             </Button>
           </div>

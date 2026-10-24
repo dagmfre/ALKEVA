@@ -36,9 +36,8 @@ function SheetOverlay({
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
       className={cn(
-        // Scrim only — no backdrop blur. Glassmorphism is banned and it costs
-        // frames on the mid-range Android this app targets.
-        "fixed inset-0 z-30 bg-black/60 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+        // Scrim only — blur costs frames on mid-range phones.
+        "fixed inset-0 z-(--z-index-scrim) bg-black/70 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
         className
       )}
       {...props}
@@ -62,9 +61,9 @@ function SheetContent({
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          // ALKEVA: --popover surface, no shadow, 200ms expo-out. The trade
-          // sheet is the only sheet in the app and it opens from the bottom.
-          "fixed z-40 flex flex-col gap-4 bg-popover transition ease-[cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:duration-150 data-[state=open]:animate-in data-[state=open]:duration-200",
+          // Panel surface with a 12% hairline; the bottom sheet gets a large
+          // rounded top. 200ms expo-out.
+          "fixed z-(--z-index-sheet) flex flex-col gap-4 border-input bg-card transition ease-[cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:duration-150 data-[state=open]:animate-in data-[state=open]:duration-200",
           side === "right" &&
             "inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
           side === "left" &&
@@ -72,14 +71,14 @@ function SheetContent({
           side === "top" &&
             "inset-x-0 top-0 h-auto border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
           side === "bottom" &&
-            "inset-x-0 bottom-0 mx-auto h-auto max-h-[92dvh] w-full max-w-[480px] overflow-y-auto rounded-t-xl border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+            "inset-x-0 bottom-0 mx-auto h-auto max-h-[92dvh] w-full max-w-[520px] overflow-y-auto rounded-t-[1.25rem] border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
           className
         )}
         {...props}
       >
         {children}
         {showCloseButton && (
-          <SheetPrimitive.Close className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary">
+          <SheetPrimitive.Close className="absolute top-3.5 right-3.5 grid size-8 place-items-center rounded-[0.5625rem] text-muted-foreground transition-colors hover:bg-white/6 hover:text-foreground disabled:pointer-events-none">
             <XIcon className="size-4" />
             <span className="sr-only">Close</span>
           </SheetPrimitive.Close>
@@ -116,7 +115,7 @@ function SheetTitle({
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
-      className={cn("font-semibold text-foreground", className)}
+      className={cn("text-[1.0625rem] font-bold text-foreground", className)}
       {...props}
     />
   )

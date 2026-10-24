@@ -7,7 +7,7 @@
  * engine already rounded exactly once, and the UI shows what the ledger holds.
  *
  * Money is never abbreviated — `112,629.25`, never `112.6k`. Abbreviating
- * someone's savings reads as evasive (`design/antipatterns.md` §3).
+ * someone's savings reads as evasive.
  */
 import { DEFAULT_LOCALE, LOCALE_META, isLocale } from "@alkeva/shared/locales";
 
@@ -111,7 +111,7 @@ export function timeOfDay(iso: string, locale: string): string {
 
 /**
  * Gregorian with localized month names. Ethiopia uses the Ethiopian calendar
- * in daily life, which is an open client decision (`design/screens.md`) — until
+ * in daily life, which is an open client decision — until
  * it is answered, receipts and history stay Gregorian so the date on a receipt
  * always matches the ledger timestamp it came from.
  */
@@ -145,7 +145,7 @@ const EAT_STAMP = new Intl.DateTimeFormat("en-GB", {
  * Pinned to Addis Ababa in both locales rather than the viewer's zone: this is
  * an Ethiopian product, the ledger is read in Ethiopian time, and a receipt
  * whose hour changes with the reader's laptop is not a record. Latin figures
- * because Amharic uses Western numerals (`design/design.md` §2).
+ * because Amharic uses Western numerals.
  */
 export function eatStamp(value: Date | string): string {
   const d = typeof value === "string" ? new Date(value) : value;
@@ -190,10 +190,44 @@ export function usd(cents: string): string {
 
 /**
  * Reserve coverage as "38.9×". The demo vault is backed tens of times over,
- * so this is deliberately not a 0–100% gauge (`design/screens.md`).
+ * so this is deliberately not a 0–100% gauge.
  */
 export function coverage(ratioPctMilli: string | null): string | null {
   if (ratioPctMilli === null) return null;
   const times = Number(BigInt(ratioPctMilli)) / 100_000;
   return `${times.toFixed(1)}×`;
+}
+
+const EAT_CLOCK_SEC = new Intl.DateTimeFormat("en-GB", {
+  timeZone: EAT,
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+});
+
+/** "22:00" in Addis Ababa time — the header clock. */
+export function eatTime(value: Date | string): string {
+  return EAT_TIME.format(typeof value === "string" ? new Date(value) : value);
+}
+
+/** "22:00:48" in Addis Ababa time — tick tape and last-tick stamps. */
+export function eatTimeSec(value: Date | string): string {
+  return EAT_CLOCK_SEC.format(typeof value === "string" ? new Date(value) : value);
+}
+
+/** World spot: micro-USD per troy ounce → "4,112.40". */
+export function usdPerOz(micro: string): string {
+  return GROUPED.format(Number(BigInt(micro || "0")) / 1_000_000);
+}
+
+/** FX: micro-birr per USD → "161.6743". */
+export function fxRate(micro: string): string {
+  return (Number(BigInt(micro || "0")) / 1_000_000).toFixed(4);
+}
+
+/** "29" + settle time → "ALK-2026-000029", the same display form the API prints. */
+export function displaySerial(serial: string, settledAt: string | null): string {
+  const year = settledAt ? new Date(settledAt).getUTCFullYear() : new Date().getUTCFullYear();
+  return `ALK-${year}-${serial.padStart(6, "0")}`;
 }

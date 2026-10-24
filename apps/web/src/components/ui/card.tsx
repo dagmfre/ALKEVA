@@ -3,12 +3,8 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * A surface, not a container with opinions.
- *
- * Re-tokenised from shadcn's default: no shadow (depth here is surface +
- * hairline, `design/design.md` §3) and no built-in padding, because ALKEVA
- * cards vary between 16px and 20px and several hold edge-to-edge divided
- * lists. Callers set their own padding.
+ * A bare panel surface for one-off compositions (auth, legal). Screens use
+ * `Panel`; this is the surface without the header vocabulary. No padding.
  */
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
@@ -27,7 +23,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"h3">) {
   return (
     <h3
       data-slot="card-title"
-      className={cn("text-[1.125rem] font-semibold", className)}
+      className={cn("text-[1.0625rem] font-bold", className)}
       {...props}
     />
   );
@@ -53,8 +49,8 @@ function CardRow({
         className,
       )}
     >
-      <span className="text-[0.9375rem] text-muted-foreground">{label}</span>
-      <span className="text-[0.9375rem] font-medium">{children}</span>
+      <span className="text-[0.875rem] text-muted-foreground">{label}</span>
+      <span className="tnum text-[0.875rem] font-medium">{children}</span>
     </div>
   );
 }

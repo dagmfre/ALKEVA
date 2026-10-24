@@ -5,7 +5,10 @@ import { useTranslations } from "next-intl";
 import type { AlertsResponse, MetalAsset } from "@alkeva/shared";
 
 import { useAssetPrice } from "@/components/market/price-provider";
+import { BellPlus } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { Segmented } from "@/components/ui/segmented";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +29,14 @@ import { cn } from "@/lib/utils";
  * A real Dialog (focus-trapped, Escape closes, backdrop) — the old hand-rolled
  * popover positioned itself off the card and could clip against the viewport.
  */
-export function PriceAlertButton({ asset }: { asset: MetalAsset }) {
+export function PriceAlertButton({
+  asset,
+  compact = false,
+}: {
+  asset: MetalAsset;
+  /** An icon button for panel headers; the full-width button otherwise. */
+  compact?: boolean;
+}) {
   const t = useTranslations("alerts");
   const tc = useTranslations("common");
   const [open, setOpen] = useState(false);
@@ -74,9 +84,21 @@ export function PriceAlertButton({ asset }: { asset: MetalAsset }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">
-          {t("cta", { metal: asset === "XAU" ? tc("gold") : tc("platinum") })}
-        </Button>
+        {compact ? (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t("cta", { metal: asset === "XAU" ? tc("gold") : tc("platinum") })}
+            title={t("cta", { metal: asset === "XAU" ? tc("gold") : tc("platinum") })}
+          >
+            <BellPlus className="size-[1.0625rem]" strokeWidth={1.8} />
+          </Button>
+        ) : (
+          <Button variant="outline" className="w-full">
+            <BellPlus />
+            {t("cta", { metal: asset === "XAU" ? tc("gold") : tc("platinum") })}
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-[24rem]">
         <DialogHeader>
@@ -88,45 +110,36 @@ export function PriceAlertButton({ asset }: { asset: MetalAsset }) {
           )}
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-1.5">
-          {(["above", "below"] as const).map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => setDirection(d)}
-              className={cn(
-                "min-h-11 rounded-md px-3 py-2 text-[0.875rem]",
-                direction === d ? "pill-active" : "well text-muted-foreground",
-              )}
-            >
-              {t(d)}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          value={direction}
+          onValueChange={setDirection}
+          stretch
+          size="lg"
+          aria-label={t("title")}
+          options={[
+            { value: "above", label: `↑ ${t("above")}` },
+            { value: "below", label: `↓ ${t("below")}` },
+          ]}
+        />
 
-        <div className="well flex items-center rounded-md">
+        <div className="flex h-12 items-center rounded-md border border-border bg-panel-2 transition-[border-color,box-shadow] focus-within:border-gold-500 focus-within:shadow-[0_0_0_3px_oklch(0.717_0.098_73.3/0.18)]">
           <input
             inputMode="decimal"
             value={threshold}
             onChange={(e) => setThreshold(e.target.value)}
-            className="tnum min-h-11 w-full bg-transparent px-3 text-base outline-none"
+            aria-label={t("title")}
+            className="tnum h-full w-full bg-transparent px-3.5 text-[1.0625rem] font-medium outline-none"
             disabled={busy}
           />
-          <span className="pe-3 text-[0.875rem] text-muted-foreground">
+          <span className="tnum pe-3.5 text-[0.8125rem] text-muted-foreground">
             {tc("birr")}/{tc("g")}
           </span>
         </div>
 
         {state === "saved" ? (
-          <p className="text-[0.9375rem] text-gain">✓ {t("saved")}</p>
+          <p className="text-[0.875rem] text-gain">✓ {t("saved")}</p>
         ) : (
-          <Button
-            variant="flat"
-            size="sm"
-            className="w-full"
-            disabled={busy}
-            onClick={() => void save()}
-          >
+          <Button className="w-full" disabled={busy} onClick={() => void save()}>
             {t("save")}
           </Button>
         )}

@@ -6,19 +6,9 @@ import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 /**
- * shadcn DropdownMenu, re-tokenised for ALKEVA.
- *
- * Changed from the shadcn default, deliberately:
- *  - Items are ≥44px tall (min-h-11) — the stock ~32px row fails the
- *    touch-target floor this app enforces everywhere interactive.
- *  - Highlight is `bg-control` (the interactive surface step), not the stock
- *    accent tint — the surface ladder does the work, never a colour wash.
- *  - The content sits on `bg-popover` with one soft large shadow; small hard
- *    shadows don't exist in this system (depth = surface + hairline).
- *  - Destructive items use `text-loss`, and their ink never changes on
- *    highlight — only the surface behind them does.
- *  - Checkbox/radio items, sub-menus and shortcuts are dropped until a
- *    screen needs them; unused primitives are dead weight in the bundle.
+ * DropdownMenu, design v2: a raised menu (12% hairline, pop shadow) with a
+ * white/6 highlight. Destructive rows keep their loss ink on highlight — the
+ * surface moves, the meaning doesn't.
  */
 function DropdownMenu({
   ...props
@@ -56,7 +46,7 @@ function DropdownMenuContent({
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
         className={cn(
-          "z-(--z-index-dropdown) max-h-(--radix-dropdown-menu-content-available-height) min-w-[10rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border border-border bg-popover p-1.5 text-popover-foreground shadow-[0_20px_50px_rgba(0,0,0,0.35)]",
+          "z-(--z-index-dropdown) max-h-(--radix-dropdown-menu-content-available-height) min-w-[10rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-[0.75rem] border border-input bg-popover p-1.5 text-popover-foreground shadow-(--shadow-pop)",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
           className
         )}
@@ -81,7 +71,7 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "relative flex min-h-11 cursor-default items-center gap-2 rounded-sm px-3 text-[0.9375rem] outline-hidden select-none focus:bg-control focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-9",
+        "relative flex min-h-10 cursor-default items-center gap-2.5 rounded-[0.5rem] px-3 text-[0.875rem] font-medium outline-hidden select-none focus:bg-white/6 focus:text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-9",
         // Destructive rows keep their loss ink on highlight — the surface
         // moves, the meaning doesn't.
         "data-[variant=destructive]:text-loss data-[variant=destructive]:focus:text-loss data-[variant=destructive]:[&_svg]:!text-loss",
@@ -106,7 +96,7 @@ function DropdownMenuLabel({
       data-inset={inset}
       className={cn(
         // Non-interactive, so it may sit below 44px. No uppercase — Ethiopic.
-        "px-3 py-1.5 text-[0.8125rem] font-medium text-muted-foreground data-[inset]:pl-9",
+        "data-label px-3 py-1.5 data-[inset]:pl-9",
         className
       )}
       {...props}

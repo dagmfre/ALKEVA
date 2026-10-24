@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { AdminOrderSearchItem } from "@alkeva/shared";
 
-import { AdminTable, Td } from "@/components/admin/ui";
-import { Skeleton } from "@/components/ui/skeleton";
+import { AdminSearch, AdminTable, MetalLabel, StatusBadge, Td } from "@/components/admin/ui";
 import { eatStamp, grams, money } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
 
+/** Every order on the platform, searchable by email or receipt number. */
 export function AdminOrdersScreen() {
   const t = useTranslations("admin");
   const tc = useTranslations("common");
@@ -17,59 +17,58 @@ export function AdminOrdersScreen() {
   const { data, loading } = useResource<{ orders: AdminOrderSearchItem[] }>(
     `/admin/orders${applied ? `?q=${encodeURIComponent(applied)}` : ""}`,
   );
+  const rows = data?.orders ?? [];
 
   return (
-    <div>
-      <h1 className="mb-4 text-xl font-semibold">{t("nav.orders")}</h1>
-      <form
-        className="mb-4 flex max-w-[420px] gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setApplied(query.trim());
-        }}
+    <div className="flex flex-col gap-3">
+      <h1 className="sr-only">{t("nav.orders")}</h1>
+      <AdminTable
+        title={t("nav.orders")}
+        hint={loading ? undefined : <span className="tnum">{rows.length}</span>}
+        action={
+          <AdminSearch
+            value={query}
+            onChange={setQuery}
+            onSubmit={() => setApplied(query.trim())}
+            placeholder={t("orders.searchPlaceholder")}
+          />
+        }
+        loading={loading}
+        minWidth={820}
+        headers={[
+          t("users.email"),
+          t("orders.side"),
+          { label: t("orders.amount"), end: true },
+          { label: t("orders.total"), end: true },
+          t("orders.status"),
+          t("orders.serial"),
+          { label: t("orders.when"), end: true },
+        ]}
       >
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t("orders.searchPlaceholder")}
-          className="well min-h-11 w-full rounded-md px-3 text-[0.9375rem] outline-none"
-        />
-      </form>
-      {loading ? (
-        <Skeleton className="h-48 rounded-lg" />
-      ) : (
-        <AdminTable
-          headers={[
-            t("users.email"),
-            t("orders.side"),
-            t("orders.amount"),
-            t("orders.total"),
-            t("orders.status"),
-            t("orders.serial"),
-            t("orders.when"),
-          ]}
-        >
-          {(data?.orders ?? []).map((o) => (
-            <tr key={o.id}>
-              <Td className="font-latin">{o.userEmail}</Td>
-              <Td>
-                {o.side === "buy" ? t("orders.buy") : t("orders.sell")}{" "}
-                {o.asset === "XAU" ? tc("gold") : tc("platinum")}
-              </Td>
-              <Td className="tnum">
-                {grams(o.gramsMg)} {tc("g")}
-              </Td>
-              <Td className="tnum">{money(o.totalCents)}</Td>
-              <Td className="text-muted-foreground">
-                {t(`orderStatus.${o.status}` as never)}
-                {o.failureReason ? ` · ${o.failureReason}` : ""}
-              </Td>
-              <Td className="tnum">{o.receiptSerial ?? "—"}</Td>
-              <Td className="font-latin text-[0.8125rem] text-subtle">{eatStamp(o.createdAt)}</Td>
-            </tr>
-          ))}
-        </AdminTable>
-      )}
+        {rows.map((o) => (
+          <tr key={o.id}>
+            <Td className="font-medium">{o.userEmail}</Td>
+            <Td>
+              <MetalLabel
+                asset={o.asset}
+                label={`${o.side === "buy" ? t("orders.buy") : t("orders.sell")} ${o.asset === "XAU" ? tc("gold") : tc("platinum")}`}
+              />
+            </Td>
+            <Td className="tnum text-end whitespace-nowrap">
+              {grams(o.gramsMg)} <span className="text-subtle">{tc("g")}</span>
+            </Td>
+            <Td className="tnum text-end font-semibold whitespace-nowrap">{money(o.totalCents)}</Td>
+            <Td>
+              <span className="flex flex-wrap items-center gap-2">
+                <StatusBadge status={o.status} label={t(`orderStatus.${o.status}` as never)} />
+                {o.failureReason && <span className="tnum text-[0.75rem] text-subtle">{o.failureReason}</span>}
+              </span>
+            </Td>
+            <Td className="tnum text-[0.8125rem] whitespace-nowrap">{o.receiptSerial ?? "—"}</Td>
+            <Td className="tnum text-end text-[0.75rem] whitespace-nowrap text-subtle">{eatStamp(o.createdAt)}</Td>
+          </tr>
+        ))}
+      </AdminTable>
     </div>
   );
 }

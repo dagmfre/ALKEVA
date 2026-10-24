@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import type { OrderListItem } from "@alkeva/shared";
 
 import { Badge } from "@/components/ui/badge";
+import { Coin } from "@/components/ui/panel";
 import {
   Table,
   TableBody,
@@ -14,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { KNOWN_ERRORS } from "@/components/trade/use-trade-form";
-import { grams, money, timeOfDay } from "@/lib/format";
+import { displaySerial, grams, money, timeOfDay } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export type OrderGroup = { key: string; label?: string; orders: OrderListItem[] };
@@ -76,7 +77,7 @@ export function OrdersTable({
                 <TableRow className="hover:bg-transparent">
                   <TableCell
                     colSpan={5 + (showSerial ? 1 : 0) + (showReceipt ? 1 : 0)}
-                    className="bg-well/60 py-2 text-[0.875rem] text-muted-foreground"
+                    className="bg-white/[0.02] py-2 text-[0.75rem] font-semibold text-subtle"
                   >
                     {group.label}
                   </TableCell>
@@ -100,7 +101,7 @@ export function OrdersTable({
         {groups.map((group) => (
           <div key={group.key}>
             {group.label && (
-              <p className="border-b border-border bg-well/60 px-4 py-2 text-[0.875rem] text-muted-foreground">
+              <p className="border-b border-border bg-white/[0.02] px-4 py-2 text-[0.75rem] font-semibold text-subtle">
                 {group.label}
               </p>
             )}
@@ -146,52 +147,44 @@ function Row({
 
   return (
     <TableRow className="align-top">
-      <TableCell className="py-3.5">
+      <TableCell>
         <span className="flex items-start gap-2.5">
-          <span
-            aria-hidden="true"
-            className={cn(
-              "mt-2 size-2 flex-none rounded-full",
-              o.asset === "XAU" ? "bg-gold-500" : "bg-platinum-400",
-            )}
-          />
-          <span className="flex min-w-0 flex-col">
-            <span className="truncate font-medium">{label}</span>
+          <Coin metal={o.asset} className="mt-px" />
+          <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="truncate font-semibold">{label}</span>
             {reason && (
-              <span className="text-[0.875rem] leading-snug text-muted-foreground">
-                {reason}
-              </span>
+              <span className="text-[0.75rem] leading-snug text-muted-foreground">{reason}</span>
             )}
           </span>
         </span>
       </TableCell>
 
       {showSerial && (
-        <TableCell className="font-latin py-3.5 text-[0.875rem] text-muted-foreground">
-          {o.receiptSerial ?? "—"}
+        <TableCell className="tnum text-[0.8125rem] text-muted-foreground">
+          {o.receiptSerial ? displaySerial(o.receiptSerial, o.settledAt) : "—"}
         </TableCell>
       )}
 
-      <TableCell className="tnum py-3.5 text-end text-muted-foreground">
+      <TableCell className="tnum text-end text-muted-foreground">
         {grams(o.gramsMg)} <span className="font-sans">{unit}</span>
       </TableCell>
 
       <TableCell
         className={cn(
-          "tnum py-3.5 text-end font-semibold",
+          "tnum text-end font-semibold",
           o.status === "rejected" && "text-subtle",
         )}
       >
         {money(o.totalCents)}
       </TableCell>
 
-      <TableCell className="py-3.5 pe-1">
+      <TableCell className="pe-1">
         <StatusBadge status={o.status} />
       </TableCell>
 
       <TableCell
         className={cn(
-          "font-latin whitespace-nowrap py-3.5 text-[0.875rem] text-subtle",
+          "tnum whitespace-nowrap text-[0.8125rem] text-subtle",
           !showReceipt && "text-end",
         )}
       >
@@ -199,11 +192,11 @@ function Row({
       </TableCell>
 
       {showReceipt && (
-        <TableCell className="py-3.5 text-end">
+        <TableCell className="text-end">
           {o.status === "settled" && (
             <Link
               href={`/receipt/${o.id}`}
-              className="text-[0.9375rem] text-gold-400 hover:text-gold-300"
+              className="text-[0.8125rem] font-semibold text-gold-400 hover:text-gold-300"
             >
               {t("receiptLink")}
             </Link>
@@ -221,15 +214,9 @@ function Block({ order: o }: { order: OrderListItem }) {
   const body = (
     <>
       <div className="flex items-center justify-between gap-3">
-        <span className="flex min-w-0 items-center gap-2.5 font-medium">
-          <span
-            aria-hidden="true"
-            className={cn(
-              "size-2 flex-none rounded-full",
-              o.asset === "XAU" ? "bg-gold-500" : "bg-platinum-400",
-            )}
-          />
-          <span className="truncate">{label}</span>
+        <span className="flex min-w-0 items-center gap-2.5 font-semibold">
+          <Coin metal={o.asset} />
+          <span className="truncate text-[0.9375rem]">{label}</span>
         </span>
         <span
           className={cn(
@@ -242,16 +229,16 @@ function Block({ order: o }: { order: OrderListItem }) {
       </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <StatusBadge status={o.status} />
-        <span className="tnum text-[0.875rem] text-muted-foreground">
+        <span className="tnum text-[0.8125rem] text-muted-foreground">
           {grams(o.gramsMg)} <span className="font-sans">{unit}</span>
         </span>
-        <span className="font-latin ms-auto text-[0.8125rem] text-subtle">{when}</span>
+        <span className="tnum ms-auto text-[0.75rem] text-subtle">{when}</span>
       </div>
       {reason && (
-        <p className="mt-1.5 text-[0.875rem] leading-snug text-muted-foreground">{reason}</p>
+        <p className="mt-1.5 text-[0.8125rem] leading-snug text-muted-foreground">{reason}</p>
       )}
       {o.status === "settled" && (
-        <span className="mt-1.5 block text-[0.9375rem] text-gold-400">
+        <span className="mt-1.5 block text-[0.8125rem] font-semibold text-gold-400">
           {t("receiptLink")} →
         </span>
       )}
@@ -260,7 +247,7 @@ function Block({ order: o }: { order: OrderListItem }) {
 
   const cls = "block border-b border-border px-4 py-3.5 last:border-0";
   return o.status === "settled" ? (
-    <Link href={`/receipt/${o.id}`} className={cn(cls, "transition-colors active:bg-popover/60")}>
+    <Link href={`/receipt/${o.id}`} className={cn(cls, "transition-colors active:bg-white/5")}>
       {body}
     </Link>
   ) : (
@@ -270,8 +257,8 @@ function Block({ order: o }: { order: OrderListItem }) {
 
 export function StatusBadge({ status }: { status: OrderListItem["status"] }) {
   const t = useTranslations("history");
-  if (status === "settled") return <Badge variant="gain">✓ {t("settled")}</Badge>;
-  if (status === "review") return <Badge variant="platinum">◑ {t("review")}</Badge>;
-  if (status === "rejected") return <Badge variant="loss">✕ {t("rejected")}</Badge>;
-  return <Badge variant="muted">{t("created")}</Badge>;
+  if (status === "settled") return <Badge variant="gain" dot>{t("settled")}</Badge>;
+  if (status === "review") return <Badge variant="platinum" dot>{t("review")}</Badge>;
+  if (status === "rejected") return <Badge variant="loss" dot>{t("rejected")}</Badge>;
+  return <Badge variant="muted" dot>{t("created")}</Badge>;
 }

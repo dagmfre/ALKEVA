@@ -62,7 +62,7 @@ function useMaterials() {
       // Lacquered body: metal under a thin clearcoat, so reflections double up
       // the way they do on a polished, varnished jewellery box.
       body: new THREE.MeshPhysicalMaterial({
-        color: "#e2ad2c",
+        color: "#d2a668",
         metalness: 1,
         roughness: 0.32,
         clearcoat: 0.7,
@@ -71,7 +71,7 @@ function useMaterials() {
       }),
       // Mirror-polished trim, rim, feet, hinges and medallion.
       trim: new THREE.MeshStandardMaterial({
-        color: "#f3c552",
+        color: "#e6c28b",
         metalness: 1,
         roughness: 0.1,
         envMapIntensity: 1.4,
@@ -87,7 +87,7 @@ function useMaterials() {
       }),
       keyhole: new THREE.MeshBasicMaterial({ color: "#0a0605" }),
       bar: new THREE.MeshStandardMaterial({
-        color: "#e8b731",
+        color: "#dcb274",
         metalness: 1,
         roughness: 0.12,
         envMapIntensity: 1.5,
@@ -200,7 +200,7 @@ function Motes({ reveal }: { reveal: React.MutableRefObject<number> }) {
         map={tex}
         size={0.05}
         sizeAttenuation
-        color="#ffd770"
+        color="#f0d39c"
         transparent
         opacity={0}
         depthWrite={false}
@@ -362,7 +362,7 @@ function GoldBox({
       ))}
 
       {/* The light that comes up from inside as the lid opens */}
-      <pointLight ref={glow} position={[0, 0.75, 0.1]} color="#ffc95e" intensity={0} distance={3.2} decay={2} />
+      <pointLight ref={glow} position={[0, 0.75, 0.1]} color="#f2cf95" intensity={0} distance={3.2} decay={2} />
 
       {/* The user's bar, resting on the velvet */}
       {hasGold && (

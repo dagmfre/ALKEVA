@@ -41,6 +41,9 @@ export const PLATFORM_HALTS = new Set(["reserve_halt", "float_halt", "account_fr
 
 export type TradeStage = "amount" | "quote" | "done";
 
+/** What the amount field is typed in: grams of metal, or birr of metal value. */
+export type AmountUnit = "g" | "etb";
+
 /**
  * A localizable error key: a machine-readable API code from KNOWN_ERRORS, or
  * "generic". The UI renders it as t(`errors.${code}`). Storing the code (not
@@ -79,7 +82,14 @@ export function useTradeForm({
   const [asset, setAsset] = useState<MetalAsset>(initialAsset);
   const [side, setSide] = useState<OrderSide>(initialSide);
   const [stage, setStage] = useState<TradeStage>("amount");
-  const [gramsInput, setGramsInput] = useState("1");
+  const [unit, setUnitState] = useState<AmountUnit>("g");
+  const [amountInput, setAmountInput] = useState("1");
+  /**
+   * subtotal / total of the last buy quote. Commission is config-driven and
+   * only known once quoted, so "Max" learns it from a real quote instead of
+   * hardcoding a rate — before the first quote Max is metal value only.
+   */
+  const lastBuyRatio = useRef<{ subtotal: bigint; total: bigint } | null>(null);
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [order, setOrder] = useState<OrderResponse | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
@@ -124,7 +134,18 @@ export function useTradeForm({
   const tick = livePrice;
   const unitCents = tick ? BigInt(tick.etbCentsPerGram) : null;
 
-  const mg = gramsToMg(gramsInput);
+  /**
+   * The amount in milligrams. Birr input is metal value at the live tick
+   * (commission comes on top, as the quote shows); the server still prices
+   * the grams itself, so this conversion is display arithmetic only.
+   */
+  const mg = useMemo(() => {
+    if (unit === "g") return gramsToMg(amountInput);
+    const birr = Number.parseFloat(amountInput.replace(/,/g, ""));
+    if (!unitCents || !Number.isFinite(birr) || birr <= 0) return null;
+    const v = (BigInt(Math.round(birr * 100)) * 1000n) / unitCents;
+    return v > 0n ? v : null;
+  }, [unit, amountInput, unitCents]);
   const estimateCents = useMemo(() => {
     if (!unitCents || mg === null) return null;
     return ((unitCents * mg) / 1000n).toString();
@@ -154,6 +175,9 @@ export function useTradeForm({
         body: JSON.stringify({ side, asset, gramsMg: mg.toString() }),
       });
       idemKey.current = crypto.randomUUID();
+      if (q.side === "buy" && BigInt(q.totalCents) > 0n) {
+        lastBuyRatio.current = { subtotal: BigInt(q.subtotalCents), total: BigInt(q.totalCents) };
+      }
       setQuoteTtl(
         Math.max(1, Math.round((new Date(q.expiresAt).getTime() - Date.now()) / 1000)),
       );
@@ -191,14 +215,45 @@ export function useTradeForm({
     }
   }
 
-  /** Fill the amount with the maximum the user can actually trade. */
-  function setMax() {
-    if (side === "sell") {
-      setGramsInput((Number(BigInt(heldMg)) / 1000).toString());
-    } else if (unitCents && balances.data) {
-      const affordable = (BigInt(balances.data.etbCents) * 1000n) / unitCents;
-      setGramsInput((Number(affordable) / 1000).toFixed(3));
+  /** Write a milligram amount into the field in the current unit. */
+  function writeMg(v: bigint) {
+    if (v <= 0n) {
+      setAmountInput("");
+      return;
     }
+    if (unit === "g") setAmountInput((Number(v) / 1000).toFixed(3));
+    else if (unitCents) setAmountInput(((Number(v) * Number(unitCents)) / 100_000).toFixed(2));
+  }
+
+  /** The most this user can trade on this side, in milligrams. */
+  function maxMg(): bigint | null {
+    if (side === "sell") return BigInt(heldMg);
+    if (!unitCents || !balances.data) return null;
+    let cash = BigInt(balances.data.etbCents);
+    const r = lastBuyRatio.current;
+    if (r) cash = (cash * r.subtotal) / r.total;
+    return (cash * 1000n) / unitCents;
+  }
+
+  /** 25 / 50 / 75 / 100 % of what can be traded. */
+  function setFraction(pct: 25 | 50 | 75 | 100) {
+    const max = maxMg();
+    if (max === null) return;
+    writeMg((max * BigInt(pct)) / 100n);
+  }
+
+  function setMax() {
+    setFraction(100);
+  }
+
+  /** Switch unit and carry the amount across at the live price. */
+  function setUnit(next: AmountUnit) {
+    if (next === unit) return;
+    const current = mg;
+    setUnitState(next);
+    if (current === null) return;
+    if (next === "g") setAmountInput((Number(current) / 1000).toFixed(3));
+    else if (unitCents) setAmountInput(((Number(current) * Number(unitCents)) / 100_000).toFixed(2));
   }
 
   function backToAmount() {
@@ -214,8 +269,11 @@ export function useTradeForm({
     side,
     setSide,
     stage,
-    gramsInput,
-    setGramsInput,
+    unit,
+    setUnit,
+    amountInput,
+    setAmountInput,
+    mg,
     quote,
     order,
     secondsLeft,
@@ -232,6 +290,7 @@ export function useTradeForm({
     requestQuote,
     confirm,
     setMax,
+    setFraction,
     backToAmount,
   };
 }

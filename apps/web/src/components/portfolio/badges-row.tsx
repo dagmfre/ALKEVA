@@ -13,26 +13,31 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * Achievement badges (Phase 3.5, computed on read — the API derives them
- * from settled orders and balances, nothing is stored). Earned = gold-text
- * chip; unearned = muted with the criterion in a tooltip, so the row also
- * teaches what the platform rewards.
+ * Achievement badges, computed on read by the API (nothing is stored).
+ * Earned ones are champagne; unearned ones stay quiet with the criterion in a
+ * tooltip, so the row also teaches what the platform rewards. Rendered as a
+ * section inside a panel, not a panel of its own.
  */
 export function BadgesRow({ badges, className }: { badges: BadgeDto[]; className?: string }) {
   const t = useTranslations("portfolio");
   if (badges.length === 0) return null;
+  const earned = badges.filter((b) => b.earned).length;
 
   return (
-    <section className={cn("rounded-lg border border-border bg-card p-4 lg:p-5", className)}>
-      <h2 className="text-[1.125rem] font-semibold">{t("badges.title")}</h2>
+    <div className={cn("flex flex-col gap-2.5", className)}>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[0.8125rem] font-bold">{t("badges.title")}</span>
+        <span className="data-label">{t("badges.earned", { n: earned, total: badges.length })}</span>
+      </div>
       <TooltipProvider delayDuration={200}>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {badges.map((b) => (
             <Tooltip key={b.key}>
               <TooltipTrigger asChild>
-                <span>
+                <span tabIndex={0} className="rounded-full outline-none focus-visible:outline-2 focus-visible:outline-ring">
                   <Badge variant={b.earned ? "gold" : "muted"}>
-                    {b.earned ? "◆" : "◇"} {t(`badges.names.${b.key}` as never)}
+                    <span aria-hidden="true">{b.earned ? "◆" : "◇"}</span>
+                    {t(`badges.names.${b.key}` as never)}
                   </Badge>
                 </span>
               </TooltipTrigger>
@@ -41,6 +46,6 @@ export function BadgesRow({ badges, className }: { badges: BadgeDto[]; className
           ))}
         </div>
       </TooltipProvider>
-    </section>
+    </div>
   );
 }
