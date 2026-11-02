@@ -1,7 +1,8 @@
 // Verify WCAG contrast for every foreground/background pair the v2 UI uses,
-// from the token values shipped in apps/web/src/app/globals.css (design v2,
-// 2026-10-24). Tinted surfaces (badges, selected chips, hairline fills) are
-// alpha-composited over their real panel in linear light before measuring.
+// from the token values shipped in apps/web/src/app/globals.css (design v2
+// layout, 2026-10-24, with the bright pre-v2 gold family restored 2026-11-01).
+// Tinted surfaces (badges, selected chips, hairline fills, the text selection)
+// are alpha-composited over their real panel in linear light before measuring.
 //
 //   node scripts/verify-contrast.mjs        → table + exit 1 on any failure
 
@@ -26,18 +27,22 @@ const T = {
   foreground: fromHex("#f2f0ec"),
   muted: fromHex("#a6a39d"),
   subtle: fromHex("#918e88"),
-  "gold-300": fromHex("#edd3a4"),
-  "gold-400": fromHex("#ddb679"),
-  "gold-500": fromHex("#c99a5b"),
+  "gold-300": fromHex("#ffe45c"),
+  "gold-400": fromHex("#ffd92e"),
+  "gold-500": fromHex("#f5d21a"),
   "platinum-400": fromHex("#cdd2da"),
   gain: fromHex("#4cc777"),
   loss: fromHex("#f4737e"),
-  "on-gold": fromHex("#1b1206"),
+  "on-gold": fromHex("#0f0d08"),
   bone: fromHex("#ece9e4"),
   "on-bone": fromHex("#141210"),
-  "cta-top": fromHex("#ecd09c"),
-  "cta-mid": fromHex("#d2a668"),
-  "cta-bottom": fromHex("#ad7f47"),
+  // --cta stops; 72% and 100% are the client's brand hexes.
+  "cta-top": fromHex("#ffe45c"),
+  "cta-40": fromHex("#f5d21a"),
+  "cta-72": fromHex("#d4a017"),
+  "cta-bottom": fromHex("#b8860b"),
+  // --cta-hover's darkest stop.
+  "cta-hover-bottom": fromHex("#c49213"),
 };
 const tint = (c, a, on = "card") => over(T[c], T[on], a);
 
@@ -57,8 +62,10 @@ for (const surface of ["background", "card", "panel-2"]) {
 }
 pairs.push(
   ["on-gold ink on CTA top", T["on-gold"], T["cta-top"], 4.5],
-  ["on-gold ink on CTA mid", T["on-gold"], T["cta-mid"], 4.5],
-  ["on-gold ink on CTA bottom", T["on-gold"], T["cta-bottom"], 4.5],
+  ["on-gold ink on CTA 40%", T["on-gold"], T["cta-40"], 4.5],
+  ["on-gold ink on CTA 72% (#d4a017)", T["on-gold"], T["cta-72"], 4.5],
+  ["on-gold ink on CTA bottom (#b8860b)", T["on-gold"], T["cta-bottom"], 4.5],
+  ["on-gold ink on CTA hover bottom", T["on-gold"], T["cta-hover-bottom"], 4.5],
   ["on-gold ink on flat gold-500", T["on-gold"], T["gold-500"], 4.5],
   ["Sell: on-bone ink on bone", T["on-bone"], T.bone, 4.5],
   ["price tag: #141006 on gold-400", fromHex("#141006"), T["gold-400"], 4.5],
@@ -71,12 +78,16 @@ pairs.push(
   ["seg thumb: foreground on raised", T.foreground, T.raised, 4.5],
   ["delta chip: loss on loss/8 over background", T.loss, tint("loss", 0.08, "background"), 4.5],
   ["banner caution: platinum on platinum/8 over background", T["platinum-400"], tint("platinum-400", 0.08, "background"), 4.5],
+  ["text selection: foreground on gold-400/20 over background", T.foreground, tint("gold-400", 0.2, "background"), 4.5],
+  ["text selection: foreground on gold-400/20 over card", T.foreground, tint("gold-400", 0.2, "card"), 4.5],
   // Non-text: hairlines are decorative separators, reported for reference only.
   ["hairline white/7 vs card (non-text, info)", tint("foreground", 0.07), T.card, 1],
   ["field border white/12 vs card (non-text, info)", tint("foreground", 0.12), T.card, 1],
   ["focus ring gold-500 vs panel-2 (non-text)", T["gold-500"], T["panel-2"], 3],
   // Banned on purpose — must stay under 4.5 so nobody "fixes" the rule away.
-  ["BANNED white text on CTA mid", fromHex("#ffffff"), T["cta-mid"], 0],
+  // Measured on the darkest stop, the one most favourable to white.
+  ["BANNED white text on CTA bottom (#b8860b)", fromHex("#ffffff"), T["cta-bottom"], 0],
+  ["BANNED white text on flat gold-500", fromHex("#ffffff"), T["gold-500"], 0],
 );
 
 let failed = 0;
@@ -86,7 +97,7 @@ for (const [label, fg, bg, min] of pairs) {
   if (!ok) failed++;
   console.log(`${ok ? "PASS" : "FAIL"}  ${r.toFixed(2).padStart(6)}:1  (min ${min})  ${label}`);
 }
-const white = ratio(fromHex("#ffffff"), T["cta-mid"]);
+const white = ratio(fromHex("#ffffff"), T["cta-bottom"]);
 if (white >= 4.5) {
   console.log("FAIL  white on gold now passes — revisit the dark-ink rule");
   failed++;

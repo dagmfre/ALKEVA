@@ -7,15 +7,15 @@ import {
 import { desc, eq } from "drizzle-orm";
 import { priceTicks, quotes, type Db } from "@alkeva/db";
 import {
-  MAX_TICK_AGE_SECONDS,
   QUOTE_TTL_SECONDS,
+  type Env,
   UNITS,
   type CreateQuoteDto,
   type MetalAsset,
   type OrderSide,
   type QuoteResponse,
 } from "@alkeva/shared";
-import { DB } from "../core/core.module.js";
+import { DB, ENV } from "../core/core.module.js";
 import { FeesService } from "../fees/fees.service.js";
 
 export type QuoteRow = typeof quotes.$inferSelect;
@@ -29,6 +29,7 @@ export type QuoteRow = typeof quotes.$inferSelect;
 export class QuotesService {
   constructor(
     @Inject(DB) private readonly db: Db,
+    @Inject(ENV) private readonly env: Env,
     private readonly fees: FeesService,
   ) {}
 
@@ -42,12 +43,20 @@ export class QuotesService {
     const tick = tickRows[0];
     if (!tick) throw new NotFoundException("no_price_data");
     // Refuse-on-stale: quoting an old price is the same bug as an unexpiring
-    // quote. The worker ticks every ~30s; 180s of silence means it's down.
-    if ((Date.now() - tick.at.getTime()) / 1000 > MAX_TICK_AGE_SECONDS) {
+    // quote. The worker ticks every ~30s; QUOTE_MAX_TICK_AGE_SEC (90 s) of
+    // silence means the feed is down.
+    if ((Date.now() - tick.at.getTime()) / 1000 > this.env.QUOTE_MAX_TICK_AGE_SEC) {
       throw new UnprocessableEntityException("stale_price");
     }
+    // Circuit breaker: the worker stores a move the secondary feed could not
+    // confirm but flags it; a bad print must never become a tradeable price.
+    if (tick.suspect) throw new UnprocessableEntityException("price_unverified");
 
-    const unit = tick.etbCentsPerGram; // integer ETB cents per gram
+    // Integer ETB cents per gram. The optional dealer spread (QUOTE_SPREAD_BPS,
+    // default 0) moves the unit price away from the mid on each side.
+    const mid = tick.etbCentsPerGram;
+    const spread = (mid * BigInt(this.env.QUOTE_SPREAD_BPS)) / 10_000n;
+    const unit = dto.side === "buy" ? mid + spread : mid - spread;
     // Amount normalization. ETB-direction derives grams first (floor), then
     // subtotal is recomputed FROM grams — the user pays for exactly the mg
     // they receive, charged ≤ the amount they asked to spend.

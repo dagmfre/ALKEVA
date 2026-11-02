@@ -100,6 +100,32 @@ export function AdminUserDetailScreen({ userId }: { userId: string }) {
           <Stat surface="strip" size="lg" label={t("users.joined")} value={eatStamp(data.createdAt)} />
         </StatStrip>
 
+        {/* Verified national identity (Fayda) — what the customer is answerable as. */}
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border px-[1.125rem] py-3 text-[0.8125rem]">
+          <span className={data.emailVerified ? "text-gain" : "text-subtle"}>
+            {data.emailVerified ? "✓ " : "○ "}
+            {t("users.emailVerified")}
+          </span>
+          {data.identity ? (
+            <>
+              <span className="text-gain">✓ {t("users.faydaVerified")}</span>
+              <span>
+                <span className="text-subtle">{t("users.legalName")}:</span>{" "}
+                <b className="font-semibold">{data.identity.legalName}</b>
+              </span>
+              {data.identity.birthdate && (
+                <span className="tnum">
+                  <span className="font-sans text-subtle">{t("users.birthdate")}:</span> {data.identity.birthdate}
+                </span>
+              )}
+              {data.identity.phone && <span className="tnum text-muted-foreground">{data.identity.phone}</span>}
+              <span className="tnum text-subtle">{eatStamp(data.identity.verifiedAt)}</span>
+            </>
+          ) : (
+            <span className="text-subtle">○ {t("users.faydaNotVerified")}</span>
+          )}
+        </div>
+
         {/* Freeze control — compliance only; the reason is mandatory because the
             AI (and the user) will read it back verbatim. */}
         {isCompliance && (

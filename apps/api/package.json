@@ -11,8 +11,7 @@
     "build": "tsc -p tsconfig.build.json && pnpm run bundle",
     "bundle": "esbuild dist/app.module.js --bundle --platform=node --format=esm --packages=external --outfile=dist/server.js",
     "start": "node --import @swc-node/register/esm-register src/main.ts",
-    "typecheck": "tsc --noEmit",
-    "typecheck:entry": "tsc -p tsconfig.entry.json"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@alkeva/db": "workspace:*",
@@ -29,6 +28,7 @@
     "drizzle-orm": "^0.38.3",
     "google-auth-library": "^11.0.2",
     "ioredis": "^5.4.2",
+    "jose": "^6.2.14",
     "nodemailer": "^9.0.5",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",

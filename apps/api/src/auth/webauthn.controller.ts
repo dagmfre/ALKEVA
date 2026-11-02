@@ -2,17 +2,19 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   Inject,
   Param,
   ParseUUIDPipe,
   Post,
+  Req,
   Res,
   UseGuards,
 } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import { z } from "zod";
 import type {
   AuthenticationResponseJSON,
@@ -21,9 +23,14 @@ import type {
 import type { Env } from "@alkeva/shared";
 import { ENV } from "../core/core.module.js";
 import { ZodPipe } from "../core/zod.pipe.js";
-import { ACCESS_COOKIE, Auth, AuthGuard, REFRESH_COOKIE } from "./auth.guard.js";
-import { AuthService, type AccessPayload, type TokenPair } from "./auth.service.js";
+import { NotificationsService } from "../notifications/notifications.service.js";
+import { Auth, AuthGuard } from "./auth.guard.js";
+import { AuthService, type AccessPayload } from "./auth.service.js";
+import { clientContext, setSessionCookies } from "./cookies.js";
 import { WebauthnService } from "./webauthn.service.js";
+
+/** Adding a passkey needs a recent real sign-in, not a long-lived refreshed session. */
+const STEP_UP_SEC = 10 * 60;
 
 // The WebAuthn response JSON is validated cryptographically by
 // SimpleWebAuthn — zod only shapes the envelope.
@@ -41,13 +48,25 @@ export class WebauthnController {
   constructor(
     private readonly webauthn: WebauthnService,
     private readonly auth: AuthService,
+    private readonly notifications: NotificationsService,
     @Inject(ENV) private readonly env: Env,
   ) {}
+
+  /**
+   * A stolen 15-minute session must not become permanent access by enrolling
+   * the thief's passkey: enrolment requires a sign-in within the last 10
+   * minutes, and the owner is emailed whenever a passkey is added.
+   */
+  private assertRecentSignIn(auth: AccessPayload): void {
+    const age = Date.now() / 1000 - (auth.auth_time ?? 0);
+    if (age > STEP_UP_SEC) throw new ForbiddenException("reauth_required");
+  }
 
   @Post("register/options")
   @HttpCode(200)
   @UseGuards(AuthGuard)
   registerOptions(@Auth() auth: AccessPayload) {
+    this.assertRecentSignIn(auth);
     return this.webauthn.registrationOptions(auth.sub);
   }
 
@@ -58,11 +77,13 @@ export class WebauthnController {
     @Auth() auth: AccessPayload,
     @Body(new ZodPipe(registerVerifyDto)) dto: { response: unknown; label?: string },
   ): Promise<{ ok: true }> {
+    this.assertRecentSignIn(auth);
     await this.webauthn.registrationVerify(
       auth.sub,
       dto.response as RegistrationResponseJSON,
       dto.label,
     );
+    void this.notifications.emit(auth.sub, "passkey_added", { label: dto.label ?? "" });
     return { ok: true };
   }
 
@@ -78,14 +99,15 @@ export class WebauthnController {
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async loginVerify(
     @Body(new ZodPipe(loginVerifyDto)) dto: { sessionId: string; response: unknown },
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
     const userId = await this.webauthn.authenticationVerify(
       dto.sessionId,
       dto.response as AuthenticationResponseJSON,
     );
-    const { user, tokens } = await this.auth.issueSessionFor(userId);
-    this.setAuthCookies(res, tokens);
+    const { user, tokens } = await this.auth.issueSessionFor(userId, ["webauthn"], clientContext(req));
+    setSessionCookies(res, this.env, tokens);
     return user;
   }
 
@@ -105,21 +127,4 @@ export class WebauthnController {
     return { ok: true };
   }
 
-  // Same cookie mechanics as AuthController — the passkey session is the
-  // ordinary session, not a special one.
-  private setAuthCookies(res: Response, tokens: TokenPair) {
-    res.cookie(ACCESS_COOKIE, tokens.accessToken, {
-      ...this.cookieOpts(),
-      maxAge: this.env.ACCESS_TOKEN_TTL_SEC * 1000,
-    });
-    res.cookie(REFRESH_COOKIE, tokens.refreshToken, {
-      ...this.cookieOpts(),
-      maxAge: this.env.REFRESH_TOKEN_TTL_SEC * 1000,
-    });
-  }
-
-  private cookieOpts() {
-    const secure = this.env.WEB_ORIGIN.startsWith("https://");
-    return { httpOnly: true, sameSite: "lax" as const, secure };
-  }
 }

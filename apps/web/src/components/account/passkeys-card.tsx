@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { eatStamp } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
 
@@ -54,7 +54,7 @@ export function PasskeysCard({ className }: { className?: string }) {
   const [label, setLabel] = useState("");
   const [removing, setRemoving] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<false | "failed" | "reauth">(false);
 
   const supported =
     typeof window !== "undefined" && "PublicKeyCredential" in window;
@@ -76,8 +76,9 @@ export function PasskeysCard({ className }: { className?: string }) {
       setEnrollOpen(false);
       setLabel("");
       setRevision((n) => n + 1);
-    } catch {
-      setError(true);
+    } catch (err) {
+      // Adding a passkey needs a sign-in from the last 10 minutes.
+      setError(err instanceof ApiError && err.code === "reauth_required" ? "reauth" : "failed");
     } finally {
       setBusy(false);
     }
@@ -90,7 +91,7 @@ export function PasskeysCard({ className }: { className?: string }) {
       setRemoving(null);
       setRevision((n) => n + 1);
     } catch {
-      setError(true);
+      setError("failed");
     } finally {
       setBusy(false);
     }
@@ -147,7 +148,7 @@ export function PasskeysCard({ className }: { className?: string }) {
       </div>
       {error && (
         <p className="border-t border-border px-[1.125rem] py-2.5 text-[0.8125rem] text-loss">
-          {t("passkeys.failed")}
+          {error === "reauth" ? t("passkeys.reauth") : t("passkeys.failed")}
         </p>
       )}
 

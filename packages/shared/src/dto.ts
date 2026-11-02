@@ -7,7 +7,7 @@ import type { Locale } from "./locales.js";
 // ── Auth ──────────────────────────────────────────────────────────
 export const registerDto = z.object({
   email: z.string().email(),
-  password: z.string().min(8).max(128),
+  password: z.string().min(10).max(128),
   fullName: z.string().min(2).max(120),
   locale: z.enum(LOCALES).default(DEFAULT_LOCALE),
   /** Terms+privacy consent is a hard gate: literal true, not a boolean —
@@ -30,7 +30,53 @@ export interface MeResponse {
   role: Role;
   status: "active" | "frozen";
   kycTier: number;
+  /** Confirmed with an emailed code — money endpoints require it. */
+  emailVerified: boolean;
+  /** A verified Fayda (national ID) identity is on file. */
+  identityVerified: boolean;
+  hasPassword: boolean;
 }
+
+/** What the sign-in and verification screens may offer (AUTH_METHODS / KYC_METHODS). */
+export interface ProvidersResponse {
+  fayda: boolean;
+  password: boolean;
+  google: boolean;
+  passkey: boolean;
+  /** Same as `passkey` — kept for screens written before Phase 10. */
+  webauthn: boolean;
+  kyc: { fayda: boolean; document: boolean };
+}
+
+/** One signed-in device (Account › Signed-in devices). */
+export interface SessionItem {
+  id: string;
+  userAgent: string | null;
+  ip: string | null;
+  amr: string[];
+  createdAt: string;
+  lastUsedAt: string;
+  current: boolean;
+}
+
+/** The part of a verified Fayda profile shown on "Complete your account". */
+export interface FaydaProfileSummary {
+  name: string;
+  email: string | null;
+}
+
+export type FaydaCallbackResponse =
+  | { status: "signed_in"; user: MeResponse }
+  | { status: "linked"; user: MeResponse }
+  | { status: "needs_profile"; token: string; profile: FaydaProfileSummary };
+
+export const faydaCompleteDto = z.object({
+  token: z.string().min(16).max(128),
+  email: z.string().email().max(254),
+  locale: z.enum(LOCALES).default(DEFAULT_LOCALE),
+  acceptTerms: z.literal(true),
+});
+export type FaydaCompleteDto = z.infer<typeof faydaCompleteDto>;
 
 // ── Prices ────────────────────────────────────────────────────────
 export interface PriceLatestResponse {
@@ -136,9 +182,11 @@ export interface HealthResponse {
 
 // ── Trading (Phase 2) ─────────────────────────────────────────────
 // Wire format: every money amount is a base-10 digit string (bigint-safe).
+// At most 15 digits: far above any real amount, far below int8's 9.2e18, so a
+// hostile 30-digit value is a 400 instead of a database overflow 500.
 const bigintString = z
   .string()
-  .regex(/^[0-9]+$/)
+  .regex(/^[0-9]{1,15}$/)
   .transform(BigInt);
 
 export const createQuoteDto = z
@@ -198,10 +246,50 @@ export interface BalancesResponse {
   xptMg: string;
 }
 
-export const faucetDto = z.object({
-  amountCents: bigintString.refine((v) => v > 0n),
+// ── Treasury entries (Phase 10): real vault stock and capital ─────
+
+export const treasuryVaultEntryDto = z.object({
+  asset: z.enum(METAL_ASSETS),
+  kind: z.enum(["intake", "outtake"]),
+  gramsMg: z
+    .string()
+    .regex(/^[0-9]{1,15}$/)
+    .transform(BigInt)
+    .refine((v) => v > 0n),
+  /** Bar serial(s) + assay certificate reference — what an auditor checks. */
+  reference: z.string().trim().min(3).max(300),
 });
-export type FaucetDto = z.infer<typeof faucetDto>;
+export type TreasuryVaultEntryDto = z.infer<typeof treasuryVaultEntryDto>;
+
+export const treasuryCapitalEntryDto = z.object({
+  direction: z.enum(["in", "out"]),
+  amountCents: z
+    .string()
+    .regex(/^[0-9]{1,15}$/)
+    .transform(BigInt)
+    .refine((v) => v > 0n),
+  /** Bank / Chapa reference for the transfer. */
+  reference: z.string().trim().min(3).max(300),
+});
+export type TreasuryCapitalEntryDto = z.infer<typeof treasuryCapitalEntryDto>;
+
+export interface TreasuryEntriesResponse {
+  vault: {
+    id: string;
+    asset: MetalAsset;
+    kind: "intake" | "outtake";
+    gramsMg: string;
+    reference: string;
+    createdAt: string;
+  }[];
+  capital: {
+    id: string;
+    direction: "in" | "out";
+    amountCents: string;
+    reference: string;
+    createdAt: string;
+  }[];
+}
 
 export interface TreasuryReserveDto {
   asset: MetalAsset;
@@ -269,6 +357,39 @@ export interface BadgeDto {
   earned: boolean;
   /** When derivable from a ledgered event (e.g. the settling order); null for state badges. */
   earnedAt: string | null;
+}
+
+/** Header profile menu: the holding tier as a game level + achievements. */
+export interface ProgressResponse {
+  tier: TierDto;
+  totalTiers: number;
+  /** What reaching the next tier changes; null at the top tier. */
+  next: {
+    name: string;
+    perTxnCapCents: string | null;
+    dailyCapCents: string | null;
+    deliveryEligible: boolean;
+  } | null;
+  badges: BadgeDto[];
+}
+
+/** The wallet "cart": balances plus everything still in flight. */
+export interface WalletPendingItem {
+  kind: "withdrawal" | "deposit" | "delivery";
+  id: string;
+  status: string;
+  amountCents: string | null;
+  asset: MetalAsset | null;
+  gramsMg: string | null;
+  createdAt: string;
+}
+
+export interface WalletResponse {
+  etbCents: string;
+  xauMg: string;
+  xptMg: string;
+  pending: WalletPendingItem[];
+  pendingCount: number;
 }
 
 export interface PortfolioResponse {
@@ -353,7 +474,8 @@ export type PaymentStatus =
   | "webhook_received"
   | "verified"
   | "credited"
-  | "failed";
+  | "failed"
+  | "reversed";
 
 export interface PaymentResponse {
   id: string;
@@ -376,15 +498,44 @@ export interface DepositChannelsResponse {
   minDepositCents: string;
 }
 
-export const createPayoutDto = z.object({
+/**
+ * Step 1 of a withdrawal: describe it. The server checks every gate, then
+ * emails a 6-digit code bound to exactly this request (Phase 10).
+ */
+export const payoutIntentDto = z.object({
   amountCents: bigintString.refine((v) => v > 0n),
   bankCode: z.number().int().positive(),
-  accountNumber: z.string().min(4).max(34),
-  accountName: z.string().min(2).max(120),
+  accountNumber: z
+    .string()
+    .trim()
+    .regex(/^[0-9A-Za-z+ -]{4,34}$/),
+  accountName: z.string().trim().min(2).max(120),
+});
+export type PayoutIntentDto = z.infer<typeof payoutIntentDto>;
+
+export interface PayoutIntentResponse {
+  intentId: string;
+  expiresAt: string;
+  /** Masked address the code went to ("da•••@gmail.com"). */
+  sentTo: string;
+}
+
+/** Step 2: the emailed code turns the intent into a held payout. */
+export const confirmPayoutDto = z.object({
+  intentId: z.string().uuid(),
+  code: z.string().regex(/^[0-9]{6}$/),
   /** Client part only — the server namespaces it `${userId}:${key}`. */
   idempotencyKey: z.string().min(8).max(64),
 });
-export type CreatePayoutDto = z.infer<typeof createPayoutDto>;
+export type ConfirmPayoutDto = z.infer<typeof confirmPayoutDto>;
+
+/** What a payout request carries once the code has confirmed it. */
+export interface PayoutRequestSpec {
+  amountCents: bigint;
+  bankCode: number;
+  accountNumber: string;
+  accountName: string;
+}
 
 export type PayoutStatus = "requested" | "approved" | "processing" | "settled" | "rejected";
 
@@ -413,13 +564,50 @@ export interface NotificationItem {
   id: string;
   template: string;
   payload: Record<string, string> | null;
-  status: "queued" | "sent" | "failed";
+  status: "queued" | "sent" | "failed" | "skipped";
+  readAt: string | null;
   createdAt: string;
 }
 
 export interface NotificationsResponse {
   notifications: NotificationItem[];
+  unreadCount: number;
+  /** Pass as ?before= for the next page; null at the end. */
+  nextCursor: string | null;
 }
+
+export const markReadDto = z.union([
+  z.object({ ids: z.array(z.string().uuid()).min(1).max(100) }),
+  z.object({ all: z.literal(true) }),
+]);
+export type MarkReadDto = z.infer<typeof markReadDto>;
+
+/** Channel preferences per category. Security notices always email. */
+export interface NotifyPrefs {
+  alerts: { email: boolean; push: boolean };
+  money: { email: boolean; push: boolean };
+  security: { push: boolean };
+}
+
+export const notifyPrefsDto = z.object({
+  alerts: z.object({ email: z.boolean(), push: z.boolean() }).optional(),
+  money: z.object({ email: z.boolean(), push: z.boolean() }).optional(),
+  security: z.object({ push: z.boolean() }).optional(),
+});
+export type NotifyPrefsDto = z.infer<typeof notifyPrefsDto>;
+
+export interface PushConfigResponse {
+  enabled: boolean;
+  publicKey: string | null;
+  /** This user's browsers currently subscribed. */
+  subscriptions: number;
+}
+
+export const pushSubscriptionDto = z.object({
+  endpoint: z.string().url().max(1000),
+  keys: z.object({ p256dh: z.string().min(10).max(200), auth: z.string().min(8).max(100) }),
+});
+export type PushSubscriptionDto = z.infer<typeof pushSubscriptionDto>;
 
 // ── KYC (Phase 4.3) ───────────────────────────────────────────────
 
@@ -429,6 +617,10 @@ export type KycStatus = "pending" | "approved" | "rejected";
 
 export interface KycMeResponse {
   kycTier: number;
+  /** Which identity checks this deployment offers (KYC_METHODS). */
+  methods: { fayda: boolean; document: boolean };
+  /** The verified national identity, when the user has done the Fayda check. */
+  identity: { provider: "fayda"; legalName: string; verifiedAt: string } | null;
   /** Latest submission, if any. */
   submission: {
     id: string;
@@ -650,6 +842,18 @@ export interface AdminUserItem {
 
 export interface AdminUserDetailResponse extends AdminUserItem {
   balances: BalancesResponse;
+  emailVerified: boolean;
+  /** The verified Fayda identity (legal name, birthdate…), if any. */
+  identity: {
+    provider: string;
+    legalName: string;
+    birthdate: string | null;
+    gender: string | null;
+    phone: string | null;
+    nationality: string | null;
+    hasPicture: boolean;
+    verifiedAt: string;
+  } | null;
   activeFreeze: {
     id: string;
     reason: string;
@@ -737,7 +941,13 @@ export const deliveryScheduleDto = z.object({
 });
 export type DeliveryScheduleDto = z.infer<typeof deliveryScheduleDto>;
 
-export type DeliveryStatus = "requested" | "reviewing" | "approved" | "scheduled" | "rejected";
+export type DeliveryStatus =
+  | "requested"
+  | "reviewing"
+  | "approved"
+  | "scheduled"
+  | "rejected"
+  | "delivered";
 
 export interface DeliveryItem {
   id: string;
@@ -749,6 +959,7 @@ export interface DeliveryItem {
   note: string | null;
   reviewNote: string | null;
   scheduledFor: string | null;
+  deliveredAt: string | null;
   createdAt: string;
 }
 
@@ -758,6 +969,6 @@ export interface DeliveryListResponse {
 
 export interface AdminDeliveryItem extends DeliveryItem {
   userEmail: string;
-  /** Advisory: the metal the user holds right now (re-checked at approve). */
+  /** The metal the user holds right now (approval checks it under lock). */
   heldMg: string;
 }

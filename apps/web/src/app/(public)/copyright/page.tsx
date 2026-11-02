@@ -58,7 +58,7 @@ export default async function CopyrightPage() {
       <section className="relative isolate overflow-hidden border-b border-border">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -z-10 [background:radial-gradient(60%_110%_at_50%_0%,oklch(0.797_0.09_78.1/0.14),transparent_65%)]"
+          className="pointer-events-none absolute inset-0 -z-10 [background:radial-gradient(60%_110%_at_50%_0%,color-mix(in_oklch,var(--gold-glow)_14%,transparent),transparent_65%)]"
         />
         <div className="mx-auto w-full max-w-[76rem] px-5 py-14 lg:px-8 lg:py-20">
           <p className="text-[0.8125rem] font-semibold text-gold-300">

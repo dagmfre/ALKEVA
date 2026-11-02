@@ -16,7 +16,9 @@
     "delayed": "Delayed",
     "back": "Back",
     "retry": "Try again",
-    "somethingWrong": "Something went wrong. Please try again."
+    "somethingWrong": "Something went wrong. Please try again.",
+    "rateLimited": "Too many requests — please wait a moment and try again.",
+    "loadFailed": "This could not be loaded. Check your connection and try again."
   },
   "auth": {
     "registerTitle": "Create your account",
@@ -30,7 +32,7 @@
     "needAccount": "New to ALKEVA? Create an account",
     "errorInvalidCredentials": "Incorrect email or password.",
     "errorEmailTaken": "An account with this email already exists.",
-    "errorValidation": "Please check the form: password needs at least 8 characters and a valid email.",
+    "errorValidation": "Please check the form: the password needs at least 10 characters and the email must be valid.",
     "errorGeneric": "Something went wrong. Please try again.",
     "forgotPassword": "Forgot password?",
     "forgotTitle": "Reset your password",
@@ -54,7 +56,15 @@
     "passkeyButton": "Sign in with a passkey",
     "passkeyFailed": "Passkey sign-in did not complete.",
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "errorLocked": "Too many attempts. For your safety, sign-in is paused for 15 minutes.",
+    "errorMethodDisabled": "This sign-in method is not available. Please use Fayda.",
+    "faydaUnavailable": "Sign-in with Fayda is not available right now. Please try again shortly.",
+    "sessionExpired": "Your session ended. Please sign in again.",
+    "continueWithFayda": "Continue with Fayda",
+    "faydaRegisterHint": "Use your Fayda national ID — your identity is verified in the same step.",
+    "faydaLoginHint": "Sign in with your Fayda national ID (FAN/FIN) and a one-time code.",
+    "staffSignIn": "Staff sign-in"
   },
   "public": {
     "signIn": "Sign in",
@@ -289,12 +299,15 @@
       "sellback_ceiling": "Today's sell-back ceiling has been reached. Try again tomorrow.",
       "tier_txn_cap": "This amount exceeds your tier's per-transaction limit.",
       "tier_daily_cap": "You have reached your tier's daily limit.",
-      "kyc_required": "Verify your identity first — it takes one document.",
+      "kyc_required": "Verify your identity with Fayda first.",
       "amount_too_small": "The amount is too small.",
       "validation_failed": "Please check the amount and try again.",
       "conflict": "This request conflicts with an earlier one. Request a new quote.",
       "rate_limited": "Too many requests — please wait a moment and try again.",
-      "generic": "Something went wrong. Please try again."
+      "generic": "Something went wrong. Please try again.",
+      "email_unverified": "Confirm your email address first.",
+      "staff_account": "Staff accounts cannot trade. Use a customer account.",
+      "price_unverified": "The latest price could not be confirmed by a second source. Trading resumes as soon as it is."
     },
     "orderTitle": "Order",
     "orderHint": "at a held quote",
@@ -354,7 +367,8 @@
         "reviewing": "In review",
         "approved": "Approved",
         "scheduled": "Scheduled",
-        "rejected": "Declined"
+        "rejected": "Declined",
+        "delivered": "Delivered"
       },
       "errors": {
         "delivery_not_eligible": "Your tier is not eligible for physical delivery yet.",
@@ -563,7 +577,8 @@
       "removeTitle": "Remove this passkey?",
       "removeBody": "You will no longer be able to sign in with it on that device. Your password keeps working.",
       "failed": "That did not complete. Please try again.",
-      "foot": "A passkey stays on your device. ALKEVA keeps only its public half, so there is nothing here to steal."
+      "foot": "A passkey stays on your device. ALKEVA keeps only its public half, so there is nothing here to steal.",
+      "reauth": "For your safety, adding a passkey needs a fresh sign-in. Sign out, sign in again, then add it."
     },
     "language": "Language",
     "tierLabel": "Tier",
@@ -590,7 +605,17 @@
     "roleLabel": "Staff role",
     "languageHint": "Screens, emails and the assistant follow it",
     "passwordHint": "We email you a reset link",
-    "moneyHint": "Birr in and out through Chapa"
+    "moneyHint": "Birr in and out through Chapa",
+    "notificationsLabel": "Notifications",
+    "notificationsHint": "Email and browser alerts",
+    "notificationsAction": "Manage",
+    "sessions": {
+      "title": "Signed-in devices",
+      "thisDevice": "This device",
+      "lastActive": "Last active {when}",
+      "signOut": "Sign out",
+      "signOutOthers": "Sign out the other {count, plural, one {device} other {# devices}}"
+    }
   },
   "deposit": {
     "title": "Deposit",
@@ -620,12 +645,14 @@
     "returnFailedBody": "The payment was cancelled or failed. No money left your account with us.",
     "returnRetry": "Try again",
     "errors": {
-      "kyc_required": "Verify your identity first.",
+      "kyc_required": "Verify your identity with Fayda first.",
       "amount_too_small": "The amount is below the minimum deposit.",
       "account_frozen": "Your account is frozen. Please contact support.",
       "payments_unconfigured": "Deposits are not available right now.",
       "chapa_error": "The payment provider could not be reached. Please try again.",
-      "generic": "Something went wrong. Please try again."
+      "generic": "Something went wrong. Please try again.",
+      "email_unverified": "Confirm your email address first.",
+      "staff_account": "Staff accounts cannot deposit."
     },
     "balanceTitle": "Your birr balance",
     "howTitle": "How a deposit works",
@@ -644,7 +671,7 @@
     "accountNumberLabel": "Account or wallet number",
     "accountNameLabel": "Account holder name",
     "cta": "Withdraw",
-    "holdNote": "Everyday withdrawals are sent immediately. Large amounts are reviewed by our finance team; if a request is declined, it returns to your balance in full.",
+    "holdNote": "Small withdrawals to an account you have been paid to before, in your verified name, go out at once. Others are checked by our finance team; a declined request returns to your balance in full.",
     "historyTitle": "Your withdrawal requests",
     "status": {
       "requested": "Awaiting approval",
@@ -654,23 +681,43 @@
       "rejected": "Returned"
     },
     "kycGateTitle": "Verify your identity to withdraw",
-    "kycGateBody": "Withdrawals require a one-time identity check. Upload one document; a compliance officer reviews it.",
+    "kycGateBody": "Withdrawals need a verified identity. Verify once with your Fayda national ID — it takes a minute.",
     "kycGateCta": "Verify identity",
     "errors": {
-      "kyc_required": "Verify your identity first.",
+      "kyc_required": "Verify your identity with Fayda first.",
       "amount_too_small": "The amount is below the minimum withdrawal.",
       "insufficient_balance": "Not enough birr balance.",
       "account_frozen": "Your account is frozen. Please contact support.",
       "payments_unconfigured": "Withdrawals are not available right now.",
       "banks_unavailable": "The bank list could not be loaded. Please try again.",
-      "generic": "Something went wrong. Please try again."
+      "generic": "Something went wrong. Please try again.",
+      "email_unverified": "Confirm your email address first.",
+      "staff_account": "Staff accounts cannot withdraw.",
+      "payout_daily_limit": "This would go over your daily withdrawal limit. Try a smaller amount or tomorrow.",
+      "payout_daily_count": "You have reached today's number of withdrawals. Try again tomorrow.",
+      "code_invalid": "That code is not right. Check the email and try again.",
+      "code_expired": "That code has expired. Send a new one.",
+      "code_locked": "Too many wrong codes. Start the withdrawal again.",
+      "code_rate_limited": "Too many codes requested. Please wait a few minutes.",
+      "rate_limited": "Too many requests — please wait a moment and try again."
     },
     "historyEmpty": "No withdrawals yet.",
     "howTitle": "How a withdrawal works",
-    "how1": "Your birr moves to a hold the moment you request it — the balance drops immediately.",
-    "how2": "Finance reviews larger requests; smaller ones are sent straight to the bank.",
+    "how1": "You confirm the withdrawal with a code we email you, then the birr moves to a hold — your balance drops immediately.",
+    "how2": "Small amounts to an account you have used before, in your own name, are sent straight away; everything else is checked by finance.",
     "how3": "Once the transfer is confirmed the hold is released to your bank account.",
-    "formTitle": "Send birr to your bank"
+    "formTitle": "Send birr to your bank",
+    "codeTitle": "Check your email",
+    "codeBody": "We sent a 6-digit code to {email}. Enter it to confirm this withdrawal.",
+    "codeLabel": "Confirmation code",
+    "confirmCta": "Confirm withdrawal",
+    "resendCode": "Send a new code",
+    "editDetails": "Change details",
+    "resultSent": "Sent. The money is on its way to your account.",
+    "resultQueued": "Received. Our finance team will check it; the amount is held until then.",
+    "resultProcessing": "Processing with the bank. We will tell you the moment it is confirmed.",
+    "nameHint": "Use the name on the account. Withdrawals in your verified legal name go out fastest.",
+    "verifyEmailLink": "Confirm email"
   },
   "assistant": {
     "emptyTitle": "Ask about your gold",
@@ -725,7 +772,56 @@
       "account_frozen": "Account frozen",
       "account_unfrozen": "Account unfrozen",
       "price_alert": "Price alert fired",
-      "order_receipt": "Trade settled"
+      "order_receipt": "Trade settled",
+      "delivery_requested": "Delivery request received",
+      "delivery_approved": "Delivery approved",
+      "delivery_scheduled": "Delivery scheduled",
+      "delivery_rejected": "Delivery declined",
+      "delivery_delivered": "Delivery completed",
+      "payout_requested": "Withdrawal waiting for approval",
+      "order_in_review": "Order under review",
+      "order_rejected": "Order not completed",
+      "deposit_reversed": "Deposit reversed",
+      "fayda_verified": "Identity verified with Fayda",
+      "new_sign_in": "New sign-in to your account",
+      "passkey_added": "Passkey added",
+      "staff_alert": "Staff alert"
+    },
+    "titleUnread": "Notices — {count} unread",
+    "markAllRead": "Mark all read",
+    "loadFailed": "Notices could not be loaded.",
+    "seeAll": "See all",
+    "loadMore": "Show older",
+    "birr": "ETB",
+    "metalGold": "gold",
+    "metalPlatinum": "platinum",
+    "alertDetail": "{metal} now {price} ETB/g",
+    "pushEnable": "Turn on browser alerts",
+    "pushDisable": "Turn off browser alerts",
+    "pushBlocked": "Browser alerts blocked",
+    "pushBlockedLong": "This browser is blocking notifications from ALKEVA. Allow them in the site settings (the lock icon in the address bar), then come back.",
+    "pushUnsupported": "This browser cannot show notifications.",
+    "pushUnavailable": "Browser alerts are not switched on for ALKEVA yet.",
+    "browserTitle": "Browser alerts",
+    "browserBody": "Get price alerts, deposits and withdrawals as a notification on this device — even when ALKEVA is closed.",
+    "iosHint": "On iPhone: tap Share → Add to Home Screen, open ALKEVA from the Home Screen, then turn alerts on.",
+    "prefsTitle": "How you hear from us",
+    "prefAlerts": "Price alerts",
+    "prefMoney": "Deposits, trades and withdrawals",
+    "prefSecurity": "Security (new sign-ins, passkeys)",
+    "channelEmail": "Email",
+    "channelBrowser": "Browser",
+    "always": "Always",
+    "staffKinds": {
+      "payout_review": "Withdrawal needs approval",
+      "payout_stuck": "Withdrawal stuck at Chapa",
+      "order_review": "Order needs compliance review",
+      "deposit_reversed": "Deposit reversed by provider",
+      "deposit_reversal_unconfirmed": "Unconfirmed reversal notice",
+      "fx_jump_held": "Exchange-rate jump held",
+      "fx_level_accepted": "New exchange rate accepted",
+      "price_suspect_XAU": "Gold price paused",
+      "price_suspect_XPT": "Platinum price paused"
     }
   },
   "alerts": {
@@ -779,7 +875,7 @@
       "days90": "Last 90 days"
     },
     "delivery": {
-      "explain": "Requests to hand over held grams physically. Nothing is reserved by a request — the held-now column shows what the user holds at this moment, and approval re-checks it.",
+      "explain": "Requests to hand over held grams physically. Approval moves the grams into a delivery hold (they can no longer be sold); Mark delivered records the handover; cancelling an approved request returns the grams.",
       "empty": "No delivery requests in this state.",
       "amount": "Requested",
       "heldNow": "Holds now",
@@ -790,8 +886,11 @@
         "reviewing": "In review",
         "approved": "Approved",
         "scheduled": "Scheduled",
-        "rejected": "Declined"
-      }
+        "rejected": "Declined",
+        "delivered": "Delivered"
+      },
+      "markDelivered": "Mark delivered",
+      "cancelRefund": "Cancel & return grams"
     },
     "compliance": {
       "exportTitle": "AML export",
@@ -843,7 +942,12 @@
       "complianceEvents": "Compliance events",
       "rule": "Rule",
       "action": "Action",
-      "resolved": "Resolved"
+      "resolved": "Resolved",
+      "emailVerified": "Email confirmed",
+      "faydaVerified": "Fayda identity verified",
+      "faydaNotVerified": "No Fayda identity",
+      "legalName": "Legal name",
+      "birthdate": "Born"
     },
     "kyc": {
       "empty": "No submissions in this state.",
@@ -909,7 +1013,37 @@
       "sellbackToday": "Sell-backs today",
       "chapaTitle": "Chapa merchant balance",
       "chapaAvailable": "Available ({currency})",
-      "chapaUnavailable": "Chapa balance unavailable (keys not configured or provider unreachable)."
+      "chapaUnavailable": "Chapa balance unavailable (keys not configured or provider unreachable).",
+      "entries": {
+        "title": "Treasury entries",
+        "hint": "real vault stock and capital — append-only",
+        "vault": "Vault stock",
+        "capital": "Capital",
+        "asset": "Metal",
+        "direction": "Direction",
+        "intake": "Intake",
+        "outtake": "Outtake",
+        "capitalIn": "Capital in",
+        "capitalOut": "Capital out",
+        "grams": "Grams",
+        "birr": "Amount (ETB)",
+        "vaultReference": "Bar serial(s) and assay certificate",
+        "capitalReference": "Bank or Chapa reference",
+        "record": "Record entry",
+        "recorded": "Recorded.",
+        "appendOnly": "Entries cannot be edited or deleted. Correct a mistake with an opposite entry.",
+        "adminOnly": "Only the administrator can record treasury entries.",
+        "when": "When",
+        "what": "Entry",
+        "amount": "Amount",
+        "reference": "Reference",
+        "errors": {
+          "amount": "Enter a positive amount.",
+          "vault_below_owed": "Refused: the vault would hold less metal than customers own.",
+          "float_below_halt": "Refused: the cash float would drop below the sell-back halt threshold.",
+          "generic": "That did not complete. Please try again."
+        }
+      }
     },
     "audit": {
       "actor": "Actor",
@@ -1008,7 +1142,22 @@
     "stepReview": "Compliance review",
     "stepReviewBody": "A person checks the document — usually within a working day.",
     "stepVerified": "Verified",
-    "stepVerifiedBody": "Deposits, trading and withdrawals open."
+    "stepVerifiedBody": "Deposits, trading and withdrawals open.",
+    "retry": "Try again",
+    "faydaTitle": "Verify with Fayda",
+    "faydaHint": "national ID · takes a minute",
+    "faydaStep1": "You go to Fayda's own sign-in page and enter your FAN/FIN.",
+    "faydaStep2": "Fayda sends a one-time code to your registered phone; you approve sharing your name and date of birth.",
+    "faydaStep3": "You come straight back here, verified — deposits, trading and withdrawals unlock immediately.",
+    "faydaCta": "Verify with Fayda",
+    "faydaPrivacy": "ALKEVA receives only what you approve on Fayda. Your Fayda password and codes never reach us.",
+    "faydaAlready": "Your identity is already verified.",
+    "faydaUnavailable": "Fayda verification is not available right now. Please try again shortly.",
+    "faydaJustVerified": "Done — your identity is verified with Fayda.",
+    "faydaVerifiedAs": "Verified with Fayda as",
+    "faydaNote": "Identity is verified by Ethiopia's national ID system (Fayda). ALKEVA never sees your Fayda credentials.",
+    "noMethods": "Identity verification is not available right now. Please contact support.",
+    "documentAlternative": "No Fayda ID? Upload a document"
   },
   "credential": {
     "eyebrow": "Registered work",
@@ -1059,5 +1208,85 @@
     "worldGold": "World gold · USD/oz",
     "worldPlatinum": "World platinum · USD/oz",
     "fxSource": "USD → ETB · {source}"
+  },
+  "fayda": {
+    "finishing": "Finishing sign-in with Fayda…",
+    "problemTitle": "Sign-in with Fayda did not complete",
+    "backToSignIn": "Back to sign-in",
+    "completeTitle": "Complete your account",
+    "completeBody": "Fayda has confirmed who you are. Add an email address — receipts, alerts and withdrawal codes are sent there.",
+    "verifiedName": "Verified name",
+    "emailWhy": "We send a 6-digit code to confirm it before any money can move.",
+    "completeButton": "Create my account",
+    "errGeneric": "Something went wrong with Fayda. Please try again.",
+    "err_consent_request_rejected": "You cancelled the sign-in on Fayda. You can try again whenever you are ready.",
+    "err_consent_details_rejected": "Fayda did not share the details ALKEVA needs. We need your name and date of birth to verify your identity.",
+    "err_transaction_timeout": "The Fayda sign-in took too long and expired. Please start again.",
+    "err_invalid_transaction": "The Fayda sign-in session expired. Please start again.",
+    "err_invalid_accepted_claim": "Fayda did not share the required details. Please try again and allow your name and date of birth.",
+    "err_invalid_permitted_scope": "Fayda refused this request. Please contact ALKEVA support.",
+    "code_fayda_state_invalid": "This sign-in link has expired or was opened in a different browser. Please start again from the sign-in page.",
+    "code_fayda_linked_elsewhere": "This Fayda ID is already linked to another ALKEVA account. One person can hold one account.",
+    "code_fayda_already_verified": "Your identity is already verified.",
+    "code_fayda_profile_incomplete": "Fayda did not return your name and date of birth, which we need to verify you.",
+    "code_fayda_pending_expired": "That took too long and the sign-in expired. Please start again.",
+    "code_underage": "You must be 18 or older to open an ALKEVA account.",
+    "code_email_taken_link_instead": "An ALKEVA account already uses this email. Sign in to that account and verify your identity with Fayda from the Identity page."
+  },
+  "verifyEmail": {
+    "title": "Confirm your email",
+    "body": "We sent a 6-digit code to {email}. Enter it to unlock deposits, trading and withdrawals.",
+    "codeLabel": "Verification code",
+    "codeHelp": "The code works for 10 minutes. Check your spam folder if you do not see it.",
+    "confirm": "Confirm email",
+    "resend": "Send a new code",
+    "resent": "A new code is on its way to {email}.",
+    "wrongCode": "That code is not right. {left} attempts left.",
+    "expiredCode": "That code has expired. Send a new one.",
+    "error": "Something went wrong. Please try again."
+  },
+  "gate": {
+    "email": "Confirm your email address to deposit, trade and withdraw.",
+    "emailCta": "Confirm email",
+    "identity": "Verify your identity with Fayda to deposit, trade and withdraw.",
+    "identityCta": "Verify with Fayda"
+  },
+  "game": {
+    "noTier": "No tier yet",
+    "rankOf": "Tier {rank} of {total}",
+    "towards": "Towards {name}",
+    "unlocksNext": "Next tier unlocks",
+    "unlocksDelivery": "Physical delivery of your metal"
+  },
+  "wallet": {
+    "open": "Wallet — {count} in progress",
+    "title": "Wallet",
+    "description": "Your birr, gold and platinum, and money on the way.",
+    "total": "Total value",
+    "show": "Show",
+    "hide": "Hide",
+    "cash": "Birr",
+    "deposit": "Deposit",
+    "withdraw": "Withdraw",
+    "buy": "Buy",
+    "sell": "Sell",
+    "pendingTitle": "In progress",
+    "pendingEmpty": "Nothing in progress.",
+    "fullWallet": "Open wallet",
+    "kinds": {
+      "withdrawal": "Withdrawal",
+      "deposit": "Deposit",
+      "delivery": "Physical delivery"
+    },
+    "statuses": {
+      "requested": "Awaiting approval",
+      "approved": "Approved",
+      "processing": "Processing",
+      "initiated": "Waiting for payment",
+      "webhook_received": "Confirming",
+      "verified": "Confirming",
+      "reviewing": "In review",
+      "scheduled": "Scheduled"
+    }
   }
 }

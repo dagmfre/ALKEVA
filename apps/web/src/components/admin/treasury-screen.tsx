@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import type { AdminTreasuryResponse } from "@alkeva/shared";
 
+import { TreasuryEntries } from "@/components/admin/treasury-entries";
 import { Badge } from "@/components/ui/badge";
 import { Panel, PanelBody, PanelHeader, Stat, StatStrip } from "@/components/ui/panel";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,12 +17,13 @@ import { cn } from "@/lib/utils";
  *   gold reserve            │ platinum reserve      (vault vs issued, coverage)
  *   cash float + sell-backs │ Chapa merchant balance
  *
- * All read-only projections — there is nothing here that can edit a number.
+ * The projections are read-only; the one write is "Treasury entries" below —
+ * real vault intake/outtake and capital, administrator-only and append-only.
  */
 export function AdminTreasuryScreen() {
   const t = useTranslations("admin");
   const tc = useTranslations("common");
-  const { data } = useResource<AdminTreasuryResponse>("/admin/treasury", {
+  const { data, reload } = useResource<AdminTreasuryResponse>("/admin/treasury", {
     intervalMs: 60_000,
   });
 
@@ -171,6 +173,7 @@ export function AdminTreasuryScreen() {
             </StatStrip>
           )}
         </Panel>
+        <TreasuryEntries onChanged={reload} />
       </div>
     </div>
   );

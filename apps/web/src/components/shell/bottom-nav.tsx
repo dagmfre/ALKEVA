@@ -9,7 +9,7 @@ import type { MeResponse } from "@alkeva/shared";
 import { isStaffRole } from "@/components/shell/header-actions";
 import { NavIcon, isActive, useNav, type NavItem } from "@/components/shell/nav-items";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
-import { useResource } from "@/lib/use-resource";
+import { useAppData } from "@/components/shell/app-data";
 import { cn } from "@/lib/utils";
 
 /**
@@ -23,7 +23,7 @@ export function BottomNav() {
   const pathname = usePathname();
   const { main, wallet, account, moreLabel } = useNav();
   const [moreOpen, setMoreOpen] = useState(false);
-  const { data: me } = useResource<MeResponse>("/auth/me");
+  const me: MeResponse | null = useAppData().me.data;
 
   const primary = main.slice(0, 4);
   const rest: NavItem[] = [

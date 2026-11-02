@@ -13,6 +13,8 @@ const PUBLIC_PATHS = [
   "/privacy",
   "/copyright",
   "/auth/google/callback",
+  // Fayda (eSignet) returns here — the redirect URI registered with Fayda.
+  "/callback",
 ];
 
 /** Public routes a signed-in visitor is bounced away from (back to the app). */
@@ -42,9 +44,21 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // lib/api.ts sends a browser whose session is really gone (refresh refused,
+  // session revoked) to /login?expired=1. Its cookies still EXIST, so without
+  // this the bounce below would send it straight back into the app — a loop.
+  // Clear them and show the sign-in form.
+  if (pathname === "/login" && req.nextUrl.searchParams.get("expired") === "1") {
+    const res = NextResponse.next();
+    res.cookies.delete(ACCESS_COOKIE);
+    res.cookies.delete(REFRESH_COOKIE);
+    return res;
+  }
+
   if (signedIn && AUTH_ONLY_WHEN_OUT.includes(pathname)) {
     const url = req.nextUrl.clone();
     url.pathname = "/";
+    url.search = "";
     return NextResponse.redirect(url);
   }
 

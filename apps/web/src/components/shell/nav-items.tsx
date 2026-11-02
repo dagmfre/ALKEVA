@@ -58,7 +58,11 @@ export function isActive(pathname: string, href: string): boolean {
 /** The name of the screen you are on, from the route alone. */
 export function usePageTitle(): string {
   const pathname = usePathname();
+  const t = useTranslations("nav");
+  const tn = useTranslations("notifications");
   const { main, wallet, account } = useNav();
+  if (pathname === "/wallet") return t("wallet");
+  if (pathname.startsWith("/notifications")) return tn("title");
   const hit = [...main, ...wallet, account].find((i) => isActive(pathname, i.href));
   return hit?.label ?? account.label;
 }

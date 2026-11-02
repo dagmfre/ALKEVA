@@ -30,7 +30,7 @@ export function LandingHeroVisual() {
     <div className="relative isolate h-[22rem] lg:h-[34rem]">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 [background:radial-gradient(55%_45%_at_45%_50%,oklch(0.797_0.09_78.1/0.18),transparent_70%)]"
+        className="pointer-events-none absolute inset-0 -z-10 [background:radial-gradient(55%_45%_at_45%_50%,color-mix(in_oklch,var(--gold-glow)_18%,transparent),transparent_70%)]"
       />
       <MetalMass asset="XAU" gramsMg="12000" className="absolute inset-x-[4%] top-[8%] w-[78%]" />
       <MetalMass asset="XPT" gramsMg="5000" className="absolute end-0 bottom-[2%] w-[48%]" />

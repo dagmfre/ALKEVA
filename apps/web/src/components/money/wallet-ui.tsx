@@ -11,15 +11,17 @@ import { cn } from "@/lib/utils";
 
 /** The one field look for the money forms: panel-2 surface, champagne focus ring. */
 export const fieldCls =
-  "h-11 w-full rounded-md border border-border bg-panel-2 px-3.5 text-[0.9375rem] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-subtle hover:border-input focus:border-gold-500 focus:shadow-[0_0_0_3px_oklch(0.717_0.098_73.3/0.18)] disabled:opacity-50";
+  "h-11 w-full rounded-md border border-border bg-panel-2 px-3.5 text-[0.9375rem] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-subtle hover:border-input focus:border-gold-500 focus:shadow-[0_0_0_3px_var(--focus-ring)] disabled:opacity-50";
 
 /**
- * Wallet sub-navigation: Deposit · Withdraw · Identity check as one segmented
- * track of links, so the three money doors read as one place.
+ * Wallet sub-navigation: Overview · Deposit · Withdraw · Identity check as one
+ * segmented track of links, so the money doors read as one place.
  */
 export function WalletNav() {
   const pathname = usePathname();
-  const { wallet } = useNav();
+  const { wallet: doors, walletLabel } = useNav();
+  // Overview first: the wallet page (balances + money in flight), then the doors.
+  const wallet = [{ key: "wallet" as const, href: "/wallet", label: walletLabel }, ...doors];
   return (
     <nav
       aria-label={wallet.map((w) => w.label).join(" · ")}
@@ -71,7 +73,7 @@ export function AmountField({
       <label className="data-label" htmlFor="amount-field">
         {label}
       </label>
-      <div className="flex h-16 items-center gap-3 rounded-[0.75rem] border border-border bg-panel-2 px-4 transition-[border-color,box-shadow] focus-within:border-gold-500 focus-within:shadow-[0_0_0_3px_oklch(0.717_0.098_73.3/0.18)]">
+      <div className="flex h-16 items-center gap-3 rounded-[0.75rem] border border-border bg-panel-2 px-4 transition-[border-color,box-shadow] focus-within:border-gold-500 focus-within:shadow-[0_0_0_3px_var(--focus-ring)]">
         <input
           id="amount-field"
           inputMode="decimal"

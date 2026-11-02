@@ -1,14 +1,23 @@
 import { randomUUID } from "node:crypto";
 import {
   BadGatewayException,
-  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
+  type OnApplicationShutdown,
+  type OnModuleInit,
 } from "@nestjs/common";
-import { and, eq, ne, sql } from "drizzle-orm";
-import { auditLogs, payments, users, type Db } from "@alkeva/db";
+import { and, eq, inArray, isNull, lt, ne, sql } from "drizzle-orm";
+import { Redis } from "ioredis";
+import {
+  auditLogs,
+  complianceEvents,
+  freezes,
+  payments,
+  users,
+  type Db,
+} from "@alkeva/db";
 import {
   parseDepositChannels,
   type CreatePaymentDto,
@@ -17,7 +26,8 @@ import {
   type PaymentResponse,
   type PaymentStatus,
 } from "@alkeva/shared";
-import { DB, ENV } from "../core/core.module.js";
+import { DB, ENV, REDIS } from "../core/core.module.js";
+import { every, runExclusive } from "../core/schedule.js";
 import { ChapaApiError, ChapaService, etbToCents } from "../chapa/chapa.service.js";
 import { LedgerService } from "../ledger/ledger.service.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
@@ -31,15 +41,65 @@ type PaymentRow = typeof payments.$inferSelect;
  * that moves money, and it is idempotent under webhook retries (Chapa resends
  * every 10 minutes up to 10 times without a 200).
  */
+/** Rows a later verified success may still credit (never credited/reversed). */
+const CREDITABLE = ["initiated", "webhook_received", "verified", "failed"] as const;
+
 @Injectable()
-export class PaymentsService {
+export class PaymentsService implements OnModuleInit, OnApplicationShutdown {
+  private sweepTimer: NodeJS.Timeout | null = null;
+
   constructor(
     @Inject(DB) private readonly db: Db,
     @Inject(ENV) private readonly env: Env,
+    @Inject(REDIS) private readonly redis: Redis,
     private readonly chapa: ChapaService,
     private readonly ledger: LedgerService,
     private readonly notifications: NotificationsService,
   ) {}
+
+  onModuleInit(): void {
+    this.sweepTimer = every(10 * 60_000, "payment sweep", () =>
+      runExclusive(this.redis, "lock:payment-sweep", 540, () => this.sweep()),
+    );
+  }
+
+  onApplicationShutdown(): void {
+    if (this.sweepTimer) clearInterval(this.sweepTimer);
+  }
+
+  /**
+   * Lost-webhook recovery (every 10 min, one instance): checkouts that never
+   * heard back are re-verified; a checkout nobody paid for in 3 days is closed.
+   */
+  async sweep(): Promise<void> {
+    if (!this.chapa.configured) return;
+    const open = await this.db
+      .select({ id: payments.id, txRef: payments.chapaTxRef, createdAt: payments.createdAt })
+      .from(payments)
+      .where(
+        and(
+          inArray(payments.status, ["initiated", "webhook_received", "verified"]),
+          lt(payments.createdAt, sql`now() - interval '10 minutes'`),
+        ),
+      )
+      .limit(100);
+    for (const p of open) {
+      try {
+        await this.settleByTxRef(p.txRef);
+      } catch (err) {
+        console.error(`payment sweep: verify failed for ${p.txRef}:`, err);
+        continue;
+      }
+      if (Date.now() - p.createdAt.getTime() > 3 * 86_400_000) {
+        await this.db
+          .update(payments)
+          .set({ status: "failed" })
+          .where(
+            and(eq(payments.id, p.id), inArray(payments.status, ["initiated", "webhook_received"])),
+          );
+      }
+    }
+  }
 
   channels(): DepositChannelsResponse {
     const channels = parseDepositChannels(this.env.DEPOSIT_CHANNELS_JSON);
@@ -56,8 +116,7 @@ export class PaymentsService {
 
   async create(userId: string, dto: CreatePaymentDto): Promise<PaymentResponse> {
     this.chapa.assertConfigured();
-    await this.ledger.assertNotFrozen(userId);
-    await this.assertKycTier(userId);
+    await this.ledger.assertCanMoveMoney(userId);
     if (dto.amountCents < this.env.DEPOSIT_MIN_CENTS) {
       throw new UnprocessableEntityException("amount_too_small");
     }
@@ -149,14 +208,132 @@ export class PaymentsService {
       })
       .where(eq(payments.id, payment.id));
 
-    if (event === "charge.success") {
-      await this.settleByTxRef(txRef);
+    if (event === "charge.refunded" || event === "charge.reversed") {
+      await this.handleReversal(txRef, event);
     } else if (event.startsWith("charge.")) {
-      // failed / cancelled / reversed-before-credit: terminal, no money moved.
+      // Success AND failure alike only prompt a server-side verify — an
+      // unverified "failed" must never close a checkout the customer may still
+      // pay (or has paid), and an unverified success never credits.
+      await this.settleByTxRef(txRef);
+    }
+  }
+
+  /**
+   * The provider took a credited deposit back (charge.refunded/reversed).
+   * Acts only when Chapa's own verify confirms it: the account is frozen for
+   * compliance, whatever of the amount is still in the account is debited back
+   * out, and any shortfall is recorded for a human. A balance is never pushed
+   * below zero.
+   */
+  private async handleReversal(txRef: string, event: string): Promise<void> {
+    const rows = await this.db.select().from(payments).where(eq(payments.chapaTxRef, txRef)).limit(1);
+    const payment = rows[0];
+    if (!payment) return;
+
+    let status = "";
+    try {
+      status = String((await this.chapa.verifyTransaction(txRef))?.status ?? "").toLowerCase();
+    } catch {
+      status = "";
+    }
+    if (status !== "refunded" && status !== "reversed") {
+      await this.db.insert(auditLogs).values({
+        actorLabel: "chapa-webhook",
+        action: "payment_reversal_unconfirmed",
+        targetType: "payment",
+        targetId: payment.id,
+        after: { event, verifiedStatus: status || null },
+      });
+      void this.notifications.emitToStaff(["compliance", "administrator"], "staff_alert", {
+        kind: "deposit_reversal_unconfirmed",
+        message: `Chapa sent ${event} for deposit ${txRef}, but its verify says "${status || "unknown"}". Nothing was changed — check the Chapa dashboard.`,
+        url: "/admin/transactions",
+      });
+      return;
+    }
+
+    if (payment.status !== "credited") {
+      // Never credited: close it, nothing to claw back.
       await this.db
         .update(payments)
         .set({ status: "failed" })
         .where(and(eq(payments.id, payment.id), ne(payments.status, "credited")));
+      return;
+    }
+
+    const userEtbId = await this.ledger.ensureUserAccount(payment.userId, "ETB");
+    const externalId = await this.ledger.systemAccountId("system:external");
+    let debited = 0n;
+    let applied = false;
+    await this.db.transaction(async (tx) => {
+      const claimed = await tx
+        .update(payments)
+        .set({ status: "reversed" })
+        .where(and(eq(payments.id, payment.id), eq(payments.status, "credited")))
+        .returning({ id: payments.id });
+      if (claimed.length === 0) return;
+
+      const balances = await this.ledger.lockAndReadBalances(tx, [userEtbId, externalId]);
+      const available = balances.get(userEtbId) ?? 0n;
+      debited =
+        available >= payment.amountCents ? payment.amountCents : available > 0n ? available : 0n;
+      if (debited > 0n) {
+        await this.ledger.postTransaction(tx, {
+          kind: "deposit",
+          paymentId: payment.id,
+          note: "deposit_reversed",
+          entries: [
+            { accountId: userEtbId, asset: "ETB", amount: -debited },
+            { accountId: externalId, asset: "ETB", amount: debited },
+          ],
+        });
+      }
+      const open = await tx
+        .select({ id: freezes.id })
+        .from(freezes)
+        .where(and(eq(freezes.userId, payment.userId), isNull(freezes.liftedAt)))
+        .limit(1);
+      if (open.length === 0) {
+        await tx.insert(freezes).values({
+          userId: payment.userId,
+          reason: `deposit ${txRef} ${status} by the payment provider`,
+          createdBy: "chapa-reversal",
+        });
+        await tx.update(users).set({ status: "frozen" }).where(eq(users.id, payment.userId));
+      }
+      const evidence = {
+        paymentId: payment.id,
+        txRef,
+        amountCents: payment.amountCents.toString(),
+        debitedCents: debited.toString(),
+        shortfallCents: (payment.amountCents - debited).toString(),
+      };
+      await tx.insert(complianceEvents).values({
+        userId: payment.userId,
+        ruleKey: "deposit_reversed",
+        action: "freeze",
+        evidence,
+      });
+      await tx.insert(auditLogs).values({
+        actorLabel: "chapa-webhook",
+        action: "deposit_reversed",
+        targetType: "payment",
+        targetId: payment.id,
+        after: evidence,
+      });
+      applied = true;
+    });
+
+    if (applied) {
+      const short = payment.amountCents - debited;
+      void this.notifications.emit(payment.userId, "deposit_reversed", {
+        amountCents: payment.amountCents.toString(),
+      });
+      void this.notifications.emitToStaff(["compliance", "administrator"], "staff_alert", {
+        kind: "deposit_reversed",
+        message: `Deposit ${txRef} (${payment.amountCents / 100n} ETB) was ${status} by the provider. The account is frozen; ${debited / 100n} ETB was debited back${short > 0n ? `, ${short / 100n} ETB short` : ""}.`,
+        url: "/admin/users",
+      });
     }
   }
 
@@ -173,7 +350,9 @@ export class PaymentsService {
       .where(eq(payments.chapaTxRef, txRef))
       .limit(1);
     const payment = rows[0];
-    if (!payment || payment.status === "credited" || payment.status === "failed") return;
+    // A `failed` row is still verified: a customer can retry a checkout and
+    // succeed after an earlier failure — they must be credited.
+    if (!payment || payment.status === "credited" || payment.status === "reversed") return;
 
     const verified = await this.chapa.verifyTransaction(txRef);
     if (!verified) return; // Chapa doesn't know it yet (pending) — try again later.
@@ -181,7 +360,7 @@ export class PaymentsService {
       await this.db
         .update(payments)
         .set({ status: "failed" })
-        .where(and(eq(payments.id, payment.id), ne(payments.status, "credited")));
+        .where(and(eq(payments.id, payment.id), inArray(payments.status, [...CREDITABLE])));
       return;
     }
     if (verified.status !== "success") return; // pending
@@ -218,7 +397,7 @@ export class PaymentsService {
       const claimed = await tx
         .update(payments)
         .set({ status: "credited", creditedAt: sql`now()` })
-        .where(and(eq(payments.id, payment.id), ne(payments.status, "credited")))
+        .where(and(eq(payments.id, payment.id), inArray(payments.status, [...CREDITABLE])))
         .returning({ id: payments.id });
       if (claimed.length === 0) return;
 
@@ -249,15 +428,6 @@ export class PaymentsService {
         txRef,
       });
     }
-  }
-
-  private async assertKycTier(userId: string): Promise<void> {
-    const rows = await this.db
-      .select({ kycTier: users.kycTier })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-    if ((rows[0]?.kycTier ?? 0) < 1) throw new ForbiddenException("kyc_required");
   }
 
   private serialize(row: PaymentRow): PaymentResponse {

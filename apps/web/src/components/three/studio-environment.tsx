@@ -20,9 +20,13 @@ export function StudioEnvironment() {
     const pmrem = new THREE.PMREMGenerator(gl);
     const envScene = new RoomEnvironment();
     const target = pmrem.fromScene(envScene, 0.04);
+    // The room is only needed to bake the PMREM; free its geometries and
+    // materials now rather than leaking them on every mount.
+    envScene.dispose();
     scene.environment = target.texture;
     return () => {
       scene.environment = null;
+      // Disposing the render target releases the environment texture it owns.
       target.dispose();
       pmrem.dispose();
     };

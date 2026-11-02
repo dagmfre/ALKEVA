@@ -10,13 +10,14 @@ import { SystemBanner } from "@/components/system/banner";
 import { eatStamp, grams } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
 
-const STATUSES = ["requested", "approved", "scheduled", "rejected"] as const;
+const STATUSES = ["requested", "approved", "scheduled", "delivered", "rejected"] as const;
 type DeliveryTab = (typeof STATUSES)[number];
 
 /**
- * The delivery queue (spec F18). Balance figures beside each row are
- * ADVISORY — a request reserves nothing, so what matters is what the user
- * holds at decision time, and the approve endpoint re-checks it.
+ * The delivery queue (spec F18). Since Phase 10 approval MOVES the grams into
+ * a delivery hold (checked under lock), "Mark delivered" records the handover
+ * (hold → vault, vault outtake), and rejecting an approved request refunds the
+ * hold. The balance beside a row is what the customer holds right now.
  */
 export function AdminDeliveryScreen() {
   const t = useTranslations("admin");
@@ -121,7 +122,22 @@ export function AdminDeliveryScreen() {
                     onDone={done}
                   />
                 )}
-                {(status === "scheduled" || status === "rejected") && (
+                {(status === "approved" || status === "scheduled") && (
+                  <>
+                    <AdminAction path={`/admin/delivery/${r.id}/deliver`} label={t("delivery.markDelivered")} onDone={done} />
+                    <AdminAction
+                      path={`/admin/delivery/${r.id}/reject`}
+                      body={{ note: "cancelled_refunded" }}
+                      label={t("delivery.cancelRefund")}
+                      tone="danger"
+                      onDone={done}
+                    />
+                  </>
+                )}
+                {status === "delivered" && r.deliveredAt && (
+                  <span className="tnum text-[0.75rem] text-subtle">{eatStamp(r.deliveredAt)}</span>
+                )}
+                {status === "rejected" && (
                   <span className={r.scheduledFor ? "tnum text-[0.75rem] text-subtle" : "text-[0.78125rem] text-subtle"}>
                     {r.scheduledFor ? eatStamp(r.scheduledFor) : r.reviewNote ?? ""}
                   </span>

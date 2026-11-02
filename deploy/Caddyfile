@@ -42,12 +42,32 @@
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
+		# Never framed (clickjacking on a money app), no plugins, no <base> games.
+		X-Frame-Options "DENY"
+		Content-Security-Policy "frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
+		# Camera only for this origin (identity documents); nothing else.
+		Permissions-Policy "camera=(self), microphone=(), geolocation=(), payment=()"
+		-Server
 	}
 
+	# Secrets must never land in the access log. Caddy already omits Cookie and
+	# Authorization; these are the ones it does not know about: Chapa's
+	# webhook signature headers (one of them is a static value), and any
+	# token or code that ends up in a query string.
 	log {
 		output file /data/access.log {
 			roll_size 10MiB
 			roll_keep 5
+		}
+		format filter {
+			request>headers>Chapa-Signature delete
+			request>headers>X-Chapa-Signature delete
+			request>uri query {
+				delete token
+				delete code
+				delete state
+			}
+			wrap json
 		}
 	}
 }

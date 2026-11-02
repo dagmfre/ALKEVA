@@ -8,6 +8,7 @@ import type { MeResponse, PortfolioResponse } from "@alkeva/shared";
 
 import { AlertsList } from "@/components/account/alerts-list";
 import { PasskeysCard } from "@/components/account/passkeys-card";
+import { SessionsCard } from "@/components/account/sessions-card";
 import { useTierName } from "@/components/portfolio/tier-gauge";
 import { isStaffRole } from "@/components/shell/header-actions";
 import { LocaleToggle } from "@/components/shell/locale-toggle";
@@ -129,21 +130,28 @@ export function AccountScreen() {
         </div>
       </section>
 
-      <div className="grid flex-1 grid-cols-1 gap-3 lg:grid-cols-3">
+      <div className="grid flex-1 grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-4">
         <Panel aria-label={t("preferencesTitle")}>
           <PanelHeader title={t("preferencesTitle")} />
           <div className="flex flex-1 flex-col border-t border-border">
             <Line label={t("language")} hint={t("languageHint")}>
               <LocaleToggle className="border border-border" />
             </Line>
-            <Line label={t("passwordLabel")} hint={t("passwordHint")}>
+            <Line label={t("notificationsLabel")} hint={t("notificationsHint")}>
               <Button variant="outline" size="sm" asChild>
-                <Link href="/forgot-password">
-                  <KeyRound />
-                  {t("passwordAction")}
-                </Link>
+                <Link href="/notifications">{t("notificationsAction")}</Link>
               </Button>
             </Line>
+            {me.data?.hasPassword && (
+              <Line label={t("passwordLabel")} hint={t("passwordHint")}>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/forgot-password">
+                    <KeyRound />
+                    {t("passwordAction")}
+                  </Link>
+                </Button>
+              </Line>
+            )}
             <Line label={t("moneyTitle")} hint={t("moneyHint")}>
               <span className="flex gap-1.5">
                 <Button variant="outline" size="sm" asChild>
@@ -156,6 +164,7 @@ export function AccountScreen() {
             </Line>
           </div>
         </Panel>
+        <SessionsCard />
         <PasskeysCard />
         <AlertsList />
       </div>

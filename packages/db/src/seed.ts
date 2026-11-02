@@ -6,12 +6,14 @@ import {
   METAL_ASSETS,
   parseTierBands,
   SYSTEM_ACCOUNTS,
+  systemAccountAsset,
   UNITS,
   type MetalAsset,
 } from "@alkeva/shared";
 import { createDb } from "./index.js";
 import {
   accounts,
+  authSessions,
   feeConfig,
   holdingTierConfig,
   ledgerEntries,
@@ -30,6 +32,12 @@ import {
 loadDotenvUpwards();
 const env = loadEnv();
 const { db, client } = createDb(env.DATABASE_URL, { max: 1 });
+/**
+ * Demo data (vault stock, opening float, a synthetic year of prices) exists
+ * so a laptop can trade. With real money it would be fake inventory standing
+ * behind the reserve gate and a made-up price history — never in production.
+ */
+const isProduction = env.NODE_ENV === "production";
 
 function pctToMilli(pct: number): number {
   return Math.round(pct * 1000);
@@ -38,7 +46,7 @@ function pctToMilli(pct: number): number {
 try {
   // 1. System accounts — one per name, asset derived from the name.
   for (const name of SYSTEM_ACCOUNTS) {
-    const asset = name === "system:vault:XAU" ? "XAU" : name === "system:vault:XPT" ? "XPT" : "ETB";
+    const asset = systemAccountAsset(name);
     await db
       .insert(accounts)
       .values({ ownerType: "system", systemName: name, asset })
@@ -152,40 +160,56 @@ try {
   }
   for (const staff of staffSeeds) {
     const existing = await db
-      .select({ id: users.id })
+      .select({ id: users.id, role: users.role })
       .from(users)
-      .where(eq(users.email, staff.email))
+      .where(sql`lower(${users.email}) = ${staff.email.toLowerCase()}`)
       .limit(1);
     const passwordHash = await argon2.hash(staff.password, { type: argon2.argon2id });
-    if (existing.length === 0) {
+    const found = existing[0];
+    if (!found) {
       await db.insert(users).values({
-        email: staff.email,
+        email: staff.email.toLowerCase(),
         passwordHash,
         fullName: staff.fullName,
         locale: "en",
         role: staff.role,
         kycTier: 3,
+        // The environment vouches for this address.
+        emailVerifiedAt: new Date(),
       });
       console.log(`✓ ${staff.role} user created`);
+    } else if (found.role === "user") {
+      // Someone registered this address as a CUSTOMER before the seed ran. The
+      // seed must never promote it: that customer — whoever they are — would
+      // walk into the staff console on the next deploy with their own
+      // passkeys and sessions intact. A human sorts this out.
+      console.error(
+        `✗ ${staff.email} already exists as a customer account — NOT promoted to ${staff.role}. ` +
+          "Pick another SEED_* address or resolve the account by hand.",
+      );
     } else {
       // The env pair is the source of truth for a staff account, so re-seeding
-      // RESETS the password and role rather than skipping. Create-only looks
-      // idempotent but is a trap: changing SEED_*_PASSWORD would be silently
-      // ignored forever, and on Render — where seed runs every deploy — a staff
-      // account created once with a forgotten password could never be recovered
-      // without a manual DB write. These accounts have no self-serve password
-      // reset; the environment is the only way in.
+      // RESETS the password and role rather than skipping (staff have no
+      // self-serve reset; the environment is the only way in). Every session
+      // that account had is ended with the old password.
       await db
         .update(users)
-        .set({ passwordHash, role: staff.role, kycTier: 3 })
-        .where(eq(users.email, staff.email));
-      console.log(`✓ ${staff.role} user exists — password + role reset from env`);
+        .set({ passwordHash, role: staff.role, kycTier: 3, emailVerifiedAt: new Date() })
+        .where(eq(users.id, found.id));
+      await db
+        .update(authSessions)
+        .set({ revokedAt: new Date(), revokedReason: "seed_password_reset" })
+        .where(sql`${authSessions.userId} = ${found.id} and ${authSessions.revokedAt} is null`);
+      console.log(`✓ ${staff.role} user exists — password + role reset from env, sessions revoked`);
     }
   }
 
-  // 5. Demo vault intake — only when the vault has no records at all.
+  // 5. Demo vault intake — only when the vault has no records at all, and
+  // never in production (real stock goes through admin Treasury entries).
   const vaultCount = await db.select({ n: sql<number>`count(*)::int` }).from(vaultHoldings);
-  if ((vaultCount[0]?.n ?? 0) === 0) {
+  if (isProduction) {
+    console.log("✓ production: no demo vault stock (record real intake in Admin › Treasury)");
+  } else if ((vaultCount[0]?.n ?? 0) === 0) {
     await db.insert(vaultHoldings).values([
       {
         asset: "XAU",
@@ -208,7 +232,9 @@ try {
   // 6. Opening float — one treasury-kind ledger transaction funding
   // system:cash from system:external, so sells can pay out and the float
   // projection is real. Idempotent: only while system:cash has no entries.
-  if (env.TREASURY_FLOAT_ETB_CENTS > 0n) {
+  if (isProduction) {
+    console.log("✓ production: no demo opening float (record real capital in Admin › Treasury)");
+  } else if (env.TREASURY_FLOAT_ETB_CENTS > 0n) {
     const [cashAccount] = await db
       .select({ id: accounts.id })
       .from(accounts)
@@ -269,7 +295,9 @@ try {
     .from(priceTicks)
     .where(eq(priceTicks.source, "seed-backfill"));
 
-  if ((backfilled[0]?.n ?? 0) === 0) {
+  if (isProduction) {
+    console.log("✓ production: no synthetic price history (charts show real ticks only)");
+  } else if ((backfilled[0]?.n ?? 0) === 0) {
     // Anchors: plausible mid-2026 spot, used only when the worker has not yet
     // written a real tick to anchor against.
     const FALLBACK_USD_PER_OZ_MICRO: Record<MetalAsset, bigint> = {

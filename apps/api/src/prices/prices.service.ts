@@ -27,7 +27,7 @@ export class PricesService {
     const rows = await this.db
       .select()
       .from(priceTicks)
-      .where(eq(priceTicks.asset, asset))
+      .where(and(eq(priceTicks.asset, asset), eq(priceTicks.suspect, false)))
       .orderBy(desc(priceTicks.at))
       .limit(1);
     const tick = rows[0];
@@ -61,7 +61,7 @@ export class PricesService {
     const [ref] = await this.db
       .select({ cents: priceTicks.etbCentsPerGram, at: priceTicks.at })
       .from(priceTicks)
-      .where(and(eq(priceTicks.asset, asset), lte(priceTicks.at, cutoff)))
+      .where(and(eq(priceTicks.asset, asset), eq(priceTicks.suspect, false), lte(priceTicks.at, cutoff)))
       .orderBy(desc(priceTicks.at))
       .limit(1);
     const reference =
@@ -70,7 +70,7 @@ export class PricesService {
         await this.db
           .select({ cents: priceTicks.etbCentsPerGram, at: priceTicks.at })
           .from(priceTicks)
-          .where(eq(priceTicks.asset, asset))
+          .where(and(eq(priceTicks.asset, asset), eq(priceTicks.suspect, false)))
           .orderBy(asc(priceTicks.at))
           .limit(1)
       )[0];
@@ -105,6 +105,7 @@ export class PricesService {
       .where(
         and(
           eq(priceTicks.asset, asset),
+          eq(priceTicks.suspect, false),
           gte(priceTicks.at, sql`now() - ${cfg.intervalSql}::interval`),
         ),
       )

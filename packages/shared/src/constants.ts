@@ -15,8 +15,18 @@ export const SYSTEM_ACCOUNTS = [
   "system:external",
   /** Withdrawal escrow: user ETB parks here between request and approve/reject. */
   "system:payout_hold",
+  /** Delivery escrow: approved-for-delivery metal parks here until handover. */
+  "system:delivery_hold:XAU",
+  "system:delivery_hold:XPT",
 ] as const;
 export type SystemAccountName = (typeof SYSTEM_ACCOUNTS)[number];
+
+/** The asset a system account holds, read from its name's `:XAU`/`:XPT` suffix. */
+export function systemAccountAsset(name: SystemAccountName): Asset {
+  if (name.endsWith(":XAU")) return "XAU";
+  if (name.endsWith(":XPT")) return "XPT";
+  return "ETB";
+}
 
 export const ROLES = ["user", "administrator", "compliance", "finance"] as const;
 export type Role = (typeof ROLES)[number];
@@ -41,8 +51,8 @@ export type PriceRange = (typeof PRICE_RANGES)[number];
 
 /** Quote lifetime (non-negotiable #3: quotes expire). */
 export const QUOTE_TTL_SECONDS = 30;
-/** Quote engine refuses ticks older than this (stale-price protection). */
-export const MAX_TICK_AGE_SECONDS = 180;
+/** Default for QUOTE_MAX_TICK_AGE_SEC: quotes refuse ticks older than this. */
+export const MAX_TICK_AGE_SECONDS = 90;
 
 /** Ethiopia's fixed UTC offset. No DST — East Africa Time never shifts. */
 const EAT_OFFSET_MS = 3 * 60 * 60 * 1000;

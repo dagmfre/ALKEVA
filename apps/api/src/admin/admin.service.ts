@@ -13,6 +13,7 @@ import {
   complianceEvents,
   feeConfig,
   freezes,
+  identityVerifications,
   kycSubmissions,
   ledgerEntries,
   orders,
@@ -521,9 +522,29 @@ export class AdminService {
       .orderBy(desc(complianceEvents.createdAt))
       .limit(10);
 
+    const idvRows = await this.db
+      .select()
+      .from(identityVerifications)
+      .where(eq(identityVerifications.userId, userId))
+      .limit(1);
+    const idv = idvRows[0];
+
     return {
       ...this.serializeUser(user),
       balances,
+      emailVerified: user.emailVerifiedAt !== null,
+      identity: idv
+        ? {
+            provider: idv.provider,
+            legalName: idv.legalName,
+            birthdate: idv.birthdate,
+            gender: idv.gender,
+            phone: idv.phone,
+            nationality: idv.nationality,
+            hasPicture: idv.picture !== null,
+            verifiedAt: idv.verifiedAt.toISOString(),
+          }
+        : null,
       activeFreeze: freeze
         ? {
             id: freeze.id,
@@ -767,8 +788,13 @@ export class AdminService {
       .leftJoin(users, eq(complianceEvents.userId, users.id))
       .orderBy(desc(complianceEvents.createdAt));
 
-    const esc = (v: string | null | undefined) =>
-      v === null || v === undefined ? "" : `"${v.replace(/"/g, '""')}"`;
+    // A cell starting with = + - @ (or a tab/CR) is a formula to a
+    // spreadsheet; prefixing an apostrophe keeps it text (CSV injection).
+    const esc = (v: string | null | undefined) => {
+      if (v === null || v === undefined) return "";
+      const safe = /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
     const lines = [
       "id,created_at,user_email,rule_key,action,resolved_at,evidence",
       ...rows.map((r) =>

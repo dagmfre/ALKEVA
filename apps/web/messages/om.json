@@ -16,7 +16,9 @@
     "delayed": "Turee",
     "back": "Duubatti",
     "retry": "Irra deebi'ii yaali",
-    "somethingWrong": "Rakkoon uumameera. Maaloo irra deebi'ii yaali."
+    "somethingWrong": "Rakkoon uumameera. Maaloo irra deebi'ii yaali.",
+    "rateLimited": "Gaaffii baay'eetu jira — maaloo xiqqoo eegiitii irra deebi'ii yaali.",
+    "loadFailed": "Kun fe'amuu hin dandeenye. Quunnamtii interneetii kee mirkaneessiitii irra deebi'ii yaali."
   },
   "auth": {
     "registerTitle": "Herrega kee bani",
@@ -30,7 +32,7 @@
     "needAccount": "ALKEVA irratti haaraadhaa? Herrega bani",
     "errorInvalidCredentials": "Imeeliin yookiin jechi darbii sirrii miti.",
     "errorEmailTaken": "Imeelii kanaan herregni banameera.",
-    "errorValidation": "Maaloo unka mirkaneessi: jechi darbii yoo xiqqaate qubee 8 qabaachuu qaba, imeeliinis sirrii ta'uu qaba.",
+    "errorValidation": "Maaloo unka mirkaneessi: jechi darbii yoo xiqqaate qubee 10 qabaachuu qaba, imeeliinis sirrii ta'uu qaba.",
     "errorGeneric": "Rakkoon uumameera. Maaloo irra deebi'ii yaali.",
     "forgotPassword": "Jecha darbii dagatteertaa?",
     "forgotTitle": "Jecha darbii kee haaromsi",
@@ -54,7 +56,15 @@
     "passkeyButton": "Passkey'n seeni",
     "passkeyFailed": "Passkey'n seenuun hin xumuramne.",
     "showPassword": "Jecha darbii agarsiisi",
-    "hidePassword": "Jecha darbii dhoksi"
+    "hidePassword": "Jecha darbii dhoksi",
+    "errorLocked": "Yaaliin baay'ee ta'eera. Nageenya keetiif, seenuun daqiiqaa 15f dhaabateera.",
+    "errorMethodDisabled": "Karaan seensa kanaa hin jiru. Maaloo Fayda fayyadami.",
+    "faydaUnavailable": "Ammatti Fayda'n seenuun hin danda'amu. Maaloo yeroo gabaabaa booda irra deebi'ii yaali.",
+    "sessionExpired": "Seensi kee xumurameera. Maaloo irra deebi'ii seeni.",
+    "continueWithFayda": "Fayda'n itti fufi",
+    "faydaRegisterHint": "Eenyummaa biyyaalessaa Fayda kee fayyadami — eenyummaan kee tarkaanfii kanuma keessatti mirkanaa'a.",
+    "faydaLoginHint": "Eenyummaa biyyaalessaa Fayda kee (FAN/FIN) fi koodii al tokkootiin seeni.",
+    "staffSignIn": "Seensa hojjettootaa"
   },
   "public": {
     "signIn": "Seeni",
@@ -289,12 +299,15 @@
       "sellback_ceiling": "Daangaan deebisanii gurguruu har'aa ga'eera. Boru yaali.",
       "tier_txn_cap": "Hangi kun daangaa daldala tokkoo sadarkaa keetii ni caala.",
       "tier_daily_cap": "Daangaa guyyaa sadarkaa keetii geesseerta.",
-      "kyc_required": "Duraan dursii eenyummaa kee mirkaneessi — waraqaa tokko qofa barbaachisa.",
+      "kyc_required": "Duraan dursii eenyummaa kee Fayda'n mirkaneessi.",
       "amount_too_small": "Hangi baay'ee xiqqaa dha.",
       "validation_failed": "Maaloo hanga mirkaneessitee irra deebi'ii yaali.",
       "conflict": "Gaaffiin kun kan duraa waliin wal faalleessa. Gatii haaraa gaafadhu.",
       "rate_limited": "Gaaffii baay'eetu jira — maaloo xiqqoo eegiitii irra deebi'ii yaali.",
-      "generic": "Rakkoon uumameera. Maaloo irra deebi'ii yaali."
+      "generic": "Rakkoon uumameera. Maaloo irra deebi'ii yaali.",
+      "email_unverified": "Duraan dursii teessoo imeelii kee mirkaneessi.",
+      "staff_account": "Herregni hojjettootaa daldaluu hin danda'u. Herrega maamilaa fayyadami.",
+      "price_unverified": "Gatiin dhumaa madda lammaffaatiin mirkanaa'uu hin dandeenye. Akkuma mirkanaa'een daldalli itti fufa."
     },
     "orderTitle": "Ajaja",
     "orderHint": "gatii qabameen",
@@ -354,7 +367,8 @@
         "reviewing": "Qorannoo irra",
         "approved": "Mirkanaa'e",
         "scheduled": "Sagantaa'e",
-        "rejected": "Diddame"
+        "rejected": "Diddame",
+        "delivered": "Kenname"
       },
       "errors": {
         "delivery_not_eligible": "Sadarkaan kee ammatti fudhannaa qaamaaf hin ga'u.",
@@ -563,7 +577,8 @@
       "removeTitle": "Passkey kun haqamuu?",
       "removeBody": "Meeshaa sana irratti isaan seenuu hin dandeessu. Jechi darbii kee itti fufee hojjeta.",
       "failed": "Hin xumuramne. Maaloo irra deebi'ii yaali.",
-      "foot": "Passkey'n meeshaa kee irra tura. ALKEVA walakkaa isaa ifaa qofa qabatti, kanaafuu asitti wanti hatamu hin jiru."
+      "foot": "Passkey'n meeshaa kee irra tura. ALKEVA walakkaa isaa ifaa qofa qabatti, kanaafuu asitti wanti hatamu hin jiru.",
+      "reauth": "Nageenya keetiif, passkey dabaluun seensa haaraa barbaada. Ba'iitii, irra deebi'ii seeni, achiis dabali."
     },
     "language": "Afaan",
     "tierLabel": "Sadarkaa",
@@ -590,7 +605,17 @@
     "roleLabel": "Gahee hojjetaa",
     "languageHint": "Fuulli, imeeliin fi gargaaraan isa hordofu",
     "passwordHint": "Hidhaa haaromsaa imeeliin siif ergina",
-    "moneyHint": "Birrii karaa Chapa galchuu fi baasuu"
+    "moneyHint": "Birrii karaa Chapa galchuu fi baasuu",
+    "notificationsLabel": "Beeksisa",
+    "notificationsHint": "Akeekkachiisa imeelii fi biraawzarii",
+    "notificationsAction": "Bulchi",
+    "sessions": {
+      "title": "Meeshaalee itti seenamee jiru",
+      "thisDevice": "Meeshaa kana",
+      "lastActive": "Sochii dhumaa {when}",
+      "signOut": "Ba'i",
+      "signOutOthers": "{count, plural, one {Meeshaa biraa irraa ba'i} other {Meeshaalee biroo # irraa ba'i}}"
+    }
   },
   "deposit": {
     "title": "Maallaqa galchuu",
@@ -620,12 +645,14 @@
     "returnFailedBody": "Kaffaltiin haqameera yookiin hin milkoofne. Herrega kee keessaa maallaqni hin baane.",
     "returnRetry": "Irra deebi'ii yaali",
     "errors": {
-      "kyc_required": "Duraan dursii eenyummaa kee mirkaneessi.",
+      "kyc_required": "Duraan dursii eenyummaa kee Fayda'n mirkaneessi.",
       "amount_too_small": "Hangichi daangaa gadi aanaa galchuu gadi.",
       "account_frozen": "Herregni kee cufameera. Maaloo deeggarsa quunnami.",
       "payments_unconfigured": "Ammatti maallaqa galchuun hin danda'amu.",
       "chapa_error": "Raawwataa kaffaltii bira ga'uun hin danda'amne. Maaloo irra deebi'ii yaali.",
-      "generic": "Rakkoon uumameera. Maaloo irra deebi'ii yaali."
+      "generic": "Rakkoon uumameera. Maaloo irra deebi'ii yaali.",
+      "email_unverified": "Duraan dursii teessoo imeelii kee mirkaneessi.",
+      "staff_account": "Herregni hojjettootaa maallaqa galchuu hin danda'u."
     },
     "balanceTitle": "Herrega Birrii kee",
     "howTitle": "Maallaqa galchuun akkamitti hojjeta",
@@ -644,7 +671,7 @@
     "accountNumberLabel": "Lakkoofsa herregaa yookiin waalletii",
     "accountNameLabel": "Maqaa abbaa herregaa",
     "cta": "Baasi",
-    "holdNote": "Baasiin guyyaa guyyaa battalumatti ergama. Hangi guddaan gareen faayinaansii keenyaan ilaalama; yoo gaaffiin diddame guutummaatti herrega keetti deebi'a.",
+    "holdNote": "Baasiin xiqqaan, herrega duraan maallaqni itti siif ergamee fi maqaa kee mirkanaa'een jirutti, battalumatti ergama. Kanneen biroo gareen faayinaansii keenyaa ni ilaala; gaaffiin diddame guutummaatti gara herrega keetti deebi'a.",
     "historyTitle": "Gaaffii baasii keetii",
     "status": {
       "requested": "Mirkaneeffannaa eegaa",
@@ -654,23 +681,43 @@
       "rejected": "Deebi'eera"
     },
     "kycGateTitle": "Maallaqa baasuuf eenyummaa kee mirkaneessi",
-    "kycGateBody": "Maallaqa baasuun mirkaneeffannaa eenyummaa al tokkoo barbaada. Waraqaa tokko ol kaa'i; qondaalli qorannoo ni ilaala.",
+    "kycGateBody": "Maallaqa baasuun eenyummaa mirkanaa'e barbaada. Eenyummaa biyyaalessaa Fayda keetiin al tokko mirkaneessi — daqiiqaa tokko fudhata.",
     "kycGateCta": "Eenyummaa mirkaneessi",
     "errors": {
-      "kyc_required": "Duraan dursii eenyummaa kee mirkaneessi.",
+      "kyc_required": "Duraan dursii eenyummaa kee Fayda'n mirkaneessi.",
       "amount_too_small": "Hangichi daangaa gadi aanaa baasuu gadi.",
       "insufficient_balance": "Herregni Birrii ga'aa miti.",
       "account_frozen": "Herregni kee cufameera. Maaloo deeggarsa quunnami.",
       "payments_unconfigured": "Ammatti maallaqa baasuun hin danda'amu.",
       "banks_unavailable": "Tarreen baankii fe'amuu hin dandeenye. Maaloo irra deebi'ii yaali.",
-      "generic": "Rakkoon uumameera. Maaloo irra deebi'ii yaali."
+      "generic": "Rakkoon uumameera. Maaloo irra deebi'ii yaali.",
+      "email_unverified": "Duraan dursii teessoo imeelii kee mirkaneessi.",
+      "staff_account": "Herregni hojjettootaa maallaqa baasuu hin danda'u.",
+      "payout_daily_limit": "Kun daangaa baasii guyyaa keetii ni caala. Hanga xiqqaa yookiin boru yaali.",
+      "payout_daily_count": "Baay'ina baasii har'aa geesseerta. Boru irra deebi'ii yaali.",
+      "code_invalid": "Koodiin sun sirrii miti. Imeelii ilaaliitii irra deebi'ii yaali.",
+      "code_expired": "Koodiin sun yeroon isaa darbeera. Kan haaraa ergi.",
+      "code_locked": "Koodii dogoggoraa baay'ee galchiteetta. Baasii irra deebi'ii jalqabi.",
+      "code_rate_limited": "Koodiin baay'een gaafatameera. Maaloo daqiiqaa muraasa eegi.",
+      "rate_limited": "Gaaffii baay'eetu jira — maaloo xiqqoo eegiitii irra deebi'ii yaali."
     },
     "historyEmpty": "Ammatti baasiin hin jiru.",
     "howTitle": "Maallaqa baasuun akkamitti hojjeta",
-    "how1": "Yeroo gaafattetti Birriin kee gara qabiinsaatti darba — herregni battalumatti gadi bu'a.",
-    "how2": "Faayinaansiin gaaffii guddaa ilaala; xiqqaan kallattiin baankiitti ergama.",
+    "how1": "Baasii koodii imeeliin siif erginuun mirkaneessita, achiis Birriin gara qabiinsaatti darba — herregni kee battalumatti gadi bu'a.",
+    "how2": "Hangi xiqqaan herrega duraan fayyadamtee fi maqaa keetiin jirutti kallattiin ergama; kan biroo hunda faayinaansiin ilaala.",
     "how3": "Dabarsi erga mirkanaa'ee qabiinsi gara herrega baankii keetii gadi dhiifama.",
-    "formTitle": "Birrii gara baankii keetti ergi"
+    "formTitle": "Birrii gara baankii keetti ergi",
+    "codeTitle": "Imeelii kee ilaali",
+    "codeBody": "Koodii lakkoofsa 6 qabu gara {email} ergineerra. Baasii kana mirkaneessuuf galchi.",
+    "codeLabel": "Koodii mirkaneessaa",
+    "confirmCta": "Baasii mirkaneessi",
+    "resendCode": "Koodii haaraa ergi",
+    "editDetails": "Odeeffannoo jijjiiri",
+    "resultSent": "Ergameera. Maallaqni gara herrega keetti deemaa jira.",
+    "resultQueued": "Fudhatameera. Gareen faayinaansii keenyaa ni ilaala; hamma sanaatti hangichi qabamee tura.",
+    "resultProcessing": "Baankii waliin adeemsa irra jira. Yeroo mirkanaa'etti battalumatti si beeksifna.",
+    "nameHint": "Maqaa herrega irra jiru fayyadami. Baasiin maqaa seeraa kee mirkanaa'een ta'e saffisaan ergama.",
+    "verifyEmailLink": "Imeelii mirkaneessi"
   },
   "assistant": {
     "emptyTitle": "Waa'ee warqee kee gaafadhu",
@@ -725,7 +772,56 @@
       "account_frozen": "Herregni cufameera",
       "account_unfrozen": "Herregni banameera",
       "price_alert": "Akeekkachiisi gatii ka'eera",
-      "order_receipt": "Daldalli xumurameera"
+      "order_receipt": "Daldalli xumurameera",
+      "delivery_requested": "Gaaffiin fudhannaa fudhatameera",
+      "delivery_approved": "Fudhannaan mirkanaa'eera",
+      "delivery_scheduled": "Fudhannaan sagantaa'eera",
+      "delivery_rejected": "Fudhannaan diddameera",
+      "delivery_delivered": "Fudhannaan xumurameera",
+      "payout_requested": "Baasiin mirkaneeffannaa eegaa jira",
+      "order_in_review": "Ajajni qorannoo irra jira",
+      "order_rejected": "Ajajni hin xumuramne",
+      "deposit_reversed": "Maallaqni galfame deebifameera",
+      "fayda_verified": "Eenyummaan Fayda'n mirkanaa'eera",
+      "new_sign_in": "Herrega keetti seensa haaraa",
+      "passkey_added": "Passkey dabalameera",
+      "staff_alert": "Akeekkachiisa hojjettootaa"
+    },
+    "titleUnread": "Beeksisa — {count} hin dubbifamne",
+    "markAllRead": "Hunda akka dubbifameetti mallatteessi",
+    "loadFailed": "Beeksisni fe'amuu hin dandeenye.",
+    "seeAll": "Hunda ilaali",
+    "loadMore": "Kan durii agarsiisi",
+    "birr": "Birrii",
+    "metalGold": "warqee",
+    "metalPlatinum": "pilaatinemii",
+    "alertDetail": "{metal} amma Birrii {price}/g",
+    "pushEnable": "Akeekkachiisa biraawzarii bani",
+    "pushDisable": "Akeekkachiisa biraawzarii cufi",
+    "pushBlocked": "Akeekkachiisni biraawzarii dhorkameera",
+    "pushBlockedLong": "Biraawzariin kun beeksisa ALKEVA irraa dhufu dhorkaa jira. Qindaa'ina marsariitii (mallattoo qulfii sarara teessoo irra jiru) keessatti hayyamiitii achiis deebi'i.",
+    "pushUnsupported": "Biraawzariin kun beeksisa agarsiisuu hin danda'u.",
+    "pushUnavailable": "Akeekkachiisni biraawzarii ammatti ALKEVAf hin banamne.",
+    "browserTitle": "Akeekkachiisa biraawzarii",
+    "browserBody": "Akeekkachiisa gatii, maallaqa galchuu fi baasuu meeshaa kana irratti akka beeksisaatti argadhu — yeroo ALKEVA cufamee jirus.",
+    "iosHint": "iPhone irratti: Share → Add to Home Screen tuqi, ALKEVA Home Screen irraa bani, achiis akeekkachiisa bani.",
+    "prefsTitle": "Akkaataa nu irraa itti dhageessu",
+    "prefAlerts": "Akeekkachiisa gatii",
+    "prefMoney": "Maallaqa galchuu, daldala fi baasuu",
+    "prefSecurity": "Nageenya (seensa haaraa, passkeys)",
+    "channelEmail": "Imeelii",
+    "channelBrowser": "Biraawzarii",
+    "always": "Yeroo hunda",
+    "staffKinds": {
+      "payout_review": "Baasiin mirkaneeffannaa barbaada",
+      "payout_stuck": "Baasiin Chapa irratti dhaabateera",
+      "order_review": "Ajajni qorannoo barbaada",
+      "deposit_reversed": "Maallaqni galfame raawwataa kaffaltiitiin deebifameera",
+      "deposit_reversal_unconfirmed": "Beeksisa deebisuu hin mirkanoofne",
+      "fx_jump_held": "Jijjiiramni tasaa gatii jijjiirraa qabameera",
+      "fx_level_accepted": "Gatiin jijjiirraa haaraan fudhatameera",
+      "price_suspect_XAU": "Gatiin warqee dhaabateera",
+      "price_suspect_XPT": "Gatiin pilaatinemii dhaabateera"
     }
   },
   "alerts": {
@@ -779,7 +875,7 @@
       "days90": "Guyyaa 90 darban"
     },
     "delivery": {
-      "explain": "Gaaffii giraama qabame qaamaan fudhachuuf dhiyaate. Gaaffiin waan qabatu hin jiru — koolamni ‘amma qaba’ waan fayyadamaan yeroo ammaa qabu agarsiisa, mirkaneessuun immoo irra deebi'ee ilaala.",
+      "explain": "Gaaffii giraama qabame qaamaan kennuuf dhiyaate. Mirkaneessuun giraamota gara qabiinsa fudhannaatti darbsa (kana booda gurguramuu hin danda'an); “Akka kenname mallatteessi” kennaa sana galmeessa; gaaffii mirkanaa'e haquun giraamota deebisa.",
       "empty": "Haala kanaan gaaffiin fudhannaa hin jiru.",
       "amount": "Kan gaafatame",
       "heldNow": "Amma qaba",
@@ -790,8 +886,11 @@
         "reviewing": "Qorannoo irra",
         "approved": "Mirkanaa'e",
         "scheduled": "Sagantaa'e",
-        "rejected": "Diddame"
-      }
+        "rejected": "Diddame",
+        "delivered": "Kenname"
+      },
+      "markDelivered": "Akka kenname mallatteessi",
+      "cancelRefund": "Haqiitii giraama deebisi"
     },
     "compliance": {
       "exportTitle": "Baasii AML",
@@ -843,7 +942,12 @@
       "complianceEvents": "Taatee qorannoo",
       "rule": "Seera",
       "action": "Gocha",
-      "resolved": "Furame"
+      "resolved": "Furame",
+      "emailVerified": "Imeeliin mirkanaa'eera",
+      "faydaVerified": "Eenyummaan Fayda mirkanaa'eera",
+      "faydaNotVerified": "Eenyummaa Fayda hin qabu",
+      "legalName": "Maqaa seeraa",
+      "birthdate": "Guyyaa dhalootaa"
     },
     "kyc": {
       "empty": "Haala kanaan dhiheessi hin jiru.",
@@ -909,7 +1013,37 @@
       "sellbackToday": "Deebi'anii gurguruu har'aa",
       "chapaTitle": "Herrega daldalaa Chapa",
       "chapaAvailable": "Kan jiru ({currency})",
-      "chapaUnavailable": "Herregni Chapa hin argamu (furtuun hin kaa'amne yookiin raawwataan hin argamne)."
+      "chapaUnavailable": "Herregni Chapa hin argamu (furtuun hin kaa'amne yookiin raawwataan hin argamne).",
+      "entries": {
+        "title": "Galmee kuusaa maallaqaa",
+        "hint": "kuusaa albuudaa dhugaa fi kaappitaala — galmee hin haqamne",
+        "vault": "Kuusaa albuudaa",
+        "capital": "Kaappitaala",
+        "asset": "Albuuda",
+        "direction": "Kallattii",
+        "intake": "Galtee",
+        "outtake": "Bahii",
+        "capitalIn": "Kaappitaala galu",
+        "capitalOut": "Kaappitaala ba'u",
+        "grams": "Giraama",
+        "birr": "Hanga (Birrii)",
+        "vaultReference": "Lakkoofsa(wwan) bar albuudaa fi ragaa qulqullinaa (assay)",
+        "capitalReference": "Lakkoofsa ragaa baankii yookiin Chapa",
+        "record": "Galmeessi",
+        "recorded": "Galmaa'eera.",
+        "appendOnly": "Galmeen gulaalamuu yookiin haqamuu hin danda'u. Dogoggora galmee faallaatiin sirreessi.",
+        "adminOnly": "Galmee kuusaa maallaqaa galmeessuu kan danda'u bulchaa qofa.",
+        "when": "Yoom",
+        "what": "Galmee",
+        "amount": "Hanga",
+        "reference": "Lakkoofsa ragaa",
+        "errors": {
+          "amount": "Hanga zeeroo ol ta'e galchi.",
+          "vault_below_owed": "Didameera: kuusaan albuuda maamiltoonni qaban gadi qabaata.",
+          "float_below_halt": "Didameera: maallaqni qulqulluun daangaa dhaabuu deebisanii gurguruu gadi bu'a.",
+          "generic": "Hin xumuramne. Maaloo irra deebi'ii yaali."
+        }
+      }
     },
     "audit": {
       "actor": "Raawwataa",
@@ -1008,7 +1142,22 @@
     "stepReview": "Qorannoo",
     "stepReviewBody": "Namni waraqaa sana ilaala — yeroo baay'ee guyyaa hojii tokko keessatti.",
     "stepVerified": "Mirkanaa'e",
-    "stepVerifiedBody": "Maallaqa galchuun, daldaluun fi baasuun ni banama."
+    "stepVerifiedBody": "Maallaqa galchuun, daldaluun fi baasuun ni banama.",
+    "retry": "Irra deebi'ii yaali",
+    "faydaTitle": "Fayda'n mirkaneessi",
+    "faydaHint": "eenyummaa biyyaalessaa · daqiiqaa tokko fudhata",
+    "faydaStep1": "Gara fuula seensaa Fayda mataa isaatti deemtee FAN/FIN kee galchita.",
+    "faydaStep2": "Fayda bilbila kee galmaa'etti koodii al tokkoo erga; ati maqaa fi guyyaa dhaloota keetii qooduuf hayyamta.",
+    "faydaStep3": "Mirkanaa'ee kallattiin asitti deebita — maallaqa galchuun, daldaluu fi baasuun battalumatti banama.",
+    "faydaCta": "Fayda'n mirkaneessi",
+    "faydaPrivacy": "ALKEVA waan ati Fayda irratti hayyamte qofa argatti. Jechi darbii fi koodiin Fayda kee gonkumaa nu hin ga'an.",
+    "faydaAlready": "Eenyummaan kee duraanuu mirkanaa'eera.",
+    "faydaUnavailable": "Ammatti mirkaneeffannaan Fayda hin danda'amu. Maaloo yeroo gabaabaa booda irra deebi'ii yaali.",
+    "faydaJustVerified": "Xumurameera — eenyummaan kee Fayda'n mirkanaa'eera.",
+    "faydaVerifiedAs": "Maqaa Fayda'n mirkanaa'e",
+    "faydaNote": "Eenyummaan sirna eenyummaa biyyaalessaa Itoophiyaa (Fayda)'n mirkanaa'a. ALKEVA odeeffannoo seensa Fayda kee gonkumaa hin argu.",
+    "noMethods": "Ammatti mirkaneeffannaan eenyummaa hin danda'amu. Maaloo deeggarsa quunnami.",
+    "documentAlternative": "Eenyummaa Fayda hin qabduu? Waraqaa ol kaa'i"
   },
   "credential": {
     "eyebrow": "Hojii galmaaye",
@@ -1059,5 +1208,85 @@
     "worldGold": "Warqee addunyaa · USD/oz",
     "worldPlatinum": "Pilaatinemii addunyaa · USD/oz",
     "fxSource": "USD → ETB · {source}"
+  },
+  "fayda": {
+    "finishing": "Fayda'n seenuu xumuraa jira…",
+    "problemTitle": "Fayda'n seenuun hin xumuramne",
+    "backToSignIn": "Gara seensaatti deebi'i",
+    "completeTitle": "Herrega kee xumuri",
+    "completeBody": "Fayda eenyummaa kee mirkaneesseera. Teessoo imeelii dabali — nagaheen, akeekkachiisni fi koodiin baasii achitti ergamu.",
+    "verifiedName": "Maqaa mirkanaa'e",
+    "emailWhy": "Maallaqni kamiyyuu osoo hin sochoʼin dura, imeelii kana mirkaneessuuf koodii lakkoofsa 6 qabu siif ergina.",
+    "completeButton": "Herrega koo uumi",
+    "errGeneric": "Fayda waliin rakkoon uumameera. Maaloo irra deebi'ii yaali.",
+    "err_consent_request_rejected": "Seensa Fayda irratti haqxeerta. Yeroo qophoofte kamiyyuu irra deebi'ii yaaluu dandeessa.",
+    "err_consent_details_rejected": "Fayda odeeffannoo ALKEVA barbaadu hin qoodne. Eenyummaa kee mirkaneessuuf maqaa fi guyyaa dhaloota keetii nu barbaachisa.",
+    "err_transaction_timeout": "Fayda'n seenuun yeroo dheeraa fudhatee yeroon isaa darbeera. Maaloo irra deebi'ii jalqabi.",
+    "err_invalid_transaction": "Yeroon seensa Fayda darbeera. Maaloo irra deebi'ii jalqabi.",
+    "err_invalid_accepted_claim": "Fayda odeeffannoo barbaachisu hin qoodne. Maaloo irra deebi'ii yaaliitii maqaa fi guyyaa dhaloota keetii akka qoodamu hayyami.",
+    "err_invalid_permitted_scope": "Fayda gaaffii kana dideera. Maaloo deeggarsa ALKEVA quunnami.",
+    "code_fayda_state_invalid": "Hidhaan seensa kanaa yeroon isaa darbeera yookiin biraawzarii biraatiin banameera. Maaloo fuula seensaa irraa irra deebi'ii jalqabi.",
+    "code_fayda_linked_elsewhere": "Eenyummaan Fayda kun duraanuu herrega ALKEVA biraa waliin walqabateera. Namni tokko herrega tokko qofa qabaachuu danda'a.",
+    "code_fayda_already_verified": "Eenyummaan kee duraanuu mirkanaa'eera.",
+    "code_fayda_profile_incomplete": "Fayda maqaa fi guyyaa dhaloota keetii, kan si mirkaneessuuf nu barbaachisu, hin ergine.",
+    "code_fayda_pending_expired": "Yeroo dheeraa fudhatee seensi yeroon isaa darbeera. Maaloo irra deebi'ii jalqabi.",
+    "code_underage": "Herrega ALKEVA banuuf umuriin kee waggaa 18 yookiin isaa ol ta'uu qaba.",
+    "code_email_taken_link_instead": "Herregni ALKEVA tokko imeelii kana duraanuu fayyadamaa jira. Herrega sanatti seeniitii fuula Eenyummaa irraa eenyummaa kee Fayda'n mirkaneessi."
+  },
+  "verifyEmail": {
+    "title": "Imeelii kee mirkaneessi",
+    "body": "Koodii lakkoofsa 6 qabu gara {email} ergineerra. Maallaqa galchuu, daldaluu fi baasuu banuuf galchi.",
+    "codeLabel": "Koodii mirkaneeffannaa",
+    "codeHelp": "Koodiin daqiiqaa 10f hojjeta. Yoo hin argine, foldara spam kee ilaali.",
+    "confirm": "Imeelii mirkaneessi",
+    "resend": "Koodii haaraa ergi",
+    "resent": "Koodiin haaraan gara {email} ergamaa jira.",
+    "wrongCode": "Koodiin sun sirrii miti. Yaaliin {left} hafeera.",
+    "expiredCode": "Koodiin sun yeroon isaa darbeera. Kan haaraa ergi.",
+    "error": "Rakkoon uumameera. Maaloo irra deebi'ii yaali."
+  },
+  "gate": {
+    "email": "Maallaqa galchuu, daldaluu fi baasuuf teessoo imeelii kee mirkaneessi.",
+    "emailCta": "Imeelii mirkaneessi",
+    "identity": "Maallaqa galchuu, daldaluu fi baasuuf eenyummaa kee Fayda'n mirkaneessi.",
+    "identityCta": "Fayda'n mirkaneessi"
+  },
+  "game": {
+    "noTier": "Ammatti sadarkaa hin qabdu",
+    "rankOf": "Sadarkaa {rank}ffaa ({total} keessaa)",
+    "towards": "Gara {name}",
+    "unlocksNext": "Sadarkaan itti aanu kan banu",
+    "unlocksDelivery": "Fudhannaa qaamaa albuuda keetii"
+  },
+  "wallet": {
+    "open": "Waalletii — {count} adeemsa irra",
+    "title": "Waalletii",
+    "description": "Birrii, warqee fi pilaatinemii kee, akkasumas maallaqa karaa irra jiru.",
+    "total": "Gatii waliigalaa",
+    "show": "Agarsiisi",
+    "hide": "Dhoksi",
+    "cash": "Birrii",
+    "deposit": "Galchi",
+    "withdraw": "Baasi",
+    "buy": "Biti",
+    "sell": "Gurguri",
+    "pendingTitle": "Adeemsa irra",
+    "pendingEmpty": "Wanti adeemsa irra jiru hin jiru.",
+    "fullWallet": "Waalletii bani",
+    "kinds": {
+      "withdrawal": "Baasii",
+      "deposit": "Maallaqa galchuu",
+      "delivery": "Fudhannaa qaamaa"
+    },
+    "statuses": {
+      "requested": "Mirkaneeffannaa eegaa",
+      "approved": "Mirkanaa'e",
+      "processing": "Adeemsa irra",
+      "initiated": "Kaffaltii eegaa",
+      "webhook_received": "Mirkaneessaa jira",
+      "verified": "Mirkaneessaa jira",
+      "reviewing": "Qorannoo irra",
+      "scheduled": "Sagantaa'e"
+    }
   }
 }

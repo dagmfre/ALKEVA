@@ -27,6 +27,8 @@ const KNOWN = new Set([
   "account_frozen",
   "payments_unconfigured",
   "chapa_error",
+  "email_unverified",
+  "staff_account",
 ]);
 
 /**

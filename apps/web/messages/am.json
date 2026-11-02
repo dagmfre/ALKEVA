@@ -16,7 +16,9 @@
     "delayed": "ዘግይቷል",
     "back": "ተመለስ",
     "retry": "እንደገና ሞክር",
-    "somethingWrong": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።"
+    "somethingWrong": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።",
+    "rateLimited": "በጣም ብዙ ጥያቄዎች — እባክዎ ትንሽ ቆይተው እንደገና ይሞክሩ።",
+    "loadFailed": "ይህ ሊጫን አልቻለም። ግንኙነትዎን ያረጋግጡና እንደገና ይሞክሩ።"
   },
   "auth": {
     "registerTitle": "መለያዎን ይፍጠሩ",
@@ -30,7 +32,7 @@
     "needAccount": "አዲስ ነዎት? መለያ ይፍጠሩ",
     "errorInvalidCredentials": "ኢሜይል ወይም የይለፍ ቃል ትክክል አይደለም።",
     "errorEmailTaken": "በዚህ ኢሜይል መለያ አስቀድሞ አለ።",
-    "errorValidation": "ቅጹን ያረጋግጡ፦ የይለፍ ቃል ቢያንስ 8 ፊደላት እና ትክክለኛ ኢሜይል ያስፈልጋል።",
+    "errorValidation": "እባክዎ ቅጹን ያረጋግጡ፦ የይለፍ ቃሉ ቢያንስ 10 ቁምፊዎች ሊኖሩት ይገባል፤ ኢሜይሉም ትክክለኛ መሆን አለበት።",
     "errorGeneric": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።",
     "forgotPassword": "የይለፍ ቃል ረሱ?",
     "forgotTitle": "የይለፍ ቃልዎን ዳግም ያስጀምሩ",
@@ -54,7 +56,15 @@
     "passkeyButton": "በይለፍ ቁልፍ ይግቡ",
     "passkeyFailed": "በይለፍ ቁልፍ መግባት አልተጠናቀቀም።",
     "showPassword": "የይለፍ ቃል አሳይ",
-    "hidePassword": "የይለፍ ቃል ደብቅ"
+    "hidePassword": "የይለፍ ቃል ደብቅ",
+    "errorLocked": "በጣም ብዙ ሙከራዎች። ለደህንነትዎ መግባት ለ15 ደቂቃ ቆሟል።",
+    "errorMethodDisabled": "ይህ የመግቢያ ዘዴ አይገኝም። እባክዎ በፋይዳ ይግቡ።",
+    "faydaUnavailable": "በፋይዳ መግባት አሁን አይገኝም። እባክዎ ትንሽ ቆይተው ይሞክሩ።",
+    "sessionExpired": "ክፍለ ጊዜዎ አብቅቷል። እባክዎ እንደገና ይግቡ።",
+    "continueWithFayda": "በፋይዳ ይቀጥሉ",
+    "faydaRegisterHint": "የፋይዳ ብሔራዊ መታወቂያዎን ይጠቀሙ — ማንነትዎ በዚያው ደረጃ ይረጋገጣል።",
+    "faydaLoginHint": "በፋይዳ ብሔራዊ መታወቂያዎ (FAN/FIN) እና በአንድ ጊዜ ኮድ ይግቡ።",
+    "staffSignIn": "የሰራተኛ መግቢያ"
   },
   "public": {
     "signIn": "ግባ",
@@ -289,12 +299,15 @@
       "sellback_ceiling": "የዛሬው የመልሶ ሽያጭ ጣሪያ ደርሷል። ነገ ይሞክሩ።",
       "tier_txn_cap": "ይህ መጠን የደረጃዎን የአንድ ግብይት ገደብ ይበልጣል።",
       "tier_daily_cap": "የደረጃዎ የቀን ገደብ ደርሷል።",
-      "kyc_required": "መጀመሪያ ማንነትዎን ያረጋግጡ — አንድ ሰነድ ብቻ ይበቃል።",
+      "kyc_required": "መጀመሪያ ማንነትዎን በፋይዳ ያረጋግጡ።",
       "amount_too_small": "መጠኑ በጣም ትንሽ ነው።",
       "validation_failed": "እባክዎ መጠኑን አረጋግጠው እንደገና ይሞክሩ።",
       "conflict": "ይህ ጥያቄ ከቀደመ ጥያቄ ጋር ይጋጫል። አዲስ ዋጋ ይጠይቁ።",
       "rate_limited": "በጣም ብዙ ጥያቄዎች — እባክዎ ትንሽ ቆይተው እንደገና ይሞክሩ።",
-      "generic": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።"
+      "generic": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።",
+      "email_unverified": "መጀመሪያ የኢሜይል አድራሻዎን ያረጋግጡ።",
+      "staff_account": "የሰራተኛ መለያዎች መገበያየት አይችሉም። የደንበኛ መለያ ይጠቀሙ።",
+      "price_unverified": "የቅርብ ጊዜው ዋጋ በሁለተኛ ምንጭ ሊረጋገጥ አልቻለም። እንደተረጋገጠ ግብይት ይቀጥላል።"
     },
     "orderTitle": "ትዕዛዝ",
     "orderHint": "በተያዘ ዋጋ",
@@ -354,7 +367,8 @@
         "reviewing": "በምርመራ ላይ",
         "approved": "ጸድቋል",
         "scheduled": "ቀን ተይዟል",
-        "rejected": "ውድቅ ተደርጓል"
+        "rejected": "ውድቅ ተደርጓል",
+        "delivered": "ተረክቧል"
       },
       "errors": {
         "delivery_not_eligible": "ደረጃዎ ለአካላዊ አቅርቦት ገና ብቁ አይደለም።",
@@ -563,7 +577,8 @@
       "removeTitle": "ይህን የይለፍ ቁልፍ ማስወገድ ይፈልጋሉ?",
       "removeBody": "በዚያ መሣሪያ ላይ በእሱ መግባት አይችሉም። የይለፍ ቃልዎ መስራቱን ይቀጥላል።",
       "failed": "አልተጠናቀቀም። እባክዎ እንደገና ይሞክሩ።",
-      "foot": "የይለፍ ቁልፍ በመሣሪያዎ ላይ ይቆያል። ALKEVA የሚይዘው ይፋዊ ግማሹን ብቻ ነው፤ ስለዚህ እዚህ የሚሰረቅ ነገር የለም።"
+      "foot": "የይለፍ ቁልፍ በመሣሪያዎ ላይ ይቆያል። ALKEVA የሚይዘው ይፋዊ ግማሹን ብቻ ነው፤ ስለዚህ እዚህ የሚሰረቅ ነገር የለም።",
+      "reauth": "ለደህንነትዎ የይለፍ ቁልፍ ለመጨመር አዲስ መግቢያ ያስፈልጋል። ይውጡ፣ እንደገና ይግቡ፣ ከዚያ ያክሉት።"
     },
     "language": "ቋንቋ",
     "tierLabel": "የመለያ ደረጃ",
@@ -590,7 +605,17 @@
     "roleLabel": "የሠራተኛ ሚና",
     "languageHint": "ማያ ገጾች፣ ኢሜይሎች እና ረዳቱ ይህንን ይከተላሉ",
     "passwordHint": "የመቀየሪያ አገናኝ በኢሜይል እንልክልዎታለን",
-    "moneyHint": "ብር ገቢና ወጪ በChapa በኩል"
+    "moneyHint": "ብር ገቢና ወጪ በChapa በኩል",
+    "notificationsLabel": "ማሳወቂያዎች",
+    "notificationsHint": "የኢሜይል እና የአሳሽ ማንቂያዎች",
+    "notificationsAction": "አስተዳድር",
+    "sessions": {
+      "title": "የገቡ መሣሪያዎች",
+      "thisDevice": "ይህ መሣሪያ",
+      "lastActive": "መጨረሻ የታየው {when}",
+      "signOut": "ውጣ",
+      "signOutOthers": "ከሌሎቹ {count} መሣሪያዎች ውጣ"
+    }
   },
   "deposit": {
     "title": "ገቢ ማድረግ",
@@ -620,12 +645,14 @@
     "returnFailedBody": "ክፍያው ተሰርዟል ወይም አልተሳካም። ከእኛ ካለው ሂሳብዎ ምንም ገንዘብ አልወጣም።",
     "returnRetry": "እንደገና ይሞክሩ",
     "errors": {
-      "kyc_required": "መጀመሪያ ማንነትዎን ያረጋግጡ።",
+      "kyc_required": "መጀመሪያ ማንነትዎን በፋይዳ ያረጋግጡ።",
       "amount_too_small": "መጠኑ ከዝቅተኛው የገቢ መጠን በታች ነው።",
       "account_frozen": "መለያዎ ታግዷል። እባክዎ ድጋፍን ያግኙ።",
       "payments_unconfigured": "ገቢ ማድረግ አሁን አይገኝም።",
       "chapa_error": "የክፍያ አቅራቢው አልተገኘም። እባክዎ እንደገና ይሞክሩ።",
-      "generic": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።"
+      "generic": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።",
+      "email_unverified": "መጀመሪያ የኢሜይል አድራሻዎን ያረጋግጡ።",
+      "staff_account": "የሰራተኛ መለያዎች ገቢ ማድረግ አይችሉም።"
     },
     "balanceTitle": "የብር ቀሪ ሂሳብዎ",
     "howTitle": "ገንዘብ ማስገባት እንዴት እንደሚሰራ",
@@ -644,7 +671,7 @@
     "accountNumberLabel": "የሂሳብ ወይም የኪስ ቁጥር",
     "accountNameLabel": "የሂሳቡ ባለቤት ስም",
     "cta": "ወጪ አድርግ",
-    "holdNote": "የተለመዱ ወጪዎች ወዲያውኑ ይላካሉ። ትላልቅ መጠኖች በፋይናንስ ቡድናችን ይመረመራሉ፤ ጥያቄ ውድቅ ከተደረገ ሙሉ በሙሉ ወደ ሂሳብዎ ይመለሳል።",
+    "holdNote": "ቀደም ብለው ወደተከፈለዎት መለያ፣ በተረጋገጠ ስምዎ የሚደረጉ አነስተኛ ወጪዎች ወዲያውኑ ይላካሉ። ሌሎቹ በፋይናንስ ቡድናችን ይታያሉ፤ ውድቅ የተደረገ ጥያቄ ሙሉ በሙሉ ወደ ቀሪ ሂሳብዎ ይመለሳል።",
     "historyTitle": "የወጪ ጥያቄዎችዎ",
     "status": {
       "requested": "ፈቃድ በመጠባበቅ ላይ",
@@ -654,23 +681,43 @@
       "rejected": "ተመልሷል"
     },
     "kycGateTitle": "ወጪ ለማድረግ ማንነትዎን ያረጋግጡ",
-    "kycGateBody": "ወጪ ማድረግ የአንድ ጊዜ የማንነት ማረጋገጫ ይጠይቃል። አንድ ሰነድ ያስገቡ፤ የቁጥጥር ባለሙያ ይመረምረዋል።",
+    "kycGateBody": "ወጪ ለማድረግ የተረጋገጠ ማንነት ያስፈልጋል። በፋይዳ ብሔራዊ መታወቂያዎ አንድ ጊዜ ያረጋግጡ — አንድ ደቂቃ ይወስዳል።",
     "kycGateCta": "ማንነት ያረጋግጡ",
     "errors": {
-      "kyc_required": "መጀመሪያ ማንነትዎን ያረጋግጡ።",
+      "kyc_required": "መጀመሪያ ማንነትዎን በፋይዳ ያረጋግጡ።",
       "amount_too_small": "መጠኑ ከዝቅተኛው የወጪ መጠን በታች ነው።",
       "insufficient_balance": "በቂ የብር ቀሪ ሂሳብ የለም።",
       "account_frozen": "መለያዎ ታግዷል። እባክዎ ድጋፍን ያግኙ።",
       "payments_unconfigured": "ወጪ ማድረግ አሁን አይገኝም።",
       "banks_unavailable": "የባንኮች ዝርዝር መጫን አልተቻለም። እባክዎ እንደገና ይሞክሩ።",
-      "generic": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።"
+      "generic": "ስህተት ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።",
+      "email_unverified": "መጀመሪያ የኢሜይል አድራሻዎን ያረጋግጡ።",
+      "staff_account": "የሰራተኛ መለያዎች ወጪ ማድረግ አይችሉም።",
+      "payout_daily_limit": "ይህ የዕለቱን የወጪ ገደብዎን ያልፋል። አነስተኛ መጠን ይሞክሩ ወይም ነገ ይሞክሩ።",
+      "payout_daily_count": "ለዛሬ የተፈቀደውን የወጪ ብዛት ደርሰዋል። ነገ እንደገና ይሞክሩ።",
+      "code_invalid": "ኮዱ ትክክል አይደለም። ኢሜይሉን አይተው እንደገና ይሞክሩ።",
+      "code_expired": "ኮዱ ጊዜው አልፏል። አዲስ ይላኩ።",
+      "code_locked": "በጣም ብዙ የተሳሳቱ ኮዶች። ወጪውን እንደገና ይጀምሩ።",
+      "code_rate_limited": "በጣም ብዙ ኮዶች ተጠይቀዋል። እባክዎ ጥቂት ደቂቃዎች ይጠብቁ።",
+      "rate_limited": "በጣም ብዙ ጥያቄዎች — እባክዎ ትንሽ ቆይተው እንደገና ይሞክሩ።"
     },
     "historyEmpty": "እስካሁን ገንዘብ አላወጡም።",
     "howTitle": "ገንዘብ ማውጣት እንዴት እንደሚሰራ",
-    "how1": "ጥያቄ ባቀረቡበት ቅጽበት ብርዎ ወደ መያዣ ይተላለፋል — ቀሪ ሂሳብዎ ወዲያውኑ ይቀንሳል።",
-    "how2": "ትላልቅ ጥያቄዎችን ፋይናንስ ይመረምራል፤ ትንንሾቹ በቀጥታ ወደ ባንክ ይላካሉ።",
+    "how1": "ወጪውን በኢሜይል በምንልክልዎ ኮድ ያረጋግጣሉ፤ ከዚያ ብሩ ወደ ማቆያ ይገባል — ቀሪ ሂሳብዎ ወዲያውኑ ይቀንሳል።",
+    "how2": "ቀደም ብለው ወደተጠቀሙበት መለያ በራስዎ ስም የሚላኩ አነስተኛ መጠኖች ወዲያው ይላካሉ፤ ሌላው ሁሉ በፋይናንስ ይታያል።",
     "how3": "ዝውውሩ ከተረጋገጠ በኋላ መያዣው ወደ ባንክ ሂሳብዎ ይለቀቃል።",
-    "formTitle": "ብር ወደ ባንክዎ ይላኩ"
+    "formTitle": "ብር ወደ ባንክዎ ይላኩ",
+    "codeTitle": "ኢሜይልዎን ይመልከቱ",
+    "codeBody": "ወደ {email} ባለ 6 አሃዝ ኮድ ልከናል። ይህን ወጪ ለማረጋገጥ ያስገቡት።",
+    "codeLabel": "የማረጋገጫ ኮድ",
+    "confirmCta": "ወጪውን አረጋግጥ",
+    "resendCode": "አዲስ ኮድ ላክ",
+    "editDetails": "ዝርዝሩን ቀይር",
+    "resultSent": "ተልኳል። ገንዘቡ ወደ መለያዎ በመሄድ ላይ ነው።",
+    "resultQueued": "ደርሷል። የፋይናንስ ቡድናችን ይመለከተዋል፤ እስከዚያው መጠኑ ተይዟል።",
+    "resultProcessing": "ከባንኩ ጋር በሂደት ላይ ነው። እንደተረጋገጠ እናሳውቅዎታለን።",
+    "nameHint": "በመለያው ላይ ያለውን ስም ይጠቀሙ። በተረጋገጠ ሕጋዊ ስምዎ የሚደረጉ ወጪዎች በፍጥነት ይላካሉ።",
+    "verifyEmailLink": "ኢሜይል አረጋግጥ"
   },
   "assistant": {
     "emptyTitle": "ስለ ወርቅዎ ይጠይቁ",
@@ -725,7 +772,56 @@
       "account_frozen": "መለያ ታግዷል",
       "account_unfrozen": "መለያ ተከፍቷል",
       "price_alert": "የዋጋ ማንቂያ ተነስቷል",
-      "order_receipt": "ግብይት ተፈጽሟል"
+      "order_receipt": "ግብይት ተፈጽሟል",
+      "delivery_requested": "የአቅርቦት ጥያቄ ደርሷል",
+      "delivery_approved": "አቅርቦት ጸድቋል",
+      "delivery_scheduled": "አቅርቦት ቀን ተይዟል",
+      "delivery_rejected": "አቅርቦት ውድቅ ተደርጓል",
+      "delivery_delivered": "አቅርቦት ተጠናቋል",
+      "payout_requested": "ወጪ ማጽደቅን እየጠበቀ ነው",
+      "order_in_review": "ትዕዛዝ በግምገማ ላይ ነው",
+      "order_rejected": "ትዕዛዝ አልተፈጸመም",
+      "deposit_reversed": "ገቢ ተመልሷል",
+      "fayda_verified": "ማንነት በፋይዳ ተረጋግጧል",
+      "new_sign_in": "ወደ መለያዎ አዲስ መግቢያ",
+      "passkey_added": "የይለፍ ቁልፍ ተጨምሯል",
+      "staff_alert": "የሰራተኛ ማስጠንቀቂያ"
+    },
+    "titleUnread": "ማሳወቂያዎች — {count} ያልተነበቡ",
+    "markAllRead": "ሁሉንም እንደተነበበ ምልክት አድርግ",
+    "loadFailed": "ማሳወቂያዎች ሊጫኑ አልቻሉም።",
+    "seeAll": "ሁሉንም ይመልከቱ",
+    "loadMore": "የቆዩትን አሳይ",
+    "birr": "ብር",
+    "metalGold": "ወርቅ",
+    "metalPlatinum": "ፕላቲነም",
+    "alertDetail": "{metal} አሁን {price} ብር/ግ",
+    "pushEnable": "የአሳሽ ማንቂያዎችን አብራ",
+    "pushDisable": "የአሳሽ ማንቂያዎችን አጥፋ",
+    "pushBlocked": "የአሳሽ ማንቂያዎች ታግደዋል",
+    "pushBlockedLong": "ይህ አሳሽ ከALKEVA የሚመጡ ማሳወቂያዎችን እያገደ ነው። በጣቢያ ቅንብሮች (በአድራሻ አሞሌው ላይ ያለው የቁልፍ ምልክት) ይፍቀዱ፤ ከዚያ ይመለሱ።",
+    "pushUnsupported": "ይህ አሳሽ ማሳወቂያዎችን ማሳየት አይችልም።",
+    "pushUnavailable": "የአሳሽ ማንቂያዎች ለALKEVA ገና አልተከፈቱም።",
+    "browserTitle": "የአሳሽ ማንቂያዎች",
+    "browserBody": "የዋጋ ማንቂያዎችን፣ ገቢዎችን እና ወጪዎችን በዚህ መሣሪያ ላይ እንደ ማሳወቂያ ያግኙ — ALKEVA ዝግ ቢሆንም እንኳ።",
+    "iosHint": "በአይፎን፦ Share → Add to Home Screen ይጫኑ፣ ALKEVAን ከመነሻ ማያ ይክፈቱ፣ ከዚያ ማንቂያዎችን ያብሩ።",
+    "prefsTitle": "ከእኛ እንዴት እንደሚሰሙ",
+    "prefAlerts": "የዋጋ ማንቂያዎች",
+    "prefMoney": "ገቢዎች፣ ግብይቶች እና ወጪዎች",
+    "prefSecurity": "ደህንነት (አዲስ መግቢያዎች፣ የይለፍ ቁልፎች)",
+    "channelEmail": "ኢሜይል",
+    "channelBrowser": "አሳሽ",
+    "always": "ሁልጊዜ",
+    "staffKinds": {
+      "payout_review": "ወጪ ማጽደቅ ያስፈልገዋል",
+      "payout_stuck": "ወጪ በቻፓ ላይ ተቋርጧል",
+      "order_review": "ትዕዛዝ የተጣጣሚነት ግምገማ ያስፈልገዋል",
+      "deposit_reversed": "ገቢ በአቅራቢው ተመልሷል",
+      "deposit_reversal_unconfirmed": "ያልተረጋገጠ የመመለስ ማሳወቂያ",
+      "fx_jump_held": "የምንዛሬ ተመን ዝላይ ተይዟል",
+      "fx_level_accepted": "አዲስ የምንዛሬ ተመን ተቀባይነት አግኝቷል",
+      "price_suspect_XAU": "የወርቅ ዋጋ ቆሟል",
+      "price_suspect_XPT": "የፕላቲነም ዋጋ ቆሟል"
     }
   },
   "alerts": {
@@ -779,7 +875,7 @@
       "days90": "ያለፉት 90 ቀናት"
     },
     "delivery": {
-      "explain": "የተያዙ ግራሞችን በአካል ለመረከብ የቀረቡ ጥያቄዎች። ጥያቄ ምንም አይይዝም — «አሁን የያዘው» አምድ ተጠቃሚው በዚህ ቅጽበት የያዘውን ያሳያል፣ እና ማጽደቅ እንደገና ያረጋግጠዋል።",
+      "explain": "የተያዙ ግራሞችን በአካል ለማስረከብ የቀረቡ ጥያቄዎች። ማጽደቅ ግራሞቹን ወደ አቅርቦት ማቆያ ያንቀሳቅሳል (ከዚያ መሸጥ አይቻልም)፤ «ተረክቧል» ርክክቡን ይመዘግባል፤ የጸደቀ ጥያቄን መሰረዝ ግራሞቹን ይመልሳል።",
       "empty": "በዚህ ሁኔታ ውስጥ የአቅርቦት ጥያቄ የለም።",
       "amount": "የተጠየቀ",
       "heldNow": "አሁን የያዘው",
@@ -790,8 +886,11 @@
         "reviewing": "በምርመራ ላይ",
         "approved": "ጸድቋል",
         "scheduled": "ቀን ተይዟል",
-        "rejected": "ውድቅ ተደርጓል"
-      }
+        "rejected": "ውድቅ ተደርጓል",
+        "delivered": "ተረክቧል"
+      },
+      "markDelivered": "ተረክቧል",
+      "cancelRefund": "ሰርዝ እና ግራሞቹን መልስ"
     },
     "compliance": {
       "exportTitle": "የAML ወጪ መዝገብ",
@@ -843,7 +942,12 @@
       "complianceEvents": "የቁጥጥር ክስተቶች",
       "rule": "ሕግ",
       "action": "እርምጃ",
-      "resolved": "የተፈታ"
+      "resolved": "የተፈታ",
+      "emailVerified": "ኢሜይል ተረጋግጧል",
+      "faydaVerified": "የፋይዳ ማንነት ተረጋግጧል",
+      "faydaNotVerified": "የፋይዳ ማንነት የለም",
+      "legalName": "ሕጋዊ ስም",
+      "birthdate": "የተወለዱት"
     },
     "kyc": {
       "empty": "በዚህ ሁኔታ ውስጥ ማስረከቢያ የለም።",
@@ -909,7 +1013,37 @@
       "sellbackToday": "የዛሬ መልሶ ሽያጮች",
       "chapaTitle": "የቻፓ ነጋዴ ቀሪ ሂሳብ",
       "chapaAvailable": "የሚገኝ ({currency})",
-      "chapaUnavailable": "የቻፓ ቀሪ ሂሳብ አይገኝም (ቁልፎች አልተዋቀሩም ወይም አቅራቢው አይደረስም)።"
+      "chapaUnavailable": "የቻፓ ቀሪ ሂሳብ አይገኝም (ቁልፎች አልተዋቀሩም ወይም አቅራቢው አይደረስም)።",
+      "entries": {
+        "title": "የግምጃ ቤት ምዝገባዎች",
+        "hint": "እውነተኛ የካዝና ክምችት እና ካፒታል — የሚጨመር ብቻ",
+        "vault": "የካዝና ክምችት",
+        "capital": "ካፒታል",
+        "asset": "ብረት",
+        "direction": "አቅጣጫ",
+        "intake": "ገቢ",
+        "outtake": "ወጪ",
+        "capitalIn": "የገባ ካፒታል",
+        "capitalOut": "የወጣ ካፒታል",
+        "grams": "ግራም",
+        "birr": "መጠን (ብር)",
+        "vaultReference": "የአሞሌ መለያ ቁጥር(ሮች) እና የጥራት ምስክር ወረቀት",
+        "capitalReference": "የባንክ ወይም የቻፓ ማጣቀሻ",
+        "record": "ምዝገባ አስገባ",
+        "recorded": "ተመዝግቧል።",
+        "appendOnly": "ምዝገባዎች ሊስተካከሉ ወይም ሊሰረዙ አይችሉም። ስህተትን በተቃራኒ ምዝገባ ያርሙ።",
+        "adminOnly": "የግምጃ ቤት ምዝገባዎችን ማስገባት የሚችለው አስተዳዳሪው ብቻ ነው።",
+        "when": "መቼ",
+        "what": "ምዝገባ",
+        "amount": "መጠን",
+        "reference": "ማጣቀሻ",
+        "errors": {
+          "amount": "አዎንታዊ መጠን ያስገቡ።",
+          "vault_below_owed": "ተቀባይነት አላገኘም፦ ካዝናው ደንበኞች ከያዙት ያነሰ ብረት ይኖረዋል።",
+          "float_below_halt": "ተቀባይነት አላገኘም፦ የጥሬ ገንዘብ ክምችቱ ከመልሶ መግዛት ማቆሚያ ገደብ በታች ይወርዳል።",
+          "generic": "አልተጠናቀቀም። እባክዎ እንደገና ይሞክሩ።"
+        }
+      }
     },
     "audit": {
       "actor": "ፈጻሚ",
@@ -1008,7 +1142,22 @@
     "stepReview": "የቁጥጥር ምርመራ",
     "stepReviewBody": "አንድ ሰው ሰነዱን ይፈትሻል — አብዛኛውን ጊዜ በአንድ የሥራ ቀን ውስጥ።",
     "stepVerified": "ተረጋግጧል",
-    "stepVerifiedBody": "ገቢ፣ ግብይት እና ወጪ ይከፈታሉ።"
+    "stepVerifiedBody": "ገቢ፣ ግብይት እና ወጪ ይከፈታሉ።",
+    "retry": "እንደገና ይሞክሩ",
+    "faydaTitle": "በፋይዳ ያረጋግጡ",
+    "faydaHint": "ብሔራዊ መታወቂያ · አንድ ደቂቃ ይወስዳል",
+    "faydaStep1": "ወደ ፋይዳ የራሱ የመግቢያ ገጽ ሄደው FAN/FIN ቁጥርዎን ያስገባሉ።",
+    "faydaStep2": "ፋይዳ ወደ ተመዘገበው ስልክዎ የአንድ ጊዜ ኮድ ይልካል፤ ስምዎን እና የትውልድ ቀንዎን ለማጋራት ይፈቅዳሉ።",
+    "faydaStep3": "ተረጋግጠው በቀጥታ ወደዚህ ይመለሳሉ — ገቢ፣ ግብይት እና ወጪ ወዲያውኑ ይከፈታሉ።",
+    "faydaCta": "በፋይዳ አረጋግጥ",
+    "faydaPrivacy": "ALKEVA የሚቀበለው በፋይዳ ላይ የፈቀዱትን ብቻ ነው። የፋይዳ የይለፍ ቃልዎ እና ኮዶችዎ በጭራሽ ወደ እኛ አይደርሱም።",
+    "faydaAlready": "ማንነትዎ ቀድሞውኑ ተረጋግጧል።",
+    "faydaUnavailable": "የፋይዳ ማረጋገጫ አሁን አይገኝም። እባክዎ ትንሽ ቆይተው ይሞክሩ።",
+    "faydaJustVerified": "ተጠናቋል — ማንነትዎ በፋይዳ ተረጋግጧል።",
+    "faydaVerifiedAs": "በፋይዳ የተረጋገጠው ስም",
+    "faydaNote": "ማንነት የሚረጋገጠው በኢትዮጵያ ብሔራዊ መታወቂያ ሥርዓት (ፋይዳ) ነው። ALKEVA የፋይዳ መግቢያ መረጃዎን በጭራሽ አያይም።",
+    "noMethods": "የማንነት ማረጋገጫ አሁን አይገኝም። እባክዎ ድጋፍን ያግኙ።",
+    "documentAlternative": "የፋይዳ መታወቂያ የለዎትም? ሰነድ ይስቀሉ"
   },
   "credential": {
     "eyebrow": "የተመዘገበ ሥራ",
@@ -1059,5 +1208,85 @@
     "worldGold": "የዓለም ወርቅ · USD/oz",
     "worldPlatinum": "የዓለም ፕላቲነም · USD/oz",
     "fxSource": "USD → ETB · {source}"
+  },
+  "fayda": {
+    "finishing": "በፋይዳ መግባትን በማጠናቀቅ ላይ…",
+    "problemTitle": "በፋይዳ መግባት አልተጠናቀቀም",
+    "backToSignIn": "ወደ መግቢያ ይመለሱ",
+    "completeTitle": "መለያዎን ያጠናቅቁ",
+    "completeBody": "ፋይዳ ማንነትዎን አረጋግጧል። የኢሜይል አድራሻ ያክሉ — ደረሰኞች፣ ማንቂያዎች እና የወጪ ኮዶች የሚላኩት ወደዚያ ነው።",
+    "verifiedName": "የተረጋገጠ ስም",
+    "emailWhy": "ማንኛውም ገንዘብ ከመንቀሳቀሱ በፊት ለማረጋገጥ ባለ 6 አሃዝ ኮድ እንልካለን።",
+    "completeButton": "መለያዬን ፍጠር",
+    "errGeneric": "በፋይዳ ላይ ችግር ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።",
+    "err_consent_request_rejected": "በፋይዳ ላይ መግባቱን ሰርዘዋል። ዝግጁ ሲሆኑ እንደገና መሞከር ይችላሉ።",
+    "err_consent_details_rejected": "ፋይዳ ALKEVA የሚያስፈልገውን መረጃ አላጋራም። ማንነትዎን ለማረጋገጥ ስምዎ እና የትውልድ ቀንዎ ያስፈልጉናል።",
+    "err_transaction_timeout": "በፋይዳ መግባቱ ብዙ ጊዜ ወስዶ ጊዜው አልፏል። እባክዎ እንደገና ይጀምሩ።",
+    "err_invalid_transaction": "የፋይዳ መግቢያ ክፍለ ጊዜ አብቅቷል። እባክዎ እንደገና ይጀምሩ።",
+    "err_invalid_accepted_claim": "ፋይዳ የሚያስፈልገውን መረጃ አላጋራም። እባክዎ እንደገና ሞክረው ስምዎን እና የትውልድ ቀንዎን ይፍቀዱ።",
+    "err_invalid_permitted_scope": "ፋይዳ ይህን ጥያቄ አልተቀበለም። እባክዎ የALKEVA ድጋፍን ያግኙ።",
+    "code_fayda_state_invalid": "ይህ የመግቢያ ማገናኛ ጊዜው አልፏል ወይም በሌላ አሳሽ ተከፍቷል። እባክዎ ከመግቢያ ገጹ እንደገና ይጀምሩ።",
+    "code_fayda_linked_elsewhere": "ይህ የፋይዳ መታወቂያ ቀድሞውኑ ከሌላ የALKEVA መለያ ጋር ተገናኝቷል። አንድ ሰው አንድ መለያ ብቻ ሊኖረው ይችላል።",
+    "code_fayda_already_verified": "ማንነትዎ ቀድሞውኑ ተረጋግጧል።",
+    "code_fayda_profile_incomplete": "ፋይዳ እርስዎን ለማረጋገጥ የሚያስፈልገንን ስምዎን እና የትውልድ ቀንዎን አልመለሰም።",
+    "code_fayda_pending_expired": "ብዙ ጊዜ ስለወሰደ መግቢያው ጊዜው አልፏል። እባክዎ እንደገና ይጀምሩ።",
+    "code_underage": "የALKEVA መለያ ለመክፈት ዕድሜዎ 18 ወይም ከዚያ በላይ መሆን አለበት።",
+    "code_email_taken_link_instead": "ይህን ኢሜይል የሚጠቀም የALKEVA መለያ አለ። ወደዚያ መለያ ይግቡና ከማንነት ገጹ በፋይዳ ያረጋግጡ።"
+  },
+  "verifyEmail": {
+    "title": "ኢሜይልዎን ያረጋግጡ",
+    "body": "ወደ {email} ባለ 6 አሃዝ ኮድ ልከናል። ገቢ ማድረግን፣ መገበያየትን እና ወጪ ማድረግን ለመክፈት ያስገቡት።",
+    "codeLabel": "የማረጋገጫ ኮድ",
+    "codeHelp": "ኮዱ ለ10 ደቂቃ ይሰራል። ካላዩት የአይፈለጌ (spam) ማህደሩን ይመልከቱ።",
+    "confirm": "ኢሜይል አረጋግጥ",
+    "resend": "አዲስ ኮድ ላክ",
+    "resent": "አዲስ ኮድ ወደ {email} እየተላከ ነው።",
+    "wrongCode": "ኮዱ ትክክል አይደለም። {left} ሙከራዎች ቀርተዋል።",
+    "expiredCode": "ኮዱ ጊዜው አልፏል። አዲስ ይላኩ።",
+    "error": "የሆነ ችግር ተፈጥሯል። እባክዎ እንደገና ይሞክሩ።"
+  },
+  "gate": {
+    "email": "ገቢ ለማድረግ፣ ለመገበያየት እና ወጪ ለማድረግ የኢሜይል አድራሻዎን ያረጋግጡ።",
+    "emailCta": "ኢሜይል አረጋግጥ",
+    "identity": "ገቢ ለማድረግ፣ ለመገበያየት እና ወጪ ለማድረግ ማንነትዎን በፋይዳ ያረጋግጡ።",
+    "identityCta": "በፋይዳ አረጋግጥ"
+  },
+  "game": {
+    "noTier": "ገና ደረጃ የለም",
+    "rankOf": "ደረጃ {rank} ከ{total}",
+    "towards": "ወደ {name}",
+    "unlocksNext": "ቀጣዩ ደረጃ የሚከፍተው",
+    "unlocksDelivery": "የብረትዎ አካላዊ አቅርቦት"
+  },
+  "wallet": {
+    "open": "ቦርሳ — {count} በሂደት ላይ",
+    "title": "ቦርሳ",
+    "description": "ብርዎ፣ ወርቅዎ እና ፕላቲነምዎ፣ እንዲሁም በመንገድ ላይ ያለ ገንዘብ።",
+    "total": "ጠቅላላ ዋጋ",
+    "show": "አሳይ",
+    "hide": "ደብቅ",
+    "cash": "ብር",
+    "deposit": "ገቢ",
+    "withdraw": "ወጪ",
+    "buy": "ግዛ",
+    "sell": "ሽጥ",
+    "pendingTitle": "በሂደት ላይ",
+    "pendingEmpty": "በሂደት ላይ ያለ ምንም የለም።",
+    "fullWallet": "ቦርሳውን ክፈት",
+    "kinds": {
+      "withdrawal": "ወጪ",
+      "deposit": "ገቢ",
+      "delivery": "አካላዊ አቅርቦት"
+    },
+    "statuses": {
+      "requested": "ማጽደቅን በመጠበቅ ላይ",
+      "approved": "ጸድቋል",
+      "processing": "በሂደት ላይ",
+      "initiated": "ክፍያን በመጠበቅ ላይ",
+      "webhook_received": "በማረጋገጥ ላይ",
+      "verified": "በማረጋገጥ ላይ",
+      "reviewing": "በግምገማ ላይ",
+      "scheduled": "ቀን ተይዟል"
+    }
   }
 }

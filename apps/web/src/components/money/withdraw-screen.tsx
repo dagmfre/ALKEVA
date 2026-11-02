@@ -1,11 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { MailCheck } from "lucide-react";
 import type {
   BalancesResponse,
   BankDto,
   KycMeResponse,
+  PayoutIntentResponse,
   PayoutResponse,
 } from "@alkeva/shared";
 
@@ -32,16 +35,27 @@ const KNOWN = new Set([
   "insufficient_balance",
   "account_frozen",
   "payments_unconfigured",
+  "email_unverified",
+  "staff_account",
+  "payout_daily_limit",
+  "payout_daily_count",
+  "code_invalid",
+  "code_expired",
+  "code_locked",
+  "code_rate_limited",
+  "rate_limited",
 ]);
 
 /**
- * Money out. A request moves the cents into the payout-hold account
- * immediately — the balance genuinely drops — and a finance approver either
- * sends it through Chapa or returns it. The requests list beside the form is
- * the user's window into that queue.
+ * Money out, in two steps (Phase 10): describe the withdrawal, then confirm it
+ * with the 6-digit code emailed to the verified address — a stolen session
+ * alone cannot move money. Confirmed, the cents move into the payout hold at
+ * once (the balance genuinely drops). Small withdrawals to an account already
+ * paid before, in the verified legal name, go out instantly; everything else
+ * waits for a finance approver.
  *
  *   wallet nav
- *   withdraw form (amount · destination · how it works) │ your requests
+ *   withdraw form → code step (amount · destination · how it works) │ your requests
  */
 export function WithdrawScreen() {
   const t = useTranslations("withdraw");
@@ -58,9 +72,18 @@ export function WithdrawScreen() {
   const [accountName, setAccountName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [intent, setIntent] = useState<PayoutIntentResponse | null>(null);
+  const [code, setCode] = useState("");
+  const [result, setResult] = useState<PayoutResponse | null>(null);
   // One idempotency key per form session, replaced after success — a
   // double-click maps to one hold (the same contract as the trade ticket).
   const [idemKey, setIdemKey] = useState(() => crypto.randomUUID());
+
+  // Payouts are checked against the verified legal name: start from it.
+  const legalName = kyc.data?.identity?.legalName ?? "";
+  useEffect(() => {
+    if (legalName) setAccountName((v) => v || legalName);
+  }, [legalName]);
 
   const needsKyc = kyc.data !== null && kyc.data.kycTier < 1;
 
@@ -72,9 +95,15 @@ export function WithdrawScreen() {
     [banks.data],
   );
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  function codeOf(err: unknown): string {
+    return err instanceof ApiError && KNOWN.has(err.code) ? err.code : "generic";
+  }
+
+  /** Step 1: every check runs now; a code goes to the verified email. */
+  async function requestCode(e?: React.FormEvent) {
+    e?.preventDefault();
     setError(null);
+    setResult(null);
     const parsed = Number.parseFloat(amount.replace(/,/g, ""));
     if (!Number.isFinite(parsed) || parsed <= 0 || !bankCode) {
       setError("amount_too_small");
@@ -82,22 +111,48 @@ export function WithdrawScreen() {
     }
     setBusy(true);
     try {
-      await api<PayoutResponse>("/payouts", {
+      const res = await api<PayoutIntentResponse>("/payouts/intent", {
         method: "POST",
         body: JSON.stringify({
           amountCents: String(Math.round(parsed * 100)),
           bankCode: Number(bankCode),
           accountNumber: accountNumber.trim(),
           accountName: accountName.trim(),
-          idempotencyKey: idemKey,
         }),
       });
+      setIntent(res);
+      setCode("");
+    } catch (err) {
+      setError(codeOf(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Step 2: the code turns the request into a held payout. */
+  async function confirm(e: React.FormEvent) {
+    e.preventDefault();
+    if (!intent) return;
+    setError(null);
+    setBusy(true);
+    try {
+      const payout = await api<PayoutResponse>("/payouts", {
+        method: "POST",
+        body: JSON.stringify({ intentId: intent.intentId, code, idempotencyKey: idemKey }),
+      });
+      setResult(payout);
+      setIntent(null);
       setAmount("");
+      setCode("");
       setIdemKey(crypto.randomUUID());
       setRevision((n) => n + 1);
       balances.reload();
     } catch (err) {
-      setError(err instanceof ApiError && KNOWN.has(err.code) ? err.code : "generic");
+      const c = codeOf(err);
+      setError(c);
+      // A refused payout (balance, daily limit) or a dead code ends this
+      // attempt; a wrong code keeps the step open for another try.
+      if (c !== "code_invalid" && c !== "generic") setIntent(null);
     } finally {
       setBusy(false);
     }
@@ -125,11 +180,68 @@ export function WithdrawScreen() {
                 </span>
               }
             />
+            {intent ? (
+              <form
+                onSubmit={(e) => void confirm(e)}
+                className="flex flex-1 flex-col gap-4 px-[1.125rem] pb-[1.125rem]"
+              >
+                <div className="flex items-start gap-3 rounded-lg border border-border bg-panel-2 p-4">
+                  <MailCheck className="mt-0.5 size-5 flex-none text-gold-400" aria-hidden="true" />
+                  <div className="flex flex-col gap-1 text-[0.875rem]">
+                    <span className="font-semibold">{t("codeTitle")}</span>
+                    <span className="text-muted-foreground">{t("codeBody", { email: intent.sentTo })}</span>
+                    <span className="tnum text-[0.8125rem] text-foreground">
+                      {money(String(Math.round(Number.parseFloat(amount.replace(/,/g, "")) * 100)))} {tc("birr")} →{" "}
+                      {accountNumber} · {accountName}
+                    </span>
+                  </div>
+                </div>
+                <label className="flex flex-col gap-2">
+                  <span className="data-label">{t("codeLabel")}</span>
+                  <input
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    required
+                    value={code}
+                    onChange={(ev) => setCode(ev.target.value.replace(/\D/g, "").slice(0, 6))}
+                    className={`${fieldCls} tnum h-14 text-center text-[1.375rem] tracking-[0.45em]`}
+                    disabled={busy}
+                  />
+                </label>
+                {error && (
+                  <SystemBanner tone="critical" className="mb-0">
+                    {KNOWN.has(error) ? t(`errors.${error}` as never) : t("errors.generic")}
+                  </SystemBanner>
+                )}
+                <div className="mt-auto flex flex-col gap-2 sm:flex-row">
+                  <Button type="submit" variant="ink" size="cta" disabled={busy || code.length !== 6} className="sm:flex-1">
+                    {busy ? tc("loading") : t("confirmCta")}
+                  </Button>
+                  <Button type="button" variant="outline" size="cta" disabled={busy} onClick={() => void requestCode()}>
+                    {t("resendCode")}
+                  </Button>
+                  <Button type="button" variant="ghost" size="cta" disabled={busy} onClick={() => { setIntent(null); setError(null); }}>
+                    {t("editDetails")}
+                  </Button>
+                </div>
+              </form>
+            ) : (
             <form
-              onSubmit={(e) => void submit(e)}
+              onSubmit={(e) => void requestCode(e)}
               className="grid flex-1 grid-cols-1 gap-x-8 gap-y-5 px-[1.125rem] pb-[1.125rem] xl:grid-cols-[minmax(0,1fr)_17rem]"
             >
               <div className="flex flex-col gap-4">
+                {result && (
+                  <SystemBanner tone="info" className="mb-0">
+                    {result.status === "settled"
+                      ? t("resultSent")
+                      : result.status === "requested"
+                        ? t("resultQueued")
+                        : t("resultProcessing")}
+                  </SystemBanner>
+                )}
                 <AmountField
                   label={t("amountLabel")}
                   value={amount}
@@ -178,6 +290,9 @@ export function WithdrawScreen() {
                       className={fieldCls}
                       disabled={busy}
                     />
+                    {legalName && accountName.trim().toLowerCase() !== legalName.toLowerCase() && (
+                      <span className="text-[0.75rem] leading-snug text-subtle">{t("nameHint")}</span>
+                    )}
                   </label>
                 </div>
                 {error && (
@@ -185,6 +300,14 @@ export function WithdrawScreen() {
                     {KNOWN.has(error) || error === "amount_too_small"
                       ? t(`errors.${error}` as never)
                       : t("errors.generic")}
+                    {error === "email_unverified" && (
+                      <>
+                        {" "}
+                        <Link href="/verify-email?next=/withdraw" className="font-semibold underline underline-offset-4">
+                          {t("verifyEmailLink")}
+                        </Link>
+                      </>
+                    )}
                   </SystemBanner>
                 )}
                 <div className="mt-auto flex flex-col gap-2">
@@ -198,6 +321,7 @@ export function WithdrawScreen() {
                 <Steps title={t("howTitle")} items={[t("how1"), t("how2"), t("how3")]} />
               </div>
             </form>
+            )}
           </Panel>
         )}
 

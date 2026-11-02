@@ -77,6 +77,17 @@ export class AdminDeliveryController {
     return { ok: true };
   }
 
+  /** Handover done: the held metal leaves the vault for good. */
+  @Post(":id/deliver")
+  @RequireRoles("administrator", "compliance")
+  async deliver(
+    @Auth() auth: AccessPayload,
+    @Param("id", ParseUUIDPipe) id: string,
+  ): Promise<{ ok: true }> {
+    await this.delivery.deliver(id, auth.sub);
+    return { ok: true };
+  }
+
   @Post(":id/reject")
   @RequireRoles("administrator", "compliance")
   async reject(

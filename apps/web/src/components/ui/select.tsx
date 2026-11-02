@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 
 /**
  * Select, design v2. The trigger is a field (same surface and focus ring as
- * Input); the list is a raised menu with a white/6 highlight and a champagne
+ * Input); the list is a raised menu with a white/6 highlight and a gold
  * check. Lists scroll natively, no scroll buttons.
  */
 
@@ -70,7 +70,7 @@ function SelectTrigger({
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       className={cn(
-        "flex h-11 w-full items-center justify-between gap-2 rounded-md border border-border bg-panel-2 px-3.5 text-[0.9375rem] whitespace-nowrap transition-[border-color,box-shadow] duration-150 outline-none hover:border-input focus-visible:border-gold-500 focus-visible:shadow-[0_0_0_3px_oklch(0.717_0.098_73.3/0.18)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 data-[placeholder]:text-subtle data-[state=open]:border-gold-500 [&>span]:line-clamp-1",
+        "flex h-11 w-full items-center justify-between gap-2 rounded-md border border-border bg-panel-2 px-3.5 text-[0.9375rem] whitespace-nowrap transition-[border-color,box-shadow] duration-150 outline-none hover:border-input focus-visible:border-gold-500 focus-visible:shadow-[0_0_0_3px_var(--focus-ring)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 data-[placeholder]:text-subtle data-[state=open]:border-gold-500 [&>span]:line-clamp-1",
         className
       )}
       {...props}

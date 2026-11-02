@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -27,7 +28,7 @@ export interface EntrySpec {
 }
 
 export interface PostTxnSpec {
-  kind: "deposit" | "buy" | "sell" | "withdrawal" | "treasury";
+  kind: "deposit" | "buy" | "sell" | "withdrawal" | "treasury" | "delivery";
   orderId?: string;
   paymentId?: string;
   payoutId?: string;
@@ -163,7 +164,7 @@ export class LedgerService {
   /**
    * Two independent freeze signals, checked together: user.status and an
    * unlifted freeze row. Shared by every money path (orders inside their tx,
-   * faucet/payments/payouts before theirs) — pass the handle that matches
+   * payments/payouts before theirs) — pass the handle that matches
    * the caller's isolation needs.
    */
   async isFrozen(handle: Db | Tx, userId: string): Promise<boolean> {
@@ -185,6 +186,43 @@ export class LedgerService {
     if (await this.isFrozen(this.db, userId)) {
       throw new UnprocessableEntityException("account_frozen");
     }
+  }
+
+  /**
+   * Who may move money at all (Phase 10): a customer account (staff accounts
+   * are separate and never trade, deposit or withdraw — they decide on other
+   * people's money), with a confirmed email and a verified identity. Returns
+   * the machine code of the first failed gate, or null. The freeze check
+   * stays separate because orders record it as its own rejection.
+   */
+  async accountGate(
+    handle: Db | Tx,
+    userId: string,
+  ): Promise<"staff_account" | "email_unverified" | "kyc_required" | null> {
+    const rows = await handle
+      .select({
+        role: users.role,
+        emailVerifiedAt: users.emailVerifiedAt,
+        kycTier: users.kycTier,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    const row = rows[0];
+    if (!row) return "kyc_required";
+    if (row.role !== "user") return "staff_account";
+    if (!row.emailVerifiedAt) return "email_unverified";
+    if (row.kycTier < 1) return "kyc_required";
+    return null;
+  }
+
+  /** accountGate + freeze, as exceptions — for paths outside an order tx. */
+  async assertCanMoveMoney(userId: string, handle: Db | Tx = this.db): Promise<void> {
+    if (await this.isFrozen(handle, userId)) {
+      throw new UnprocessableEntityException("account_frozen");
+    }
+    const code = await this.accountGate(handle, userId);
+    if (code) throw new ForbiddenException(code);
   }
 
   /** Balance projection across the user's accounts; absent accounts read 0. */

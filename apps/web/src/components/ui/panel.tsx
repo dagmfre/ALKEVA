@@ -80,8 +80,10 @@ function PanelBody({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 /**
- * A metal token: a small radial-gradient coin. Gold is champagne, platinum is
- * cool silver; the letters are for screen readers and the colour-blind.
+ * A metal token: a small radial-gradient coin. Gold is drawn from the gold
+ * tokens (pale specular → 500 → a darkened 700 rim) so it re-colours with
+ * them; platinum is cool silver. The letters are for screen readers and the
+ * colour-blind.
  */
 function Coin({
   metal,
@@ -98,7 +100,7 @@ function Coin({
       className={cn(
         "inline-grid flex-none place-items-center rounded-full font-latin font-bold",
         metal === "XAU"
-          ? "bg-[radial-gradient(circle_at_34%_28%,#f8e6c0,#cfa264_52%,#7a5730)] text-[#3a2610]"
+          ? "bg-[radial-gradient(circle_at_34%_28%,color-mix(in_oklch,var(--gold-300),white_40%),var(--gold-500)_52%,color-mix(in_oklch,var(--gold-700),black_35%))] text-primary-foreground"
           : "bg-[radial-gradient(circle_at_34%_28%,#ffffff,#bcc2cb_52%,#666c76)] text-[#2a2e34]",
         size === "sm" && "size-4 [font-size:0]",
         size === "md" && "size-6 text-[0.5625rem]",

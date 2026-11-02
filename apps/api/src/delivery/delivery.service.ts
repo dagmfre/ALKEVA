@@ -7,7 +7,7 @@ import {
   UnprocessableEntityException,
 } from "@nestjs/common";
 import { and, desc, eq, inArray } from "drizzle-orm";
-import { auditLogs, deliveryRequests, users, type Db } from "@alkeva/db";
+import { auditLogs, deliveryRequests, users, vaultHoldings, type Db } from "@alkeva/db";
 import type {
   AdminDeliveryItem,
   CreateDeliveryDto,
@@ -15,21 +15,32 @@ import type {
   DeliveryListResponse,
   DeliveryStatus,
   MetalAsset,
+  SystemAccountName,
 } from "@alkeva/shared";
 import { DB } from "../core/core.module.js";
-import { LedgerService } from "../ledger/ledger.service.js";
+import { LedgerService, type Tx } from "../ledger/ledger.service.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
 import { PortfolioService } from "../portfolio/portfolio.service.js";
 
+type DeliveryRow = typeof deliveryRequests.$inferSelect;
+
 const OPEN_STATUSES: DeliveryStatus[] = ["requested", "reviewing", "approved", "scheduled"];
+/** Statuses in which the metal sits in system:delivery_hold:<asset>. */
+const HELD_STATUSES: DeliveryStatus[] = ["approved", "scheduled"];
 
 /**
- * Physical delivery requests (spec F18) — a WORKFLOW record, never a ledger
- * event. Requesting delivery does not move a milligram: the metal handover
- * ledger movement (user metal → a delivery-out account) is the physical
- * fulfilment step and is deliberately out of scope here. Balances are checked
- * advisorily at request AND at approve, but nothing is reserved — the admin
- * UI copy says so.
+ * Physical delivery (spec F18). Since Phase 10 the metal really moves:
+ *
+ *   approve  → user metal → system:delivery_hold:<asset>   (cannot be sold or
+ *                                                          delivered twice)
+ *   deliver  → hold → system:vault:<asset> + a vault outtake row — the bar
+ *              left the building, so physical stock and grams owed to
+ *              customers drop by the same amount and the reserve ratio holds
+ *   reject   → from approved/scheduled, hold → user (the refund)
+ *
+ * Before this, approval only recorded intent: a customer could take the bar
+ * and still sell the grams. Every decision is one transaction with a
+ * conditional status update, and staff never decide their own request.
  */
 @Injectable()
 export class DeliveryService {
@@ -41,7 +52,7 @@ export class DeliveryService {
   ) {}
 
   async create(userId: string, dto: CreateDeliveryDto): Promise<DeliveryItem> {
-    await this.ledger.assertNotFrozen(userId);
+    await this.ledger.assertCanMoveMoney(userId);
 
     const snapshot = await this.portfolio.forUser(userId);
     if (!snapshot.tier.deliveryEligible) {
@@ -116,9 +127,9 @@ export class DeliveryService {
   // ── staff side ──────────────────────────────────────────────────
 
   async listAdmin(status?: string): Promise<{ requests: AdminDeliveryItem[] }> {
-    const valid = (["requested", "reviewing", "approved", "scheduled", "rejected"] as const).find(
-      (s) => s === status,
-    );
+    const valid = (
+      ["requested", "reviewing", "approved", "scheduled", "rejected", "delivered"] as const
+    ).find((s) => s === status);
     const rows = await this.db
       .select({ request: deliveryRequests, email: users.email })
       .from(deliveryRequests)
@@ -129,8 +140,6 @@ export class DeliveryService {
 
     const out: AdminDeliveryItem[] = [];
     for (const r of rows) {
-      // Advisory held-balance beside every row: nothing is reserved, so the
-      // officer must see what the user holds NOW, not at request time.
       const balances = await this.ledger.balancesForUser(r.request.userId);
       const heldMg = r.request.asset === "XAU" ? balances.xauMg : balances.xptMg;
       out.push({ ...this.toItem(r.request), userEmail: r.email, heldMg });
@@ -139,45 +148,203 @@ export class DeliveryService {
   }
 
   async approve(id: string, reviewerId: string, note?: string): Promise<void> {
-    const row = await this.mustGet(id);
-    if (row.status !== "requested" && row.status !== "reviewing") {
-      throw new ConflictException("delivery_not_open");
-    }
-    // Balance re-check at decision time — advisory, no reservation.
-    const balances = await this.ledger.balancesForUser(row.userId);
-    const held = BigInt(row.asset === "XAU" ? balances.xauMg : balances.xptMg);
-    if (held < row.gramsMg) throw new UnprocessableEntityException("insufficient_metal");
+    const peek = await this.mustGet(id);
+    this.assertNotOwn(peek, reviewerId);
+    // The customer must still be allowed to move value (not frozen, verified).
+    await this.ledger.assertCanMoveMoney(peek.userId);
 
-    await this.decide(row.id, reviewerId, "approved", note ?? null, null);
-    void this.notifications.emit(row.userId, "delivery_approved", {
-      asset: row.asset,
-      gramsMg: row.gramsMg.toString(),
+    const asset = peek.asset as MetalAsset;
+    const userMetalId = await this.ledger.ensureUserAccount(peek.userId, asset);
+    const holdId = await this.ledger.systemAccountId(this.holdName(asset));
+
+    await this.db.transaction(async (tx) => {
+      const row = await this.claim(tx, id, ["requested", "reviewing"], "approved", {
+        reviewerId,
+        reviewNote: note ?? null,
+        reviewedAt: new Date(),
+      });
+      const balances = await this.ledger.lockAndReadBalances(tx, [userMetalId, holdId]);
+      if ((balances.get(userMetalId) ?? 0n) < row.gramsMg) {
+        // Throwing rolls the status change back too: nothing moves.
+        throw new UnprocessableEntityException("insufficient_metal");
+      }
+      await this.ledger.postTransaction(tx, {
+        kind: "delivery",
+        initiatedBy: reviewerId,
+        note: `delivery_hold:${row.id}`,
+        entries: [
+          { accountId: userMetalId, asset, amount: -row.gramsMg },
+          { accountId: holdId, asset, amount: row.gramsMg },
+        ],
+      });
+      await this.auditTx(tx, reviewerId, "delivery_approved", row.id, {
+        gramsMg: row.gramsMg.toString(),
+        held: true,
+      });
+    });
+
+    void this.notifications.emit(peek.userId, "delivery_approved", {
+      asset: peek.asset,
+      gramsMg: peek.gramsMg.toString(),
     });
   }
 
   async schedule(id: string, reviewerId: string, scheduledFor: string): Promise<void> {
-    const row = await this.mustGet(id);
-    if (row.status !== "approved") throw new ConflictException("delivery_not_approved");
-    await this.decide(row.id, reviewerId, "scheduled", row.reviewNote, new Date(scheduledFor));
-    void this.notifications.emit(row.userId, "delivery_scheduled", {
-      asset: row.asset,
-      gramsMg: row.gramsMg.toString(),
+    const peek = await this.mustGet(id);
+    this.assertNotOwn(peek, reviewerId);
+    await this.db.transaction(async (tx) => {
+      const row = await this.claim(tx, id, ["approved", "scheduled"], "scheduled", {
+        reviewerId,
+        scheduledFor: new Date(scheduledFor),
+      });
+      await this.auditTx(tx, reviewerId, "delivery_scheduled", row.id, { scheduledFor });
+    });
+    void this.notifications.emit(peek.userId, "delivery_scheduled", {
+      asset: peek.asset,
+      gramsMg: peek.gramsMg.toString(),
       scheduledFor,
     });
   }
 
+  /** The handover: held metal goes back to the vault account AND out of the vault. */
+  async deliver(id: string, reviewerId: string): Promise<void> {
+    const peek = await this.mustGet(id);
+    this.assertNotOwn(peek, reviewerId);
+    const asset = peek.asset as MetalAsset;
+    const holdId = await this.ledger.systemAccountId(this.holdName(asset));
+    const vaultId = await this.ledger.systemAccountId(
+      `system:vault:${asset}` as SystemAccountName,
+    );
+
+    await this.db.transaction(async (tx) => {
+      const row = await this.claim(tx, id, HELD_STATUSES, "delivered", {
+        reviewerId,
+        deliveredAt: new Date(),
+      });
+      await this.ledger.lockAndReadBalances(tx, [holdId, vaultId]);
+      await this.ledger.postTransaction(tx, {
+        kind: "delivery",
+        initiatedBy: reviewerId,
+        note: `delivery_out:${row.id}`,
+        entries: [
+          { accountId: holdId, asset, amount: -row.gramsMg },
+          { accountId: vaultId, asset, amount: row.gramsMg },
+        ],
+      });
+      await tx.insert(vaultHoldings).values({
+        asset,
+        kind: "outtake",
+        gramsMg: row.gramsMg,
+        reference: `DELIVERY-${row.id}`,
+        recordedBy: reviewerId,
+      });
+      await this.auditTx(tx, reviewerId, "delivery_delivered", row.id, {
+        gramsMg: row.gramsMg.toString(),
+      });
+    });
+
+    void this.notifications.emit(peek.userId, "delivery_delivered", {
+      asset: peek.asset,
+      gramsMg: peek.gramsMg.toString(),
+    });
+  }
+
   async reject(id: string, reviewerId: string, note?: string): Promise<void> {
-    const row = await this.mustGet(id);
-    if (row.status === "rejected") throw new ConflictException("delivery_not_open");
-    await this.decide(row.id, reviewerId, "rejected", note ?? null, null);
-    void this.notifications.emit(row.userId, "delivery_rejected", {
-      asset: row.asset,
-      gramsMg: row.gramsMg.toString(),
+    const peek = await this.mustGet(id);
+    this.assertNotOwn(peek, reviewerId);
+    const asset = peek.asset as MetalAsset;
+    const userMetalId = await this.ledger.ensureUserAccount(peek.userId, asset);
+    const holdId = await this.ledger.systemAccountId(this.holdName(asset));
+
+    await this.db.transaction(async (tx) => {
+      // Lock the row to learn whether the metal is currently held.
+      const current = await tx
+        .select()
+        .from(deliveryRequests)
+        .where(eq(deliveryRequests.id, id))
+        .limit(1)
+        .for("update");
+      const before = current[0];
+      if (!before || !OPEN_STATUSES.includes(before.status as DeliveryStatus)) {
+        throw new ConflictException("delivery_not_open");
+      }
+      const wasHeld = HELD_STATUSES.includes(before.status as DeliveryStatus);
+      const row = await this.claim(tx, id, [before.status as DeliveryStatus], "rejected", {
+        reviewerId,
+        reviewNote: note ?? null,
+        reviewedAt: new Date(),
+      });
+      if (wasHeld) {
+        await this.ledger.lockAndReadBalances(tx, [userMetalId, holdId]);
+        await this.ledger.postTransaction(tx, {
+          kind: "delivery",
+          initiatedBy: reviewerId,
+          note: `delivery_refund:${row.id}`,
+          entries: [
+            { accountId: holdId, asset, amount: -row.gramsMg },
+            { accountId: userMetalId, asset, amount: row.gramsMg },
+          ],
+        });
+      }
+      await this.auditTx(tx, reviewerId, "delivery_rejected", row.id, {
+        refunded: wasHeld,
+        note: note ?? null,
+      });
+    });
+
+    void this.notifications.emit(peek.userId, "delivery_rejected", {
+      asset: peek.asset,
+      gramsMg: peek.gramsMg.toString(),
       ...(note ? { note } : {}),
     });
   }
 
-  private async mustGet(id: string) {
+  // ── internals ───────────────────────────────────────────────────
+
+  private holdName(asset: MetalAsset): SystemAccountName {
+    return `system:delivery_hold:${asset}` as SystemAccountName;
+  }
+
+  private assertNotOwn(row: DeliveryRow, reviewerId: string): void {
+    if (row.userId === reviewerId) throw new ForbiddenException("cannot_decide_own");
+  }
+
+  /** Conditional status move — the double-click / two-officer mutex. */
+  private async claim(
+    tx: Tx,
+    id: string,
+    from: DeliveryStatus[],
+    to: DeliveryStatus,
+    set: Partial<typeof deliveryRequests.$inferInsert>,
+  ): Promise<DeliveryRow> {
+    const claimed = await tx
+      .update(deliveryRequests)
+      .set({ ...set, status: to })
+      .where(and(eq(deliveryRequests.id, id), inArray(deliveryRequests.status, from)))
+      .returning();
+    const row = claimed[0];
+    if (!row) throw new ConflictException(`delivery_not_${from.join("_or_")}`);
+    return row;
+  }
+
+  private async auditTx(
+    tx: Tx,
+    actorId: string,
+    action: string,
+    targetId: string,
+    after: Record<string, unknown>,
+  ): Promise<void> {
+    await tx.insert(auditLogs).values({
+      actorId,
+      actorLabel: `staff:${actorId}`,
+      action,
+      targetType: "delivery_request",
+      targetId,
+      after,
+    });
+  }
+
+  private async mustGet(id: string): Promise<DeliveryRow> {
     const rows = await this.db
       .select()
       .from(deliveryRequests)
@@ -187,33 +354,7 @@ export class DeliveryService {
     return rows[0];
   }
 
-  private async decide(
-    id: string,
-    reviewerId: string,
-    status: DeliveryStatus,
-    reviewNote: string | null,
-    scheduledFor: Date | null,
-  ): Promise<void> {
-    await this.db
-      .update(deliveryRequests)
-      .set({
-        status,
-        reviewerId,
-        reviewNote,
-        reviewedAt: new Date(),
-        ...(scheduledFor ? { scheduledFor } : {}),
-      })
-      .where(eq(deliveryRequests.id, id));
-    await this.db.insert(auditLogs).values({
-      actorId: reviewerId,
-      actorLabel: "staff",
-      action: `delivery_${status}`,
-      targetType: "delivery_request",
-      targetId: id,
-    });
-  }
-
-  private toItem(r: typeof deliveryRequests.$inferSelect): DeliveryItem {
+  private toItem(r: DeliveryRow): DeliveryItem {
     return {
       id: r.id,
       asset: r.asset as MetalAsset,
@@ -224,6 +365,7 @@ export class DeliveryService {
       note: r.note,
       reviewNote: r.reviewNote,
       scheduledFor: r.scheduledFor?.toISOString() ?? null,
+      deliveredAt: r.deliveredAt?.toISOString() ?? null,
       createdAt: r.createdAt.toISOString(),
     };
   }

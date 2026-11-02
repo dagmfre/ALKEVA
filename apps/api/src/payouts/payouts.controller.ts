@@ -1,9 +1,12 @@
 import { Body, Controller, Get, Post, UseGuards } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import {
-  createPayoutDto,
+  confirmPayoutDto,
+  payoutIntentDto,
   type BankDto,
-  type CreatePayoutDto,
+  type ConfirmPayoutDto,
+  type PayoutIntentDto,
+  type PayoutIntentResponse,
   type PayoutResponse,
 } from "@alkeva/shared";
 import { Auth, AuthGuard } from "../auth/auth.guard.js";
@@ -21,14 +24,26 @@ export class PayoutsController {
     return this.payouts.banks();
   }
 
+  /** Step 1 — checks the request and emails a confirmation code. */
+  @Post("intent")
+  @UseGuards(AuthGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  intent(
+    @Auth() auth: AccessPayload,
+    @Body(new ZodPipe(payoutIntentDto)) dto: PayoutIntentDto,
+  ): Promise<PayoutIntentResponse> {
+    return this.payouts.createIntent(auth.sub, dto);
+  }
+
+  /** Step 2 — the emailed code creates the held payout. */
   @Post()
   @UseGuards(AuthGuard)
   @Throttle({ default: { ttl: 60_000, limit: 10 } })
-  request(
+  confirm(
     @Auth() auth: AccessPayload,
-    @Body(new ZodPipe(createPayoutDto)) dto: CreatePayoutDto,
+    @Body(new ZodPipe(confirmPayoutDto)) dto: ConfirmPayoutDto,
   ): Promise<PayoutResponse> {
-    return this.payouts.request(auth.sub, dto);
+    return this.payouts.confirm(auth.sub, dto);
   }
 
   @Get()

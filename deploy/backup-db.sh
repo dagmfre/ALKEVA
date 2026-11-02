@@ -9,14 +9,24 @@
 # copy of the ledger that is not the live volume — so it fails loudly, keeps
 # two weeks, and never deletes the last good dump on a failed run.
 #
-# These dumps sit on the same disk as the database: they cover a bad migration
-# or a fat-fingered delete, NOT a lost server. Pull one off-box periodically:
-#   scp -i ~/.ssh/alkeva_vps root@159.195.85.255:/opt/alkeva/backups/<file> .
+# Phase 10 (real money):
+#  - BACKUP_AGE_RECIPIENT (an `age` public key, age1…): every dump is encrypted
+#    before it is kept. The dump holds the whole ledger and every customer's
+#    identity data; the matching private key lives OFF the server with the
+#    owner. Without it set, dumps stay plain (and the log says so).
+#  - BACKUP_RCLONE_REMOTE (e.g. "b2:alkeva-backups"): the encrypted dump is
+#    also copied off the box. A dump on the same disk as the database survives
+#    a bad migration, not a lost server.
+# Both live in /opt/alkeva/backup.env. Needs: apt install age rclone.
 set -euo pipefail
 
 DIR=/opt/alkeva/backups
 KEEP_DAYS=14
 COMPOSE="docker compose -f /opt/alkeva/app/deploy/docker-compose.prod.yml"
+BACKUP_AGE_RECIPIENT=""
+BACKUP_RCLONE_REMOTE=""
+# shellcheck disable=SC1091
+[ -f /opt/alkeva/backup.env ] && . /opt/alkeva/backup.env
 
 mkdir -p "$DIR" && chmod 700 "$DIR"
 OUT="$DIR/alkeva-$(date -u +%Y%m%dT%H%MZ).dump"
@@ -26,9 +36,22 @@ OUT="$DIR/alkeva-$(date -u +%Y%m%dT%H%MZ).dump"
 $COMPOSE exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > "$OUT.part"
 # A custom-format dump starts with the magic "PGDMP"; an error page does not.
 [ "$(head -c 5 "$OUT.part")" = "PGDMP" ] || { echo "$(date -u) dump invalid"; rm -f "$OUT.part"; exit 1; }
-mv "$OUT.part" "$OUT"
+if [ -n "$BACKUP_AGE_RECIPIENT" ]; then
+  age -r "$BACKUP_AGE_RECIPIENT" -o "$OUT.age.part" "$OUT.part"
+  rm -f "$OUT.part"
+  mv "$OUT.age.part" "$OUT.age"
+  OUT="$OUT.age"
+else
+  echo "$(date -u) WARNING: BACKUP_AGE_RECIPIENT unset — dump kept UNENCRYPTED"
+  mv "$OUT.part" "$OUT"
+fi
 chmod 600 "$OUT"
 
+if [ -n "$BACKUP_RCLONE_REMOTE" ]; then
+  rclone copy "$OUT" "$BACKUP_RCLONE_REMOTE" --no-traverse \
+    || echo "$(date -u) WARNING: off-box copy to $BACKUP_RCLONE_REMOTE FAILED"
+fi
+
 # Retention only after a good dump exists.
-find "$DIR" -name 'alkeva-*.dump' -mtime +"$KEEP_DAYS" -delete
+find "$DIR" \( -name 'alkeva-*.dump' -o -name 'alkeva-*.dump.age' \) -mtime +"$KEEP_DAYS" -delete
 echo "$(date -u) ok $(du -h "$OUT" | cut -f1) $OUT"

@@ -1,6 +1,9 @@
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import {
+  ConflictException,
   Inject,
   Injectable,
+  NotFoundException,
   ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -18,8 +21,11 @@ import { DB, ENV } from "../core/core.module.js";
  * issued by AuthService, so every guard, the cookie proxy, and middleware are
  * untouched.
  *
- * `state` is a short-lived signed JWT (nonce + intent + locale) — the CSRF
- * binding between /start and /callback. Endpoints are Google's stable,
+ * `state` is a short-lived signed JWT (intent + locale + the sha256 of a
+ * random value held in an httpOnly cookie). The callback only proceeds in the
+ * browser that started the flow — otherwise an attacker could hand a victim a
+ * callback URL carrying the attacker's own code and sign the victim into the
+ * attacker's account (login CSRF), where the victim's deposits would land. Endpoints are Google's stable,
  * documented pair: accounts.google.com/o/oauth2/v2/auth (via
  * generateAuthUrl) and the token exchange + JWKS-verified id_token
  * (google-auth-library v11 handles both).
@@ -33,7 +39,11 @@ export class GoogleAuthService {
   ) {}
 
   get configured(): boolean {
-    return this.env.GOOGLE_CLIENT_ID.length > 0 && this.env.GOOGLE_CLIENT_SECRET.length > 0;
+    return (
+      this.env.AUTH_METHODS.includes("google") &&
+      this.env.GOOGLE_CLIENT_ID.length > 0 &&
+      this.env.GOOGLE_CLIENT_SECRET.length > 0
+    );
   }
 
   private guard(): void {
@@ -48,35 +58,43 @@ export class GoogleAuthService {
     });
   }
 
-  /** 302 target for GET /auth/google/start. */
-  async startUrl(intent: "login" | "register", locale: Locale): Promise<string> {
+  /** 302 target for GET /auth/google/start, plus the browser-binding cookie value. */
+  async startUrl(
+    intent: "login" | "register",
+    locale: Locale,
+  ): Promise<{ url: string; binding: string }> {
     this.guard();
+    const binding = randomBytes(24).toString("base64url");
     const state = await this.jwt.signAsync(
-      { nonce: crypto.randomUUID(), intent, locale, type: "google_state" },
+      { bh: sha256(binding), intent, locale, type: "google_state" },
       { secret: this.env.JWT_SECRET, expiresIn: 600 },
     );
-    return this.client().generateAuthUrl({
+    const url = this.client().generateAuthUrl({
       access_type: "online",
       scope: ["openid", "email", "profile"],
       prompt: "select_account",
       state,
     });
+    return { url, binding };
   }
 
   /**
    * Code exchange + id_token verification → the user this session belongs to.
    * Returns the userId; the controller issues cookies via AuthService.
    */
-  async handleCallback(code: string, state: string): Promise<string> {
+  async handleCallback(code: string, state: string, binding: string | undefined): Promise<string> {
     this.guard();
 
-    let parsed: { intent?: string; locale?: string; type?: string };
+    let parsed: { intent?: string; locale?: string; type?: string; bh?: string };
     try {
       parsed = await this.jwt.verifyAsync(state, { secret: this.env.JWT_SECRET });
     } catch {
       throw new UnauthorizedException("google_state_invalid");
     }
     if (parsed.type !== "google_state") throw new UnauthorizedException("google_state_invalid");
+    if (!binding || !parsed.bh || !safeEqual(sha256(binding), parsed.bh)) {
+      throw new UnauthorizedException("google_state_invalid");
+    }
     const locale = toLocale(parsed.locale);
 
     const client = this.client();
@@ -111,12 +129,17 @@ export class GoogleAuthService {
       .limit(1);
     if (identity[0]) return identity[0].userId;
 
-    // 2. Existing account with this (verified) email → link.
+    // 2. Existing account with this email → link, but ONLY when that account
+    // has itself proven the address. Linking to an unproven address would let
+    // whoever pre-registered it share the account with its real owner.
     const existing = await this.db
-      .select({ id: users.id })
+      .select({ id: users.id, verified: users.emailVerifiedAt })
       .from(users)
       .where(eq(sql`lower(${users.email})`, email))
       .limit(1);
+    if (existing[0] && !existing[0].verified) {
+      throw new ConflictException("email_taken_link_instead");
+    }
     if (existing[0]) {
       await this.db.insert(authIdentities).values({
         userId: existing[0].id,
@@ -134,10 +157,10 @@ export class GoogleAuthService {
       return existing[0].id;
     }
 
-    // 3. New account. passwordHash NULL — the reset flow doubles as "add a
-    // password". Consent: the web register button sits behind the terms
-    // checkbox, so a register-intent arrival has consented; termsAcceptedAt
-    // records it.
+    // 3. New account — only from the register page, where the button sits
+    // behind the terms checkbox. A sign-in attempt for an account that does
+    // not exist must not silently create one without consent.
+    if (parsed.intent !== "register") throw new NotFoundException("google_account_not_found");
     const inserted = await this.db
       .insert(users)
       .values({
@@ -146,6 +169,8 @@ export class GoogleAuthService {
         fullName: payload.name?.trim() || email.split("@")[0]!,
         locale,
         termsAcceptedAt: new Date(),
+        // Google asserted email_verified above.
+        emailVerifiedAt: new Date(),
       })
       .returning({ id: users.id });
     const userId = inserted[0]!.id;
@@ -165,4 +190,14 @@ export class GoogleAuthService {
     });
     return userId;
   }
+}
+
+function sha256(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
 }

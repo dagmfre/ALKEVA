@@ -12,6 +12,7 @@ import { Coin, Panel, PanelHeader, Stat, StatStrip } from "@/components/ui/panel
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTradeSheet } from "@/components/trade/trade-sheet-context";
 import { displaySerial, eatStamp, grams, money } from "@/lib/format";
+import { LoadFailed } from "@/components/system/load-failed";
 import { useResource } from "@/lib/use-resource";
 import { cn } from "@/lib/utils";
 
@@ -173,7 +174,8 @@ export function ReceiptsScreen() {
 
 function Preview({ orderId }: { orderId: string }) {
   const t = useTranslations("receipt");
-  const { data, loading } = useResource<ReceiptResponse>(`/orders/${orderId}/receipt`);
+  const { data, loading, error, reload } = useResource<ReceiptResponse>(`/orders/${orderId}/receipt`);
+  if (!data && error && !loading) return <LoadFailed onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-[34rem] rounded-xl" />;
   return (
     <div className="relative">

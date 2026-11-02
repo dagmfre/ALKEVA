@@ -16,7 +16,9 @@
     "delayed": "ደንጉዩ",
     "back": "ተመለስ",
     "retry": "እንደገና ፈትን",
-    "somethingWrong": "ጸገም ኣጋጢሙ። በጃኻ እንደገና ፈትን።"
+    "somethingWrong": "ጸገም ኣጋጢሙ። በጃኻ እንደገና ፈትን።",
+    "rateLimited": "ብዙሓት ሕቶታት — በጃኻ ቁሩብ ተጸበ እሞ እንደገና ፈትን።",
+    "loadFailed": "እዚ ክጽዓን ኣይከኣለን። ናይ ኢንተርነት ርክብካ ኣረጋግጽ እሞ እንደገና ፈትን።"
   },
   "auth": {
     "registerTitle": "ሕሳብካ ክፈት",
@@ -30,7 +32,7 @@
     "needAccount": "ኣብ ALKEVA ሓድሽ ዲኻ? ሕሳብ ክፈት",
     "errorInvalidCredentials": "ኢመይል ወይ መሕለፊ ቃል ቅኑዕ ኣይኮነን።",
     "errorEmailTaken": "በዚ ኢመይል ዝተኸፍተ ሕሳብ ኣሎ።",
-    "errorValidation": "በጃኻ ቅጥዒ ኣረጋግጽ፦ መሕለፊ ቃል እንተወሓደ 8 ፊደላት ክኸውን ኣለዎ፣ ኢመይል እውን ቅኑዕ ክኸውን ኣለዎ።",
+    "errorValidation": "በጃኻ ቅጥዒ ኣረጋግጽ፦ መሕለፊ ቃል እንተወሓደ 10 ፊደላት ክኸውን ኣለዎ፣ ኢመይል እውን ቅኑዕ ክኸውን ኣለዎ።",
     "errorGeneric": "ጸገም ኣጋጢሙ። በጃኻ እንደገና ፈትን።",
     "forgotPassword": "መሕለፊ ቃል ረሲዕካ?",
     "forgotTitle": "መሕለፊ ቃልካ ኣሐድስ",
@@ -54,7 +56,15 @@
     "passkeyButton": "ብpasskey እቶ",
     "passkeyFailed": "ብpasskey ምእታው ኣይተዛዘመን።",
     "showPassword": "ናይ መሕለፊ ቃል ኣርኢ",
-    "hidePassword": "ናይ መሕለፊ ቃል ሓብእ"
+    "hidePassword": "ናይ መሕለፊ ቃል ሓብእ",
+    "errorLocked": "ብዙሓት ፈተነታት። ንድሕንነትካ፣ ምእታው ን15 ደቓይቕ ተቋሪጹ ኣሎ።",
+    "errorMethodDisabled": "እዚ ኣገባብ ምእታው ኣይርከብን። በጃኻ ብፋይዳ እቶ።",
+    "faydaUnavailable": "ብፋይዳ ምእታው ሕጂ ኣይርከብን። በጃኻ ድሕሪ ቁሩብ እንደገና ፈትን።",
+    "sessionExpired": "ናይ ምእታው ግዜኻ ተወዲኡ። በጃኻ እንደገና እቶ።",
+    "continueWithFayda": "ብፋይዳ ቀጽል",
+    "faydaRegisterHint": "ናይ ፋይዳ ሃገራዊ መንነትካ ተጠቐም — መንነትካ ኣብቲ ሓደ ስጉምቲ ብሓንሳብ ይረጋገጽ።",
+    "faydaLoginHint": "ብናይ ፋይዳ ሃገራዊ መንነትካ (FAN/FIN) ከምኡውን ብሓደ ግዜ ዝሰርሕ ኮድ እቶ።",
+    "staffSignIn": "ምእታው ሰራሕተኛታት"
   },
   "public": {
     "signIn": "እቶ",
@@ -289,12 +299,15 @@
       "sellback_ceiling": "ናይ ሎሚ መዓልቲ ናይ ምምላስ ደረት በጺሑ። ጽባሕ ፈትን።",
       "tier_txn_cap": "እዚ መጠን ካብ ናይ ደረጃኻ ናይ ሓደ ንግዲ ደረት ይሓልፍ።",
       "tier_daily_cap": "ናይ ደረጃኻ መዓልታዊ ደረት በጺሕካ።",
-      "kyc_required": "ቅድም መንነትካ ኣረጋግጽ — ሓደ ሰነድ ጥራይ የድሊ።",
+      "kyc_required": "ቅድም መንነትካ ብፋይዳ ኣረጋግጽ።",
       "amount_too_small": "እቲ መጠን ኣዝዩ ንእሽቶ እዩ።",
       "validation_failed": "በጃኻ መጠን ኣረጋግጽ እሞ እንደገና ፈትን።",
       "conflict": "እዚ ሕቶ ምስ ናይ ቀደም ይጋጮ። ሓድሽ ዋጋ ሕተት።",
       "rate_limited": "ብዙሓት ሕቶታት — በጃኻ ቁሩብ ተጸበ እሞ እንደገና ፈትን።",
-      "generic": "ጸገም ኣጋጢሙ። በጃኻ እንደገና ፈትን።"
+      "generic": "ጸገም ኣጋጢሙ። በጃኻ እንደገና ፈትን።",
+      "email_unverified": "ቅድም ኣድራሻ ኢመይልካ ኣረጋግጽ።",
+      "staff_account": "ናይ ሰራሕተኛ ሕሳባት ክነግዱ ኣይክእሉን። ናይ ዓሚል ሕሳብ ተጠቐም።",
+      "price_unverified": "እቲ ናይ መወዳእታ ዋጋ ብካልኣይ ምንጪ ክረጋገጽ ኣይከኣለን። ምስ ተረጋገጸ ንግዲ ብኡንብኡ ይቕጽል።"
     },
     "orderTitle": "ትእዛዝ",
     "orderHint": "ብዝተትሓዘ ዋጋ",
@@ -354,7 +367,8 @@
         "reviewing": "ኣብ ምርመራ",
         "approved": "ጸዲቑ",
         "scheduled": "ተመዲቡ",
-        "rejected": "ተነጺጉ"
+        "rejected": "ተነጺጉ",
+        "delivered": "ተረኪቡ"
       },
       "errors": {
         "delivery_not_eligible": "ደረጃኻ ገና ንኣካላዊ ምርካብ ኣይበቅዕን።",
@@ -563,7 +577,8 @@
       "removeTitle": "እዚ passkey ይወገድ?",
       "removeBody": "ብእኡ ኣብቲ መሳርሒ ክትኣቱ ኣይትኽእልን። መሕለፊ ቃልካ ግን ይሰርሕ።",
       "failed": "ኣይተዛዘመን። በጃኻ እንደገና ፈትን።",
-      "foot": "passkey ኣብ መሳርሒኻ ይጸንሕ። ALKEVA ህዝባዊ ፍርቁ ጥራይ ትሕዝ፣ ስለዚ ኣብዚ ዝስረቕ የልቦን።"
+      "foot": "passkey ኣብ መሳርሒኻ ይጸንሕ። ALKEVA ህዝባዊ ፍርቁ ጥራይ ትሕዝ፣ ስለዚ ኣብዚ ዝስረቕ የልቦን።",
+      "reauth": "ንድሕንነትካ፣ passkey ንምውሳኽ ሓድሽ ምእታው የድሊ። ውጻእ፣ እንደገና እቶ፣ ድሕሪኡ ወስኾ።"
     },
     "language": "ቋንቋ",
     "tierLabel": "ደረጃ",
@@ -590,7 +605,17 @@
     "roleLabel": "ተራ ሰራሕተኛ",
     "languageHint": "መርኣዪታት፣ ኢመይላትን እቲ ሓጋዚን ይኽተልዎ",
     "passwordHint": "መሐደሲ መላግቦ ብኢመይል ንልእከልካ",
-    "moneyHint": "ብር ብChapa ይኣቱን ይወጽእን"
+    "moneyHint": "ብር ብChapa ይኣቱን ይወጽእን",
+    "notificationsLabel": "መልእኽትታት",
+    "notificationsHint": "ናይ ኢመይልን ብራውዘርን መጠንቀቕታታት",
+    "notificationsAction": "ኣመሓድር",
+    "sessions": {
+      "title": "ዝኣተኻሎም መሳርሒታት",
+      "thisDevice": "እዚ መሳርሒ",
+      "lastActive": "ናይ መወዳእታ ንጥፈት፦ {when}",
+      "signOut": "ውጻእ",
+      "signOutOthers": "{count, plural, one {ካብቲ ካልእ መሳርሒ} other {ካብቶም ካልኦት # መሳርሒታት}} ውጻእ"
+    }
   },
   "deposit": {
     "title": "ገንዘብ ምእታው",
@@ -620,12 +645,14 @@
     "returnFailedBody": "እቲ ክፍሊት ተሰሪዙ ወይ ኣይተዓወተን። ካብ ሕሳብካ ገንዘብ ኣይወጸን።",
     "returnRetry": "እንደገና ፈትን",
     "errors": {
-      "kyc_required": "ቅድም መንነትካ ኣረጋግጽ።",
+      "kyc_required": "ቅድም መንነትካ ብፋይዳ ኣረጋግጽ።",
       "amount_too_small": "እቲ መጠን ካብቲ ዝተሓተ ናይ ምእታው ደረት ይትሕቲ።",
       "account_frozen": "ሕሳብካ ተዓጊቱ ኣሎ። በጃኻ ንደገፍ ተወከስ።",
       "payments_unconfigured": "ሕጂ ገንዘብ ምእታው ኣይካኣልን።",
       "chapa_error": "ናይ ክፍሊት ኣገልጋሊ ክርከብ ኣይከኣለን። በጃኻ እንደገና ፈትን።",
-      "generic": "ጸገም ኣጋጢሙ። በጃኻ እንደገና ፈትን።"
+      "generic": "ጸገም ኣጋጢሙ። በጃኻ እንደገና ፈትን።",
+      "email_unverified": "ቅድም ኣድራሻ ኢመይልካ ኣረጋግጽ።",
+      "staff_account": "ናይ ሰራሕተኛ ሕሳባት ገንዘብ ከእትዉ ኣይክእሉን።"
     },
     "balanceTitle": "ናይ ብር ሒሳብካ",
     "howTitle": "ገንዘብ ምእታው ብኸመይ ይሰርሕ",
@@ -644,7 +671,7 @@
     "accountNumberLabel": "ቁጽሪ ሕሳብ ወይ ዋሌት",
     "accountNameLabel": "ስም ወናኒ ሕሳብ",
     "cta": "ኣውጽእ",
-    "holdNote": "መዓልታዊ ምውጻእ ብቐጥታ ይለኣኽ። ዓበይቲ መጠናት ብጉጅለ ፋይናንስና ይረኣዩ፤ ሕቶ እንተተነጺጉ ምሉእ ብምሉእ ናብ ሒሳብካ ይምለስ።",
+    "holdNote": "ቅድሚ ሕጂ ገንዘብ ዝተቐበልካሉ ሕሳብ፣ ብዝተረጋገጸ ስምካ ዝግበሩ ንኣሽቱ ምውጻኣት ብኡንብኡ ይለኣኹ። ካልኦት ብጉጅለ ፋይናንስና ይምርመሩ፤ ዝተነጸገ ሕቶ ምሉእ ብምሉእ ናብ ሒሳብካ ይምለስ።",
     "historyTitle": "ናይ ምውጻእ ሕቶታትካ",
     "status": {
       "requested": "ኣብ ትጽቢት ምጽዳቕ",
@@ -654,23 +681,43 @@
       "rejected": "ተመሊሱ"
     },
     "kycGateTitle": "ገንዘብ ንምውጻእ መንነትካ ኣረጋግጽ",
-    "kycGateBody": "ገንዘብ ምውጻእ ሓደ ግዜ ናይ መንነት መረጋገጺ የድልዮ። ሓደ ሰነድ ጸዓን፤ ሓደ ተኸታታሊ ምርመራ ሓላፊ ይርእዮ።",
+    "kycGateBody": "ገንዘብ ምውጻእ ዝተረጋገጸ መንነት የድልዮ። ሓንሳብ ብናይ ፋይዳ ሃገራዊ መንነትካ ኣረጋግጽ — ሓደ ደቒቕ ይወስድ።",
     "kycGateCta": "መንነት ኣረጋግጽ",
     "errors": {
-      "kyc_required": "ቅድም መንነትካ ኣረጋግጽ።",
+      "kyc_required": "ቅድም መንነትካ ብፋይዳ ኣረጋግጽ።",
       "amount_too_small": "እቲ መጠን ካብቲ ዝተሓተ ናይ ምውጻእ ደረት ይትሕቲ።",
       "insufficient_balance": "እኹል ናይ ብር ሒሳብ የልቦን።",
       "account_frozen": "ሕሳብካ ተዓጊቱ ኣሎ። በጃኻ ንደገፍ ተወከስ።",
       "payments_unconfigured": "ሕጂ ገንዘብ ምውጻእ ኣይካኣልን።",
       "banks_unavailable": "ዝርዝር ባንክታት ክጽዓን ኣይከኣለን። በጃኻ እንደገና ፈትን።",
-      "generic": "ጸገም ኣጋጢሙ። በጃኻ እንደገና ፈትን።"
+      "generic": "ጸገም ኣጋጢሙ። በጃኻ እንደገና ፈትን።",
+      "email_unverified": "ቅድም ኣድራሻ ኢመይልካ ኣረጋግጽ።",
+      "staff_account": "ናይ ሰራሕተኛ ሕሳባት ገንዘብ ከውጽኡ ኣይክእሉን።",
+      "payout_daily_limit": "እዚ ካብ መዓልታዊ ደረት ምውጻእካ ክሓልፍ እዩ። ዝነኣሰ መጠን ፈትን ወይ ጽባሕ ፈትን።",
+      "payout_daily_count": "ናይ ሎሚ ብዝሒ ምውጻኣት በጺሕካ። ጽባሕ እንደገና ፈትን።",
+      "code_invalid": "እቲ ኮድ ቅኑዕ ኣይኮነን። ነቲ ኢመይል ርአ እሞ እንደገና ፈትን።",
+      "code_expired": "እቲ ኮድ ግዜኡ ሓሊፉ። ሓድሽ ኮድ ስደድ።",
+      "code_locked": "ብዙሓት ጌጋ ኮዳት። ነቲ ምውጻእ እንደገና ጀምር።",
+      "code_rate_limited": "ብዙሓት ኮዳት ተሓቲቶም። በጃኻ ቁሩብ ደቓይቕ ተጸበ።",
+      "rate_limited": "ብዙሓት ሕቶታት — በጃኻ ቁሩብ ተጸበ እሞ እንደገና ፈትን።"
     },
     "historyEmpty": "ገና ምውጻእ የልቦን።",
     "howTitle": "ገንዘብ ምውጻእ ብኸመይ ይሰርሕ",
-    "how1": "ምስ ሓተትካ ብርካ ናብ ትሕዝቶ ይሰጋገር — ሒሳብካ ብቐጥታ ይንኪ።",
-    "how2": "ፋይናንስ ንዓበይቲ ሕቶታት ይርኢ፤ ንኣሽቱ ብቐጥታ ናብ ባንክ ይለኣኹ።",
+    "how1": "ነቲ ምውጻእ ብኢመይል ብንልእከልካ ኮድ ተረጋግጾ፣ ድሕሪኡ እቲ ብር ናብ ትሕዝቶ ይሰጋገር — ሒሳብካ ብኡንብኡ ይንኪ።",
+    "how2": "ቅድሚ ሕጂ ናብ ዝተጠቐምካሉ ሕሳብ ብናይ ገዛእ ርእስኻ ስም ዝኸዱ ንኣሽቱ መጠናት ብቐጥታ ይለኣኹ፤ ካልእ ኩሉ ብፋይናንስ ይምርመር።",
     "how3": "እቲ ምስግጋር ምስ ተረጋገጸ እቲ ትሕዝቶ ናብ ናይ ባንክ ሕሳብካ ይለቀቕ።",
-    "formTitle": "ብር ናብ ባንክኻ ስደድ"
+    "formTitle": "ብር ናብ ባንክኻ ስደድ",
+    "codeTitle": "ኢመይልካ ርአ",
+    "codeBody": "ናብ {email} 6 ኣሃዛት ዘለዎ ኮድ ሰዲድና ኣለና። ነዚ ምውጻእ ንምርግጋጽ ኣእትዎ።",
+    "codeLabel": "ኮድ መረጋገጺ",
+    "confirmCta": "ምውጻእ ኣረጋግጽ",
+    "resendCode": "ሓድሽ ኮድ ስደድ",
+    "editDetails": "ዝርዝር ቀይር",
+    "resultSent": "ተላኢኹ። እቲ ገንዘብ ናብ ሕሳብካ ኣብ መንገዲ ኣሎ።",
+    "resultQueued": "ተቐቢልናዮ። ጉጅለ ፋይናንስና ክምርምሮ እዩ፤ ክሳብ ሽዑ እቲ መጠን ተትሒዙ ይጸንሕ።",
+    "resultProcessing": "ምስ ባንክ ኣብ መስርሕ ኣሎ። ምስ ተረጋገጸ ብኡንብኡ ክንሕብረካ ኢና።",
+    "nameHint": "ኣብቲ ሕሳብ ዘሎ ስም ተጠቐም። ብዝተረጋገጸ ሕጋዊ ስምካ ዝግበሩ ምውጻኣት ብቕልጡፍ ይለኣኹ።",
+    "verifyEmailLink": "ኢመይል ኣረጋግጽ"
   },
   "assistant": {
     "emptyTitle": "ብዛዕባ ወርቅኻ ሕተት",
@@ -725,7 +772,56 @@
       "account_frozen": "ሕሳብ ተዓጊቱ",
       "account_unfrozen": "ሕሳብ ተፈቲሑ",
       "price_alert": "ናይ ዋጋ መጠንቀቕታ ተላዒሉ",
-      "order_receipt": "ንግዲ ተዛዚሙ"
+      "order_receipt": "ንግዲ ተዛዚሙ",
+      "delivery_requested": "ናይ ምርካብ ሕቶ በጺሑ",
+      "delivery_approved": "ምርካብ ጸዲቑ",
+      "delivery_scheduled": "ምርካብ ተመዲቡ",
+      "delivery_rejected": "ምርካብ ተነጺጉ",
+      "delivery_delivered": "ምርካብ ተዛዚሙ",
+      "payout_requested": "ምውጻእ ምጽዳቕ ይጽበ ኣሎ",
+      "order_in_review": "ትእዛዝ ኣብ ምርመራ",
+      "order_rejected": "ትእዛዝ ኣይተዛዘመን",
+      "deposit_reversed": "ዝኣተወ ገንዘብ ተመሊሱ",
+      "fayda_verified": "መንነት ብፋይዳ ተረጋጊጹ",
+      "new_sign_in": "ናብ ሕሳብካ ሓድሽ ምእታው",
+      "passkey_added": "passkey ተወሲኹ",
+      "staff_alert": "መጠንቀቕታ ሰራሕተኛታት"
+    },
+    "titleUnread": "መልእኽትታት — {count} ዘይተነበቡ",
+    "markAllRead": "ኩሉ ከም ዝተነበበ ምልክት ግበር",
+    "loadFailed": "መልእኽትታት ክጽዓኑ ኣይከኣሉን።",
+    "seeAll": "ኩሉ ርአ",
+    "loadMore": "ናይ ቀደም ኣርኢ",
+    "birr": "ብር",
+    "metalGold": "ወርቂ",
+    "metalPlatinum": "ፕላቲነም",
+    "alertDetail": "{metal} ሕጂ {price} ብር/ግ",
+    "pushEnable": "ናይ ብራውዘር መጠንቀቕታታት ወልዕ",
+    "pushDisable": "ናይ ብራውዘር መጠንቀቕታታት ኣጥፍእ",
+    "pushBlocked": "ናይ ብራውዘር መጠንቀቕታታት ተዓጊቶም",
+    "pushBlockedLong": "እዚ ብራውዘር ካብ ALKEVA ዝመጹ መልእኽትታት ይዓግት ኣሎ። ኣብ ምድላዋት መርበብ (ኣብ መስመር ኣድራሻ ዘሎ ምልክት መቖለፊ) ፍቐዶም፣ ድሕሪኡ ተመለስ።",
+    "pushUnsupported": "እዚ ብራውዘር መልእኽትታት ከርኢ ኣይክእልን።",
+    "pushUnavailable": "ናይ ብራውዘር መጠንቀቕታታት ኣብ ALKEVA ገና ኣይተኸፍቱን።",
+    "browserTitle": "ናይ ብራውዘር መጠንቀቕታታት",
+    "browserBody": "ናይ ዋጋ መጠንቀቕታታት፣ ገንዘብ ምእታውን ምውጻእን ኣብዚ መሳርሒ ከም መልእኽቲ ተቐበል — ALKEVA ዕጽውቲ እንተኾነት እውን።",
+    "iosHint": "ኣብ iPhone፦ Share → Add to Home Screen ጠውቕ፣ ALKEVA ካብ Home Screen ክፈት፣ ድሕሪኡ መጠንቀቕታታት ወልዕ።",
+    "prefsTitle": "ብኸመይ ክንሕብረካ",
+    "prefAlerts": "ናይ ዋጋ መጠንቀቕታታት",
+    "prefMoney": "ገንዘብ ምእታው፣ ንግድን ምውጻእን",
+    "prefSecurity": "ድሕንነት (ሓደስቲ ምእታዋት፣ passkeys)",
+    "channelEmail": "ኢመይል",
+    "channelBrowser": "ብራውዘር",
+    "always": "ኩሉ ግዜ",
+    "staffKinds": {
+      "payout_review": "ምውጻእ ምጽዳቕ የድልዮ",
+      "payout_stuck": "ምውጻእ ኣብ Chapa ደው ኢሉ",
+      "order_review": "ትእዛዝ ተኸታታሊ ምርመራ የድልዮ",
+      "deposit_reversed": "ዝኣተወ ገንዘብ ብኣገልጋሊ ተመሊሱ",
+      "deposit_reversal_unconfirmed": "ዘይተረጋገጸ ናይ ምምላስ መልእኽቲ",
+      "fx_jump_held": "ድንገተኛ ለውጢ ተመን ምንዛሪ ተትሒዙ",
+      "fx_level_accepted": "ሓድሽ ተመን ምንዛሪ ተቐባልነት ረኺቡ",
+      "price_suspect_XAU": "ዋጋ ወርቂ ተቋሪጹ",
+      "price_suspect_XPT": "ዋጋ ፕላቲነም ተቋሪጹ"
     }
   },
   "alerts": {
@@ -779,7 +875,7 @@
       "days90": "ናይ መወዳእታ 90 መዓልታት"
     },
     "delivery": {
-      "explain": "ዝተትሓዙ ግራም ብኣካል ንምርካብ ዝቐረቡ ሕቶታት። ብሕቶ ዝተትሓዘ የልቦን — እቲ ‘ሕጂ ዝሕዞ’ ዓምዲ እቲ ተጠቃሚ ኣብዚ ህሞት ዝሕዞ የርኢ፣ ምጽዳቕ ድማ እንደገና የረጋግጽ።",
+      "explain": "ዝተትሓዙ ግራም ብኣካል ንምርካብ ዝቐረቡ ሕቶታት። ምጽዳቕ ነቶም ግራም ናብ ናይ ምርካብ ትሕዝቶ የሰጋግሮም (ድሕሪኡ ክሽየጡ ኣይክእሉን)፤ «ከም ዝተረከበ መዝግብ» ነቲ ርክክብ ይምዝግብ፤ ዝጸደቐ ሕቶ ምስራዝ ነቶም ግራም ይመልሶም።",
       "empty": "ኣብዚ ኩነታት ናይ ምርካብ ሕቶታት የልቦን።",
       "amount": "ዝተሓተተ",
       "heldNow": "ሕጂ ዝሕዞ",
@@ -790,8 +886,11 @@
         "reviewing": "ኣብ ምርመራ",
         "approved": "ጸዲቑ",
         "scheduled": "ተመዲቡ",
-        "rejected": "ተነጺጉ"
-      }
+        "rejected": "ተነጺጉ",
+        "delivered": "ተረኪቡ"
+      },
+      "markDelivered": "ከም ዝተረከበ መዝግብ",
+      "cancelRefund": "ሰርዝን ግራም መልስን"
     },
     "compliance": {
       "exportTitle": "ናይ AML ምውጻእ",
@@ -843,7 +942,12 @@
       "complianceEvents": "ናይ ተኸታታሊ ምርመራ ፍጻመታት",
       "rule": "ሕጊ",
       "action": "ተግባር",
-      "resolved": "ተፈቲሑ"
+      "resolved": "ተፈቲሑ",
+      "emailVerified": "ኢመይል ተረጋጊጹ",
+      "faydaVerified": "መንነት ፋይዳ ተረጋጊጹ",
+      "faydaNotVerified": "መንነት ፋይዳ የብሉን",
+      "legalName": "ሕጋዊ ስም",
+      "birthdate": "ዕለተ ልደት"
     },
     "kyc": {
       "empty": "ኣብዚ ኩነታት ዝቐረበ የልቦን።",
@@ -909,7 +1013,37 @@
       "sellbackToday": "ናይ ሎሚ ምምላሳት",
       "chapaTitle": "ናይ Chapa ሒሳብ ነጋዳይ",
       "chapaAvailable": "ዘሎ ({currency})",
-      "chapaUnavailable": "ናይ Chapa ሒሳብ ኣይርከብን (መፍትሕ ኣይተቐመጠን ወይ ኣገልጋሊ ኣይተረኽበን)።"
+      "chapaUnavailable": "ናይ Chapa ሒሳብ ኣይርከብን (መፍትሕ ኣይተቐመጠን ወይ ኣገልጋሊ ኣይተረኽበን)።",
+      "entries": {
+        "title": "መዛግብቲ ግምጃ",
+        "hint": "ሓቀኛ ክምችት ካዝናን ካፒታልን — ይውሰኽ እምበር ኣይእረምን",
+        "vault": "ክምችት ካዝና",
+        "capital": "ካፒታል",
+        "asset": "ማዕድን",
+        "direction": "ኣንፈት",
+        "intake": "ምእታው",
+        "outtake": "ምውጻእ",
+        "capitalIn": "ዝኣተወ ካፒታል",
+        "capitalOut": "ዝወጸ ካፒታል",
+        "grams": "ግራም",
+        "birr": "መጠን (ብር)",
+        "vaultReference": "መለለዪ ቁጽሪ(ታት) ናይ ባር ከምኡውን ናይ ጽሬት ምርመራ ምስክር ወረቐት",
+        "capitalReference": "ናይ ባንክ ወይ Chapa መወከሲ",
+        "record": "መዝገብ ኣእቱ",
+        "recorded": "ተመዝጊቡ።",
+        "appendOnly": "መዛግብቲ ክእረሙ ወይ ክድምሰሱ ኣይክእሉን። ጌጋ ብተጻራሪ መዝገብ ኣእርም።",
+        "adminOnly": "መዛግብቲ ግምጃ ከእቱ ዝኽእል እቲ ኣመሓዳሪ ጥራይ እዩ።",
+        "when": "መዓስ",
+        "what": "መዝገብ",
+        "amount": "መጠን",
+        "reference": "መወከሲ",
+        "errors": {
+          "amount": "ኣወንታዊ መጠን ኣእቱ።",
+          "vault_below_owed": "ተነጺጉ፦ ካዝና ካብቲ ዓማዊል ዝውንንዎ ዝወሓደ ማዕድን ክሕዝ እዩ።",
+          "float_below_halt": "ተነጺጉ፦ ጥረ ገንዘብ ካብ ደረት ምቁራጽ ምምላስ ንታሕቲ ክወርድ እዩ።",
+          "generic": "ኣይተዛዘመን። በጃኻ እንደገና ፈትን።"
+        }
+      }
     },
     "audit": {
       "actor": "ፈጻሚ",
@@ -1008,7 +1142,22 @@
     "stepReview": "ተኸታታሊ ምርመራ",
     "stepReviewBody": "ሓደ ሰብ ነቲ ሰነድ ይምርምሮ — መብዛሕትኡ ግዜ ኣብ ውሽጢ ሓደ ናይ ስራሕ መዓልቲ።",
     "stepVerified": "ተረጋጊጹ",
-    "stepVerifiedBody": "ገንዘብ ምእታው፣ ንግድን ምውጻእን ይኽፈቱ።"
+    "stepVerifiedBody": "ገንዘብ ምእታው፣ ንግድን ምውጻእን ይኽፈቱ።",
+    "retry": "እንደገና ፈትን",
+    "faydaTitle": "ብፋይዳ ኣረጋግጽ",
+    "faydaHint": "ሃገራዊ መንነት · ሓደ ደቒቕ ይወስድ",
+    "faydaStep1": "ናብቲ ናይ ፋይዳ ናይ ገዛእ ርእሱ ገጽ ምእታው ትኸይድ፣ FAN/FIN ቁጽርኻ ድማ ተእቱ።",
+    "faydaStep2": "ፋይዳ ናብቲ ዝተመዝገበ ስልክኻ ሓደ ግዜ ዝሰርሕ ኮድ ይልእክ፤ ስምካን ዕለተ ልደትካን ክካፈል ትፈቅድ።",
+    "faydaStep3": "ተረጋጊጽካ ብቐጥታ ናብዚ ትምለስ — ገንዘብ ምእታው፣ ንግድን ምውጻእን ብኡንብኡ ይኽፈቱ።",
+    "faydaCta": "ብፋይዳ ኣረጋግጽ",
+    "faydaPrivacy": "ALKEVA ኣብ ፋይዳ ዝፈቐድካዮ ጥራይ እያ እትቕበል። ናይ ፋይዳ መሕለፊ ቃልካን ኮዳትካን ፈጺሞም ናባና ኣይበጽሑን።",
+    "faydaAlready": "መንነትካ ድሮ ተረጋጊጹ ኣሎ።",
+    "faydaUnavailable": "መረጋገጺ ፋይዳ ሕጂ ኣይርከብን። በጃኻ ድሕሪ ቁሩብ እንደገና ፈትን።",
+    "faydaJustVerified": "ተዛዚሙ — መንነትካ ብፋይዳ ተረጋጊጹ።",
+    "faydaVerifiedAs": "ብፋይዳ ዝተረጋገጸ ስም",
+    "faydaNote": "መንነት ብሃገራዊ ስርዓት መንነት ኢትዮጵያ (ፋይዳ) ይረጋገጽ። ALKEVA ናይ ፋይዳ መእተዊ ሓበሬታኻ ፈጺማ ኣይትርእን።",
+    "noMethods": "መረጋገጺ መንነት ሕጂ ኣይርከብን። በጃኻ ንደገፍ ተወከስ።",
+    "documentAlternative": "ናይ ፋይዳ መንነት የብልካን? ሰነድ ጸዓን"
   },
   "credential": {
     "eyebrow": "ዝተመዝገበ ስራሕ",
@@ -1059,5 +1208,85 @@
     "worldGold": "ዓለም ለኻዊ ወርቂ · USD/oz",
     "worldPlatinum": "ዓለም ለኻዊ ፕላቲነም · USD/oz",
     "fxSource": "USD → ETB · {source}"
+  },
+  "fayda": {
+    "finishing": "ብፋይዳ ምእታው ይዛዘም ኣሎ…",
+    "problemTitle": "ብፋይዳ ምእታው ኣይተዛዘመን",
+    "backToSignIn": "ናብ ገጽ ምእታው ተመለስ",
+    "completeTitle": "ምኽፋት ሕሳብካ ዛዝም",
+    "completeBody": "ፋይዳ መንነትካ ኣረጋጊጹ ኣሎ። ኣድራሻ ኢመይል ወስኽ — ደረሰኛት፣ መጠንቀቕታታትን ናይ ምውጻእ ኮዳትን ናብኡ እዮም ዝለኣኹ።",
+    "verifiedName": "ዝተረጋገጸ ስም",
+    "emailWhy": "ዝኾነ ገንዘብ ቅድሚ ምንቅስቓሱ፣ ነቲ ኢመይል ንምርግጋጽ 6 ኣሃዛት ዘለዎ ኮድ ንልእከልካ።",
+    "completeButton": "ሕሳበይ ክፈት",
+    "errGeneric": "ምስ ፋይዳ ጸገም ኣጋጢሙ። በጃኻ እንደገና ፈትን።",
+    "err_consent_request_rejected": "ኣብ ፋይዳ ምእታው ሰሪዝካዮ። ድሉው ኣብ ዝኾንካሉ እዋን እንደገና ክትፍትን ትኽእል ኢኻ።",
+    "err_consent_details_rejected": "ፋይዳ ALKEVA ዘድልያ ሓበሬታ ኣይሃበን። መንነትካ ንምርግጋጽ ስምካን ዕለተ ልደትካን የድልየና።",
+    "err_transaction_timeout": "ብፋይዳ ምእታው ብዙሕ ግዜ ወሲዱ ግዜኡ ሓሊፉ። በጃኻ እንደገና ጀምር።",
+    "err_invalid_transaction": "ናይ ፋይዳ ምእታው ግዜኡ ሓሊፉ። በጃኻ እንደገና ጀምር።",
+    "err_invalid_accepted_claim": "ፋይዳ ዘድሊ ሓበሬታ ኣይሃበን። በጃኻ እንደገና ፈትን፣ ስምካን ዕለተ ልደትካን ክካፈል ፍቐድ።",
+    "err_invalid_permitted_scope": "ፋይዳ ነዚ ሕቶ ነጺግዎ። በጃኻ ንደገፍ ALKEVA ተወከስ።",
+    "code_fayda_state_invalid": "እዚ መላግቦ ምእታው ግዜኡ ሓሊፉ ወይ ኣብ ካልእ ብራውዘር ተኸፊቱ። በጃኻ ካብ ገጽ ምእታው እንደገና ጀምር።",
+    "code_fayda_linked_elsewhere": "እዚ ናይ ፋይዳ መንነት ድሮ ምስ ካልእ ናይ ALKEVA ሕሳብ ተኣሳሲሩ ኣሎ። ሓደ ሰብ ሓደ ሕሳብ ጥራይ ክሕዝ ይኽእል።",
+    "code_fayda_already_verified": "መንነትካ ድሮ ተረጋጊጹ ኣሎ።",
+    "code_fayda_profile_incomplete": "ፋይዳ ንምርግጋጽካ ዘድልየና ስምካን ዕለተ ልደትካን ኣይመለሰን።",
+    "code_fayda_pending_expired": "ብዙሕ ግዜ ስለ ዝወሰደ ምእታው ግዜኡ ሓሊፉ። በጃኻ እንደገና ጀምር።",
+    "code_underage": "ናይ ALKEVA ሕሳብ ንምኽፋት ዕድመኻ 18 ወይ ካብኡ ንላዕሊ ክኸውን ኣለዎ።",
+    "code_email_taken_link_instead": "በዚ ኢመይል ዝተኸፍተ ናይ ALKEVA ሕሳብ ኣሎ። ናብቲ ሕሳብ እቶ እሞ ካብ ገጽ መረጋገጺ መንነት መንነትካ ብፋይዳ ኣረጋግጽ።"
+  },
+  "verifyEmail": {
+    "title": "ኢመይልካ ኣረጋግጽ",
+    "body": "ናብ {email} 6 ኣሃዛት ዘለዎ ኮድ ሰዲድና ኣለና። ገንዘብ ምእታው፣ ንግድን ምውጻእን ንምኽፋት ኣእትዎ።",
+    "codeLabel": "ኮድ መረጋገጺ",
+    "codeHelp": "እቲ ኮድ ን10 ደቓይቕ ይሰርሕ። እንተዘይረኺብካዮ ናይ spam ፎልደር ርአ።",
+    "confirm": "ኢመይል ኣረጋግጽ",
+    "resend": "ሓድሽ ኮድ ስደድ",
+    "resent": "ሓድሽ ኮድ ናብ {email} ይለኣኽ ኣሎ።",
+    "wrongCode": "እቲ ኮድ ቅኑዕ ኣይኮነን። {left} ፈተነታት ተሪፎም።",
+    "expiredCode": "እቲ ኮድ ግዜኡ ሓሊፉ። ሓድሽ ኮድ ስደድ።",
+    "error": "ጸገም ኣጋጢሙ። በጃኻ እንደገና ፈትን።"
+  },
+  "gate": {
+    "email": "ገንዘብ ንምእታው፣ ንምንጋድን ንምውጻእን ኣድራሻ ኢመይልካ ኣረጋግጽ።",
+    "emailCta": "ኢመይል ኣረጋግጽ",
+    "identity": "ገንዘብ ንምእታው፣ ንምንጋድን ንምውጻእን መንነትካ ብፋይዳ ኣረጋግጽ።",
+    "identityCta": "ብፋይዳ ኣረጋግጽ"
+  },
+  "game": {
+    "noTier": "ገና ደረጃ የልቦን",
+    "rankOf": "ደረጃ {rank} ካብ {total}",
+    "towards": "ናብ {name}",
+    "unlocksNext": "ዝቕጽል ደረጃ ዝኸፍቶ",
+    "unlocksDelivery": "ኣካላዊ ምርካብ ማዕድንካ"
+  },
+  "wallet": {
+    "open": "ዋሌት — {count} ኣብ መስርሕ",
+    "title": "ዋሌት",
+    "description": "ብርካ፣ ወርቅኻን ፕላቲነምካን፣ ከምኡውን ኣብ መንገዲ ዘሎ ገንዘብ።",
+    "total": "ጠቕላላ ዋጋ",
+    "show": "ኣርኢ",
+    "hide": "ሓብእ",
+    "cash": "ብር",
+    "deposit": "ኣእቱ",
+    "withdraw": "ኣውጽእ",
+    "buy": "ግዛእ",
+    "sell": "ሽጥ",
+    "pendingTitle": "ኣብ መስርሕ",
+    "pendingEmpty": "ኣብ መስርሕ ዘሎ የልቦን።",
+    "fullWallet": "ዋሌት ክፈት",
+    "kinds": {
+      "withdrawal": "ገንዘብ ምውጻእ",
+      "deposit": "ገንዘብ ምእታው",
+      "delivery": "ኣካላዊ ምርካብ"
+    },
+    "statuses": {
+      "requested": "ኣብ ትጽቢት ምጽዳቕ",
+      "approved": "ጸዲቑ",
+      "processing": "ኣብ መስርሕ",
+      "initiated": "ክፍሊት ይጽበ ኣሎ",
+      "webhook_received": "ይረጋገጽ ኣሎ",
+      "verified": "ይረጋገጽ ኣሎ",
+      "reviewing": "ኣብ ምርመራ",
+      "scheduled": "ተመዲቡ"
+    }
   }
 }

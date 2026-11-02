@@ -57,13 +57,24 @@ services:
   redis:
     image: redis:7-alpine
     # appendonly so idempotency keys and WebAuthn challenges survive a restart.
-    # No ports: — the whole reason this deployment is cheaper than the Vercel
-    # split is that Redis is now reachable only inside this network.
-    command: ["redis-server", "--appendonly", "yes"]
+    # No ports: — Redis is reachable only inside this network. Since Phase 10
+    # it also takes a password when /opt/alkeva/redis.env sets REDIS_PASSWORD
+    # (the FX cache, quotes' price guard and revoked sessions live here, so
+    # anything else on the network must not be able to write them). REDIS_URL
+    # in /opt/alkeva/.env then carries the same password: redis://:PASS@redis:6379
+    env_file:
+      - path: /opt/alkeva/redis.env
+        required: false
+    command:
+      - sh
+      - -c
+      - exec redis-server --appendonly yes $${REDIS_PASSWORD:+--requirepass "$$REDIS_PASSWORD"}
     volumes:
       - redisdata:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test:
+        - CMD-SHELL
+        - redis-cli $${REDIS_PASSWORD:+-a "$$REDIS_PASSWORD"} --no-auth-warning ping | grep -q PONG
       interval: 5s
       timeout: 3s
       retries: 10
@@ -122,7 +133,10 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    env_file: [/opt/alkeva/.env]
+    # Only ALKEVA_DOMAIN and ALKEVA_ACME_EMAIL — the edge proxy has no business
+    # holding the payment, JWT and AI secrets. ship.sh writes this file from
+    # /opt/alkeva/.env before every deploy.
+    env_file: [/opt/alkeva/caddy.env]
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddydata:/data

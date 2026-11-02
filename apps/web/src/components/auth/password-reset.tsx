@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -77,7 +77,13 @@ export function ResetPasswordScreen() {
   const tc = useTranslations("common");
   const router = useRouter();
   const params = useSearchParams();
-  const token = params.get("token") ?? "";
+  // The link carries the token in the URL fragment (#token=…) so it never
+  // reaches a server log; ?token= is still read for links sent before that.
+  const [token, setToken] = useState(params.get("token") ?? "");
+  useEffect(() => {
+    const fromHash = new URLSearchParams(window.location.hash.slice(1)).get("token");
+    if (fromHash) setToken(fromHash);
+  }, []);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 

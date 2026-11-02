@@ -1,4 +1,6 @@
 import { PriceProvider } from "@/components/market/price-provider";
+import { AccountGateBanner } from "@/components/shell/account-gate-banner";
+import { AppDataProvider } from "@/components/shell/app-data";
 import { BottomNav } from "@/components/shell/bottom-nav";
 import { MobileHeader, TopBar } from "@/components/shell/top-bar";
 import { TradeSheet } from "@/components/trade/trade-sheet";
@@ -18,15 +20,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <TradeSheetProvider>
       <PriceProvider>
-        <div className="flex min-h-dvh flex-col">
-          <TopBar />
-          <MobileHeader />
-          <main className="mx-auto flex w-full max-w-[1680px] min-w-0 flex-1 flex-col px-4 pt-4 pb-[calc(4.5rem+env(safe-area-inset-bottom)+1rem)] lg:pb-5">
-            {children}
-          </main>
-          <BottomNav />
-          <TradeSheet />
-        </div>
+        <AppDataProvider>
+          <div className="flex min-h-dvh flex-col">
+            <TopBar />
+            <MobileHeader />
+            <main className="mx-auto flex w-full max-w-[1680px] min-w-0 flex-1 flex-col px-4 pt-4 pb-[calc(4.5rem+env(safe-area-inset-bottom)+1rem)] lg:pb-5">
+              <AccountGateBanner />
+              {children}
+            </main>
+            <BottomNav />
+            <TradeSheet />
+          </div>
+        </AppDataProvider>
       </PriceProvider>
     </TradeSheetProvider>
   );

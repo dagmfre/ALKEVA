@@ -16,7 +16,9 @@
     "delayed": "Daahay",
     "back": "Dib u noqo",
     "retry": "Isku day mar kale",
-    "somethingWrong": "Khalad ayaa dhacay. Fadlan mar kale isku day."
+    "somethingWrong": "Khalad ayaa dhacay. Fadlan mar kale isku day.",
+    "rateLimited": "Codsiyo aad u badan — fadlan sug wax yar oo mar kale isku day.",
+    "loadFailed": "Tan lama soo rari karin. Hubi xiriirkaaga oo mar kale isku day."
   },
   "auth": {
     "registerTitle": "Furo akoonkaaga",
@@ -30,7 +32,7 @@
     "needAccount": "Ma cusub tahay ALKEVA? Akoon fur",
     "errorInvalidCredentials": "Iimaylka ama furaha sirta ah waa qalad.",
     "errorEmailTaken": "Akoon iimaylkan leh ayaa horey u jiray.",
-    "errorValidation": "Fadlan foomka hubi: furaha sirta ah waa inuu ugu yaraan 8 xaraf ahaadaa, iimayluhuna sax noqdaa.",
+    "errorValidation": "Fadlan foomka hubi: furaha sirta ah waa inuu ugu yaraan 10 xaraf ahaadaa, iimayluhuna sax noqdaa.",
     "errorGeneric": "Khalad ayaa dhacay. Fadlan mar kale isku day.",
     "forgotPassword": "Ma illowday furaha sirta ah?",
     "forgotTitle": "Furahaaga sirta ah cusboonaysii",
@@ -54,7 +56,15 @@
     "passkeyButton": "Ku gal passkey",
     "passkeyFailed": "Gelitaanka passkey ma dhammaystirmin.",
     "showPassword": "Muuji furaha sirta",
-    "hidePassword": "Qari furaha sirta"
+    "hidePassword": "Qari furaha sirta",
+    "errorLocked": "Isku dayo aad u badan. Ammaankaaga darteed, gelitaanka waa la hakiyay 15 daqiiqo.",
+    "errorMethodDisabled": "Habkan gelitaanka lama heli karo. Fadlan isticmaal Fayda.",
+    "faydaUnavailable": "Gelitaanka Fayda hadda lama heli karo. Fadlan wax yar kadib isku day.",
+    "sessionExpired": "Gelitaankaagu wuu dhammaaday. Fadlan mar kale gal.",
+    "continueWithFayda": "Ku sii wad Fayda",
+    "faydaRegisterHint": "Isticmaal aqoonsigaaga qaranka ee Fayda — aqoonsigaaga isla tallaabadaas ayaa lagu xaqiijinayaa.",
+    "faydaLoginHint": "Ku gal aqoonsigaaga qaranka ee Fayda (FAN/FIN) iyo koodh hal mar ah.",
+    "staffSignIn": "Gelitaanka shaqaalaha"
   },
   "public": {
     "signIn": "Gal",
@@ -289,12 +299,15 @@
       "sellback_ceiling": "Xadka dib-u-iibinta maanta ayaa la gaaray. Berri isku day.",
       "tier_txn_cap": "Qadarkani wuxuu ka sarreeyaa xadka macaamil kasta ee heerkaaga.",
       "tier_daily_cap": "Waxaad gaartay xadka maalinlaha ah ee heerkaaga.",
-      "kyc_required": "Marka hore aqoonsigaaga xaqiiji — hal dukumenti ayaa loo baahan yahay.",
+      "kyc_required": "Marka hore aqoonsigaaga ku xaqiiji Fayda.",
       "amount_too_small": "Qadarku aad buu u yar yahay.",
       "validation_failed": "Fadlan qadarka hubi oo mar kale isku day.",
       "conflict": "Codsigan wuxuu is-hor-taagayaa mid hore. Qiime cusub codso.",
       "rate_limited": "Codsiyo aad u badan — fadlan sug wax yar oo mar kale isku day.",
-      "generic": "Khalad ayaa dhacay. Fadlan mar kale isku day."
+      "generic": "Khalad ayaa dhacay. Fadlan mar kale isku day.",
+      "email_unverified": "Marka hore xaqiiji cinwaanka iimaylkaaga.",
+      "staff_account": "Akoonnada shaqaalaha ma ganacsan karaan. Isticmaal akoon macmiil.",
+      "price_unverified": "Qiimihii ugu dambeeyay lama xaqiijin karin il labaad. Ganacsigu wuu dib u bilaabmayaa isla marka la xaqiijiyo."
     },
     "orderTitle": "Dalab",
     "orderHint": "qiime la hayo",
@@ -354,7 +367,8 @@
         "reviewing": "Baaris",
         "approved": "La ansixiyay",
         "scheduled": "La qorsheeyay",
-        "rejected": "La diiday"
+        "rejected": "La diiday",
+        "delivered": "La gaarsiiyay"
       },
       "errors": {
         "delivery_not_eligible": "Heerkaagu weli uma qalmo qaadis dhab ah.",
@@ -563,7 +577,8 @@
       "removeTitle": "Ma la saarayaa passkey-gan?",
       "removeBody": "Kuma geli kartid qalabkaas mar dambe. Furahaaga sirta ah wuu sii shaqaynayaa.",
       "failed": "Ma dhammaystirmin. Fadlan mar kale isku day.",
-      "foot": "Passkey wuxuu ku jiraa qalabkaaga. ALKEVA waxay haysaa oo kaliya qaybtiisa guud, sidaas darteed halkan wax la xadi karo ma jiraan."
+      "foot": "Passkey wuxuu ku jiraa qalabkaaga. ALKEVA waxay haysaa oo kaliya qaybtiisa guud, sidaas darteed halkan wax la xadi karo ma jiraan.",
+      "reauth": "Ammaankaaga darteed, ku darista passkey waxay u baahan tahay gelitaan cusub. Ka bax, mar kale gal, kadibna ku dar."
     },
     "language": "Luqadda",
     "tierLabel": "Heer",
@@ -590,7 +605,17 @@
     "roleLabel": "Doorka shaqaalaha",
     "languageHint": "Shaashadaha, iimaylada iyo kaaliyuhu way raacaan",
     "passwordHint": "Waxaan kuu soo diraynaa xiriiriye cusboonaysiin",
-    "moneyHint": "Birr gelin iyo bixin iyadoo loo marayo Chapa"
+    "moneyHint": "Birr gelin iyo bixin iyadoo loo marayo Chapa",
+    "notificationsLabel": "Ogeysiisyo",
+    "notificationsHint": "Digniinaha iimaylka iyo biraawsarka",
+    "notificationsAction": "Maamul",
+    "sessions": {
+      "title": "Qalabka laga soo galay",
+      "thisDevice": "Qalabkan",
+      "lastActive": "Ugu dambeyn firfircoon: {when}",
+      "signOut": "Ka bax",
+      "signOutOthers": "Ka bax {count, plural, one {qalabka kale} other {# qalab oo kale}}"
+    }
   },
   "deposit": {
     "title": "Lacag gelin",
@@ -620,12 +645,14 @@
     "returnFailedBody": "Lacag bixinta waa la joojiyay ama way fashilantay. Lacagi kaagama bixin xisaabtaada.",
     "returnRetry": "Isku day mar kale",
     "errors": {
-      "kyc_required": "Marka hore aqoonsigaaga xaqiiji.",
+      "kyc_required": "Marka hore aqoonsigaaga ku xaqiiji Fayda.",
       "amount_too_small": "Qadarku wuxuu ka hooseeyaa xadka ugu yar ee lacag gelinta.",
       "account_frozen": "Akoonkaaga waa la xannibay. Fadlan la xiriir taageerada.",
       "payments_unconfigured": "Hadda lacag gelin lama heli karo.",
       "chapa_error": "Bixiyaha lacagta lama gaari karin. Fadlan mar kale isku day.",
-      "generic": "Khalad ayaa dhacay. Fadlan mar kale isku day."
+      "generic": "Khalad ayaa dhacay. Fadlan mar kale isku day.",
+      "email_unverified": "Marka hore xaqiiji cinwaanka iimaylkaaga.",
+      "staff_account": "Akoonnada shaqaalaha lacag ma shuban karaan."
     },
     "balanceTitle": "Xisaabtaada Birr",
     "howTitle": "Sida lacag gelintu u shaqeyso",
@@ -644,7 +671,7 @@
     "accountNumberLabel": "Lambarka xisaabta ama wallet-ka",
     "accountNameLabel": "Magaca lahaanshaha xisaabta",
     "cta": "Bixi",
-    "holdNote": "Bixinta caadiga ah isla markiiba waa la diraa. Qadar badan waxaa eega kooxdayada maaliyadda; haddii codsi la diido, si buuxda ayuu xisaabtaada ugu soo noqonayaa.",
+    "holdNote": "Lacag bixin yar oo loo dirayo xisaab horey lacag laguugu diray, oo ku qoran magacaaga la xaqiijiyay, isla markiiba way baxdaa. Kuwa kale waxaa hubiya kooxdayada maaliyadda; codsi la diido si buuxda ayuu xisaabtaada ugu soo noqonayaa.",
     "historyTitle": "Codsiyadaada bixinta",
     "status": {
       "requested": "Sugaya ansixin",
@@ -654,23 +681,43 @@
       "rejected": "La celiyay"
     },
     "kycGateTitle": "Si aad lacag u bixiso aqoonsigaaga xaqiiji",
-    "kycGateBody": "Lacag bixintu waxay u baahan tahay hubin aqoonsi hal mar ah. Soo geli hal dukumenti; sarkaal baaris ayaa eegaya.",
+    "kycGateBody": "Lacag bixintu waxay u baahan tahay aqoonsi la xaqiijiyay. Hal mar ku xaqiiji aqoonsigaaga qaranka ee Fayda — waxay qaadataa hal daqiiqo.",
     "kycGateCta": "Aqoonsiga xaqiiji",
     "errors": {
-      "kyc_required": "Marka hore aqoonsigaaga xaqiiji.",
+      "kyc_required": "Marka hore aqoonsigaaga ku xaqiiji Fayda.",
       "amount_too_small": "Qadarku wuxuu ka hooseeyaa xadka ugu yar ee bixinta.",
       "insufficient_balance": "Xisaabta Birr kuma filna.",
       "account_frozen": "Akoonkaaga waa la xannibay. Fadlan la xiriir taageerada.",
       "payments_unconfigured": "Hadda lacag bixin lama heli karo.",
       "banks_unavailable": "Liiska bangiyada lama soo rari karin. Fadlan mar kale isku day.",
-      "generic": "Khalad ayaa dhacay. Fadlan mar kale isku day."
+      "generic": "Khalad ayaa dhacay. Fadlan mar kale isku day.",
+      "email_unverified": "Marka hore xaqiiji cinwaanka iimaylkaaga.",
+      "staff_account": "Akoonnada shaqaalaha lacag ma bixin karaan.",
+      "payout_daily_limit": "Tani waxay dhaafaysaa xadka lacag bixinta maalinlaha ah. Isku day qadar ka yar ama berri.",
+      "payout_daily_count": "Waxaad gaartay tirada lacag bixinta maanta loo oggol yahay. Berri isku day.",
+      "code_invalid": "Koodhkaas sax ma aha. Hubi iimaylka oo mar kale isku day.",
+      "code_expired": "Koodhkaas wakhtigiisu wuu dhammaaday. Dir mid cusub.",
+      "code_locked": "Koodhadh qaldan oo aad u badan. Lacag bixinta dib u bilow.",
+      "code_rate_limited": "Koodhadh aad u badan ayaa la codsaday. Fadlan sug dhowr daqiiqo.",
+      "rate_limited": "Codsiyo aad u badan — fadlan sug wax yar oo mar kale isku day."
     },
     "historyEmpty": "Weli bixin ma jirto.",
     "howTitle": "Sida bixintu u shaqeyso",
-    "how1": "Birrkaagu wuxuu u guuraa hayn isla markaad codsato — xisaabtu isla markiiba way hoos u dhacdaa.",
-    "how2": "Maaliyaddu way eegtaa codsiyada waaweyn; kuwa yaryar si toos ah ayaa bangiga loogu diraa.",
+    "how1": "Lacag bixinta waxaad ku xaqiijinaysaa koodh aan iimayl kuugu soo dirno, kadibna Birrku wuxuu u guuraa hayn — xisaabtaadu isla markiiba way hoos u dhacdaa.",
+    "how2": "Qadar yar oo loo dirayo xisaab aad horey u isticmaashay, oo magacaaga ku qoran, isla markiiba waa la diraa; wax kasta oo kale waxaa hubisa maaliyadda.",
     "how3": "Marka wareejinta la xaqiijiyo, haynta waxaa loo sii daayaa xisaabtaada bangiga.",
-    "formTitle": "Birr u dir bangigaaga"
+    "formTitle": "Birr u dir bangigaaga",
+    "codeTitle": "Hubi iimaylkaaga",
+    "codeBody": "Waxaan koodh ka kooban 6 tiro u dirnay {email}. Geli si aad u xaqiijiso lacag bixintan.",
+    "codeLabel": "Koodhka xaqiijinta",
+    "confirmCta": "Xaqiiji lacag bixinta",
+    "resendCode": "Dir koodh cusub",
+    "editDetails": "Beddel faahfaahinta",
+    "resultSent": "Waa la diray. Lacagtu waxay ku socotaa xisaabtaada.",
+    "resultQueued": "Waa la helay. Kooxdayada maaliyadda ayaa hubin doonta; qadarka waa la hayaa ilaa markaas.",
+    "resultProcessing": "Bangiga ayaa hadda ka shaqaynaya. Waan ku ogeysiin doonaa isla marka la xaqiijiyo.",
+    "nameHint": "Isticmaal magaca ku qoran xisaabta. Lacag bixinta ku qoran magacaaga sharciga ah ee la xaqiijiyay ayaa ugu dhakhsaha badan.",
+    "verifyEmailLink": "Xaqiiji iimaylka"
   },
   "assistant": {
     "emptyTitle": "Wax ka weydii dahabkaaga",
@@ -725,7 +772,56 @@
       "account_frozen": "Akoonka waa la xannibay",
       "account_unfrozen": "Akoonka waa la furay",
       "price_alert": "Digniinta qiimaha ayaa shaqeysay",
-      "order_receipt": "Daldalis waa dhammaaday"
+      "order_receipt": "Daldalis waa dhammaaday",
+      "delivery_requested": "Codsiga qaadista waa la helay",
+      "delivery_approved": "Qaadista waa la ansixiyay",
+      "delivery_scheduled": "Qaadista waa la qorsheeyay",
+      "delivery_rejected": "Qaadista waa la diiday",
+      "delivery_delivered": "Qaadista waa la dhammaystiray",
+      "payout_requested": "Lacag bixin sugaysa ansixin",
+      "order_in_review": "Dalab baaris ku jira",
+      "order_rejected": "Dalabku ma dhammaystirmin",
+      "deposit_reversed": "Lacag gelinta dib ayaa loo celiyay",
+      "fayda_verified": "Aqoonsiga waxaa lagu xaqiijiyay Fayda",
+      "new_sign_in": "Gelitaan cusub oo akoonkaaga ah",
+      "passkey_added": "Passkey waa lagu daray",
+      "staff_alert": "Digniin shaqaale"
+    },
+    "titleUnread": "Ogeysiisyo — {count} aan la akhrin",
+    "markAllRead": "Dhammaan u calaamadee la akhriyay",
+    "loadFailed": "Ogeysiisyada lama soo rari karin.",
+    "seeAll": "Dhammaan arag",
+    "loadMore": "Muuji kuwii hore",
+    "birr": "Birr",
+    "metalGold": "dahab",
+    "metalPlatinum": "balaatiin",
+    "alertDetail": "{metal} hadda waa {price} Birr/g",
+    "pushEnable": "Shid digniinaha biraawsarka",
+    "pushDisable": "Dami digniinaha biraawsarka",
+    "pushBlocked": "Digniinaha biraawsarka waa la xannibay",
+    "pushBlockedLong": "Biraawsarkani wuxuu xannibayaa ogeysiisyada ALKEVA. Ka ogolow dejinta goobta (astaanta qufulka ee ku taal barta cinwaanka), kadibna soo noqo.",
+    "pushUnsupported": "Biraawsarkani ma muujin karo ogeysiisyo.",
+    "pushUnavailable": "Digniinaha biraawsarka weli looma shidin ALKEVA.",
+    "browserTitle": "Digniinaha biraawsarka",
+    "browserBody": "Ku hel digniinaha qiimaha, lacag gelinta iyo lacag bixinta ogeysiis ahaan qalabkan — xitaa marka ALKEVA xiran tahay.",
+    "iosHint": "iPhone-ka: taabo Share → Add to Home Screen, ALKEVA ka fur Home Screen-ka, kadibna shid digniinaha.",
+    "prefsTitle": "Sida aan kuula soo xiriirno",
+    "prefAlerts": "Digniinaha qiimaha",
+    "prefMoney": "Lacag gelinta, daldalisyada iyo lacag bixinta",
+    "prefSecurity": "Ammaanka (gelitaanno cusub, passkeys)",
+    "channelEmail": "Iimayl",
+    "channelBrowser": "Biraawsar",
+    "always": "Had iyo jeer",
+    "staffKinds": {
+      "payout_review": "Lacag bixin u baahan ansixin",
+      "payout_stuck": "Lacag bixin ku xayiran Chapa",
+      "order_review": "Dalab u baahan baaris",
+      "deposit_reversed": "Lacag gelin uu bixiyuhu dib u celiyay",
+      "deposit_reversal_unconfirmed": "Ogeysiis dib-u-celin oo aan la xaqiijin",
+      "fx_jump_held": "Booddo sicirka sarrifka ah oo la hakiyay",
+      "fx_level_accepted": "Sicir sarrif cusub waa la aqbalay",
+      "price_suspect_XAU": "Qiimaha dahabka waa la hakiyay",
+      "price_suspect_XPT": "Qiimaha balaatiinka waa la hakiyay"
     }
   },
   "alerts": {
@@ -779,7 +875,7 @@
       "days90": "90-kii maalmood ee u dambeeyay"
     },
     "delivery": {
-      "explain": "Codsiyo lagu qaadanayo garaamka la hayo si dhab ah. Codsigu waxba ma hayo — tiirka ‘hadda hayo’ wuxuu tusayaa waxa uu isticmaaluhu haatan haysto, ansixintuna mar kale way hubisaa.",
+      "explain": "Codsiyo lagu wareejinayo garaamka la hayo si dhab ah. Ansixintu waxay garaamka u guurisaa hayn qaadis (lama iibin karo mar dambe); 'Calaamadee la gaarsiiyay' waxay diiwaangelisaa wareejinta; joojinta codsi la ansixiyay waxay soo celisaa garaamka.",
       "empty": "Xaaladdan codsi qaadis ma leh.",
       "amount": "La codsaday",
       "heldNow": "Hadda hayo",
@@ -790,8 +886,11 @@
         "reviewing": "Baaris",
         "approved": "La ansixiyay",
         "scheduled": "La qorsheeyay",
-        "rejected": "La diiday"
-      }
+        "rejected": "La diiday",
+        "delivered": "La gaarsiiyay"
+      },
+      "markDelivered": "Calaamadee la gaarsiiyay",
+      "cancelRefund": "Jooji oo soo celi garaamka"
     },
     "compliance": {
       "exportTitle": "Soo saarista AML",
@@ -843,7 +942,12 @@
       "complianceEvents": "Dhacdooyinka baarista",
       "rule": "Xeer",
       "action": "Ficil",
-      "resolved": "La xalliyay"
+      "resolved": "La xalliyay",
+      "emailVerified": "Iimaylka waa la xaqiijiyay",
+      "faydaVerified": "Aqoonsiga Fayda waa la xaqiijiyay",
+      "faydaNotVerified": "Aqoonsi Fayda ma leh",
+      "legalName": "Magaca sharciga ah",
+      "birthdate": "Taariikhda dhalashada"
     },
     "kyc": {
       "empty": "Xaaladdan gudbin ma leh.",
@@ -909,7 +1013,37 @@
       "sellbackToday": "Dib-u-iibin maanta",
       "chapaTitle": "Xisaabta ganacsiga ee Chapa",
       "chapaAvailable": "La heli karo ({currency})",
-      "chapaUnavailable": "Xisaabta Chapa lama heli karo (furayaasha lama dejin ama bixiyaha lama gaarin)."
+      "chapaUnavailable": "Xisaabta Chapa lama heli karo (furayaasha lama dejin ama bixiyaha lama gaarin).",
+      "entries": {
+        "title": "Diiwaannada khasnadda",
+        "hint": "kaydka dhabta ah ee khasnadda iyo raasumaalka — kaliya waa lagu dari karaa",
+        "vault": "Kaydka khasnadda",
+        "capital": "Raasumaal",
+        "asset": "Macdan",
+        "direction": "Jihada",
+        "intake": "Soo gelin",
+        "outtake": "Ka saarid",
+        "capitalIn": "Raasumaal soo galay",
+        "capitalOut": "Raasumaal baxay",
+        "grams": "Garaam",
+        "birr": "Qadarka (Birr)",
+        "vaultReference": "Lambar(ada) taxanaha baarka iyo shahaadada hubinta saafiyadda",
+        "capitalReference": "Tixraaca bangiga ama Chapa",
+        "record": "Diiwaangeli",
+        "recorded": "Waa la diiwaangeliyay.",
+        "appendOnly": "Diiwaannada lama beddeli karo lamana tirtiri karo. Khalad ku sax diiwaan ka soo horjeeda.",
+        "adminOnly": "Kaliya maamulaha ayaa diiwaangelin kara diiwaannada khasnadda.",
+        "when": "Goorma",
+        "what": "Diiwaan",
+        "amount": "Qadar",
+        "reference": "Tixraac",
+        "errors": {
+          "amount": "Geli qadar ka weyn eber.",
+          "vault_below_owed": "Waa la diiday: khasnaddu waxay heyn lahayd macdan ka yar inta macaamiishu leeyihiin.",
+          "float_below_halt": "Waa la diiday: lacagta caddaanka ah waxay ka hoos dhici lahayd xadka joojinta dib-u-iibinta.",
+          "generic": "Taasi ma dhammaystirmin. Fadlan mar kale isku day."
+        }
+      }
     },
     "audit": {
       "actor": "Qabtaha",
@@ -1008,7 +1142,22 @@
     "stepReview": "Baarista",
     "stepReviewBody": "Qof ayaa hubinaya dukumentiga — badanaa hal maalin shaqo gudaheed.",
     "stepVerified": "La xaqiijiyay",
-    "stepVerifiedBody": "Lacag gelinta, ganacsiga iyo bixinta waa la furayaa."
+    "stepVerifiedBody": "Lacag gelinta, ganacsiga iyo bixinta waa la furayaa.",
+    "retry": "Isku day mar kale",
+    "faydaTitle": "Ku xaqiiji Fayda",
+    "faydaHint": "aqoonsiga qaranka · waxay qaadataa hal daqiiqo",
+    "faydaStep1": "Waxaad tagaysaa bogga gelitaanka ee Fayda lafteeda, halkaas oo aad ku gelinayso FAN/FIN-kaaga.",
+    "faydaStep2": "Fayda waxay koodh hal mar ah u dirtaa telefoonkaaga diiwaangashan; adiguna waxaad ogolaanaysaa in la wadaago magacaaga iyo taariikhda dhalashadaada.",
+    "faydaStep3": "Isla markiiba halkan ayaad ku soo noqonaysaa adigoo la xaqiijiyay — lacag gelinta, ganacsiga iyo lacag bixinta isla markiiba waa la furayaa.",
+    "faydaCta": "Ku xaqiiji Fayda",
+    "faydaPrivacy": "ALKEVA waxay helaysaa oo kaliya waxa aad ku ogolaato Fayda. Furaha sirta ah ee Fayda iyo koodhadhkaaga weligood nama soo gaaraan.",
+    "faydaAlready": "Aqoonsigaaga horey ayaa loo xaqiijiyay.",
+    "faydaUnavailable": "Xaqiijinta Fayda hadda lama heli karo. Fadlan wax yar kadib isku day.",
+    "faydaJustVerified": "Waa dhammaatay — aqoonsigaaga waxaa lagu xaqiijiyay Fayda.",
+    "faydaVerifiedAs": "Fayda waxay ku xaqiijisay magaca",
+    "faydaNote": "Aqoonsiga waxaa xaqiijiya nidaamka aqoonsiga qaranka ee Itoobiya (Fayda). ALKEVA weligeed ma aragto xogta gelitaanka Fayda ee aad leedahay.",
+    "noMethods": "Xaqiijinta aqoonsiga hadda lama heli karo. Fadlan la xiriir taageerada.",
+    "documentAlternative": "Ma haysatid aqoonsi Fayda? Soo geli dukumenti"
   },
   "credential": {
     "eyebrow": "Shaqo diiwaangashan",
@@ -1059,5 +1208,85 @@
     "worldGold": "Dahabka caalamka · USD/oz",
     "worldPlatinum": "Balaatiinka caalamka · USD/oz",
     "fxSource": "USD → ETB · {source}"
+  },
+  "fayda": {
+    "finishing": "Gelitaanka Fayda waa la dhammaynayaa…",
+    "problemTitle": "Gelitaanka Fayda ma dhammaystirmin",
+    "backToSignIn": "Ku noqo gelitaanka",
+    "completeTitle": "Dhammaystir akoonkaaga",
+    "completeBody": "Fayda waxay xaqiijisay cidda aad tahay. Ku dar cinwaan iimayl — rasiidyada, digniinaha iyo koodhadhka lacag bixinta halkaas ayaa loo diraa.",
+    "verifiedName": "Magaca la xaqiijiyay",
+    "emailWhy": "Waxaan u diraynaa koodh ka kooban 6 tiro si aan u xaqiijino ka hor inta aanay lacagi dhaqaaqin.",
+    "completeButton": "Akoonkayga fur",
+    "errGeneric": "Khalad ayaa ka dhacay Fayda. Fadlan mar kale isku day.",
+    "err_consent_request_rejected": "Gelitaanka waad ka joojisay Fayda. Mar kale waad isku dayi kartaa markaad diyaar tahay.",
+    "err_consent_details_rejected": "Fayda ma wadaagin macluumaadka ALKEVA u baahan tahay. Waxaan u baahanahay magacaaga iyo taariikhda dhalashadaada si aan u xaqiijino aqoonsigaaga.",
+    "err_transaction_timeout": "Gelitaanka Fayda wuu dheeraaday, wakhtigiisuna wuu dhammaaday. Fadlan dib u bilow.",
+    "err_invalid_transaction": "Fadhiga gelitaanka Fayda wakhtigiisu wuu dhammaaday. Fadlan dib u bilow.",
+    "err_invalid_accepted_claim": "Fayda ma wadaagin macluumaadka loo baahan yahay. Fadlan mar kale isku day oo ogolow magacaaga iyo taariikhda dhalashadaada.",
+    "err_invalid_permitted_scope": "Fayda way diiday codsigan. Fadlan la xiriir taageerada ALKEVA.",
+    "code_fayda_state_invalid": "Xiriiriyahan gelitaanka wakhtigiisu wuu dhammaaday ama waxaa lagu furay biraawsar kale. Fadlan dib uga bilow bogga gelitaanka.",
+    "code_fayda_linked_elsewhere": "Aqoonsigan Fayda waxaa horey loogu xiray akoon kale oo ALKEVA ah. Hal qof wuxuu yeelan karaa hal akoon oo kaliya.",
+    "code_fayda_already_verified": "Aqoonsigaaga horey ayaa loo xaqiijiyay.",
+    "code_fayda_profile_incomplete": "Fayda ma soo celin magacaaga iyo taariikhda dhalashadaada, oo aan u baahanahay si aan kuu xaqiijino.",
+    "code_fayda_pending_expired": "Taasi way dheeraatay, gelitaankuna wakhtigiisu wuu dhammaaday. Fadlan dib u bilow.",
+    "code_underage": "Waa inaad tahay 18 sano ama ka weyn si aad u furto akoon ALKEVA.",
+    "code_email_taken_link_instead": "Akoon ALKEVA ah ayaa horey u isticmaalaya iimaylkan. Gal akoonkaas, kadibna aqoonsigaaga ku xaqiiji Fayda bogga Hubinta aqoonsiga."
+  },
+  "verifyEmail": {
+    "title": "Xaqiiji iimaylkaaga",
+    "body": "Waxaan koodh ka kooban 6 tiro u dirnay {email}. Geli si aad u furto lacag gelinta, ganacsiga iyo lacag bixinta.",
+    "codeLabel": "Koodhka xaqiijinta",
+    "codeHelp": "Koodhku wuxuu shaqeeyaa 10 daqiiqo. Haddii aadan arkin, hubi galka spam-ka.",
+    "confirm": "Xaqiiji iimaylka",
+    "resend": "Dir koodh cusub",
+    "resent": "Koodh cusub ayaa u socda {email}.",
+    "wrongCode": "Koodhkaas sax ma aha. {left} isku day ayaa kuu haray.",
+    "expiredCode": "Koodhkaas wakhtigiisu wuu dhammaaday. Dir mid cusub.",
+    "error": "Khalad ayaa dhacay. Fadlan mar kale isku day."
+  },
+  "gate": {
+    "email": "Xaqiiji cinwaanka iimaylkaaga si aad lacag u shubto, u ganacsato oo lacag u bixiso.",
+    "emailCta": "Xaqiiji iimaylka",
+    "identity": "Aqoonsigaaga ku xaqiiji Fayda si aad lacag u shubto, u ganacsato oo lacag u bixiso.",
+    "identityCta": "Ku xaqiiji Fayda"
+  },
+  "game": {
+    "noTier": "Weli heer ma jiro",
+    "rankOf": "Heerka {rank} ee {total}",
+    "towards": "Ku sii jeeda {name}",
+    "unlocksNext": "Heerka xiga wuxuu furayaa",
+    "unlocksDelivery": "Qaadista dhabta ah ee macdantaada"
+  },
+  "wallet": {
+    "open": "Jeeb — {count} socda",
+    "title": "Jeeb",
+    "description": "Birrkaaga, dahabkaaga iyo balaatiinkaaga, iyo lacagta jidka ku jirta.",
+    "total": "Wadarta qiimaha",
+    "show": "Muuji",
+    "hide": "Qari",
+    "cash": "Birr",
+    "deposit": "Lacag gelin",
+    "withdraw": "Lacag bixin",
+    "buy": "Iibso",
+    "sell": "Iibi",
+    "pendingTitle": "Waxa socda",
+    "pendingEmpty": "Waxba ma socdaan.",
+    "fullWallet": "Fur jeebka",
+    "kinds": {
+      "withdrawal": "Lacag bixin",
+      "deposit": "Lacag gelin",
+      "delivery": "Qaadis dhab ah"
+    },
+    "statuses": {
+      "requested": "Sugaya ansixin",
+      "approved": "La ansixiyay",
+      "processing": "Socda",
+      "initiated": "Sugaya lacag bixinta",
+      "webhook_received": "Waa la xaqiijinayaa",
+      "verified": "Waa la xaqiijinayaa",
+      "reviewing": "Baaris ku jira",
+      "scheduled": "La qorsheeyay"
+    }
   }
 }

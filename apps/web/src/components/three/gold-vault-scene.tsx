@@ -62,7 +62,7 @@ function useMaterials() {
       // Lacquered body: metal under a thin clearcoat, so reflections double up
       // the way they do on a polished, varnished jewellery box.
       body: new THREE.MeshPhysicalMaterial({
-        color: "#d2a668",
+        color: "#e2ad2c",
         metalness: 1,
         roughness: 0.32,
         clearcoat: 0.7,
@@ -71,7 +71,7 @@ function useMaterials() {
       }),
       // Mirror-polished trim, rim, feet, hinges and medallion.
       trim: new THREE.MeshStandardMaterial({
-        color: "#e6c28b",
+        color: "#f3c552",
         metalness: 1,
         roughness: 0.1,
         envMapIntensity: 1.4,
@@ -87,7 +87,7 @@ function useMaterials() {
       }),
       keyhole: new THREE.MeshBasicMaterial({ color: "#0a0605" }),
       bar: new THREE.MeshStandardMaterial({
-        color: "#dcb274",
+        color: "#e8b731",
         metalness: 1,
         roughness: 0.12,
         envMapIntensity: 1.5,
@@ -160,27 +160,29 @@ function useMoteTexture() {
 
 // ---- Dust motes rising out of the open box ---------------------------------
 const MOTES = 70;
+/** Phones: fewer additive sprites — overdraw is what a mobile GPU pays for. */
+const MOTES_LOW_POWER = 24;
 
-function Motes({ reveal }: { reveal: React.MutableRefObject<number> }) {
+function Motes({ reveal, count }: { reveal: React.MutableRefObject<number>; count: number }) {
   const tex = useMoteTexture();
   const points = useRef<THREE.Points>(null);
   const { positions, speeds } = useMemo(() => {
-    const positions = new Float32Array(MOTES * 3);
-    const speeds = new Float32Array(MOTES);
-    for (let i = 0; i < MOTES; i++) {
+    const positions = new Float32Array(count * 3);
+    const speeds = new Float32Array(count);
+    for (let i = 0; i < count; i++) {
       positions[i * 3] = (Math.random() - 0.5) * (W - 0.4);
       positions[i * 3 + 1] = FLOOR_Y + Math.random() * 1.6;
       positions[i * 3 + 2] = (Math.random() - 0.5) * (D - 0.4);
       speeds[i] = 0.12 + Math.random() * 0.22;
     }
     return { positions, speeds };
-  }, []);
+  }, [count]);
 
   useFrame((state, delta) => {
     const p = points.current;
     if (!p) return;
     const t = state.clock.elapsedTime;
-    for (let i = 0; i < MOTES; i++) {
+    for (let i = 0; i < count; i++) {
       let y = positions[i * 3 + 1]! + speeds[i]! * delta;
       if (y > FLOOR_Y + 1.8) y = FLOOR_Y + 0.05;
       positions[i * 3 + 1] = y;
@@ -200,7 +202,7 @@ function Motes({ reveal }: { reveal: React.MutableRefObject<number> }) {
         map={tex}
         size={0.05}
         sizeAttenuation
-        color="#f0d39c"
+        color="#ffd770"
         transparent
         opacity={0}
         depthWrite={false}
@@ -215,11 +217,13 @@ function GoldBox({
   gramsMg,
   open,
   hovered,
+  moteCount,
   onRevealChange,
 }: {
   gramsMg: string;
   open: boolean;
   hovered: boolean;
+  moteCount: number;
   onRevealChange: (revealed: boolean) => void;
 }) {
   const m = useMaterials();
@@ -231,10 +235,14 @@ function GoldBox({
   const bar = useRef<THREE.Mesh>(null);
   const glow = useRef<THREE.PointLight>(null);
 
-  const lidS = useRef<Spring>({ x: 0, v: 0 });
-  const haspS = useRef<Spring>({ x: 0, v: 0 });
-  const liftS = useRef<Spring>({ x: 0, v: 0 });
-  const reveal = useRef(0);
+  // Springs start at the pose the box is in when the scene mounts. Normally
+  // that is closed; if the visitor opened the static box while the three.js
+  // chunk was still downloading, the 3D box arrives already open rather than
+  // replaying the sequence. (useRef keeps only the first render's value.)
+  const lidS = useRef<Spring>({ x: open ? LID_OPEN : 0, v: 0 });
+  const haspS = useRef<Spring>({ x: open ? 1 : 0, v: 0 });
+  const liftS = useRef<Spring>({ x: open ? 1 : 0, v: 0 });
+  const reveal = useRef(open ? 1 : 0);
   const revealed = useRef(false);
 
   const hasGold = BigInt(gramsMg) > 0n;
@@ -362,7 +370,7 @@ function GoldBox({
       ))}
 
       {/* The light that comes up from inside as the lid opens */}
-      <pointLight ref={glow} position={[0, 0.75, 0.1]} color="#f2cf95" intensity={0} distance={3.2} decay={2} />
+      <pointLight ref={glow} position={[0, 0.75, 0.1]} color="#ffc95e" intensity={0} distance={3.2} decay={2} />
 
       {/* The user's bar, resting on the velvet */}
       {hasGold && (
@@ -377,7 +385,7 @@ function GoldBox({
         />
       )}
 
-      <Motes reveal={reveal} />
+      <Motes reveal={reveal} count={moteCount} />
 
       {/* Lid — pivots on the hinge line at the back top edge */}
       <group ref={lid} position={[0, H, -D / 2]}>
@@ -422,23 +430,65 @@ export default function GoldVaultScene({
   open,
   hovered,
   active,
+  lowPower = false,
   onRevealChange,
+  onReady,
+  onContextLost,
 }: {
   gramsMg: string;
   open: boolean;
   hovered: boolean;
   /** False while scrolled out of view — the render loop stops entirely. */
   active: boolean;
+  /** Phones / touch devices: DPR ≤ 1.5, a 512 shadow map, fewer motes. */
+  lowPower?: boolean;
   onRevealChange: (revealed: boolean) => void;
+  /** The renderer exists — the 3D box is about to draw its first frame. */
+  onReady?: () => void;
+  /** The browser dropped the WebGL context; the wrapper swaps in the static box. */
+  onContextLost?: () => void;
 }) {
+  // R3F's own teardown force-loses the context ~500 ms after a real unmount;
+  // only a loss while this scene is still mounted means the GPU dropped us.
+  const alive = useRef(true);
+  const contextLost = useRef(onContextLost);
+  useEffect(() => {
+    contextLost.current = onContextLost;
+  }, [onContextLost]);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
   return (
     <Canvas
       shadows="percentage"
-      dpr={[1, 2]}
+      dpr={lowPower ? [1, 1.5] : [1, 2]}
       frameloop={active ? "always" : "never"}
-      gl={{ alpha: true, antialias: true }}
+      gl={(defaults) => {
+        try {
+          return new THREE.WebGLRenderer({ ...defaults, alpha: true, antialias: true });
+        } catch (err) {
+          // No context to be had (a phone at its WebGL-context limit): R3F
+          // would leave a blank canvas, so hand the stage to the static box.
+          contextLost.current?.();
+          throw err;
+        }
+      }}
       camera={{ position: [0, 2.05, 5.0], fov: 34 }}
       style={{ background: "transparent" }}
+      onCreated={({ gl }) => {
+        gl.domElement.addEventListener(
+          "webglcontextlost",
+          () => {
+            if (alive.current) contextLost.current?.();
+          },
+          { once: true },
+        );
+        onReady?.();
+      }}
     >
       <Exposure />
       <StudioEnvironment />
@@ -448,7 +498,7 @@ export default function GoldVaultScene({
         intensity={2.2}
         color="#fff1d0"
         castShadow
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={lowPower ? [512, 512] : [1024, 1024]}
         shadow-bias={-0.0004}
         shadow-camera-left={-3}
         shadow-camera-right={3}
@@ -459,7 +509,13 @@ export default function GoldVaultScene({
       />
       {/* Cool rim from behind so the gold silhouette separates from the dark page */}
       <directionalLight position={[-3, 3, -5]} intensity={1.2} color="#dfe6ff" />
-      <GoldBox gramsMg={gramsMg} open={open} hovered={hovered} onRevealChange={onRevealChange} />
+      <GoldBox
+        gramsMg={gramsMg}
+        open={open}
+        hovered={hovered}
+        moteCount={lowPower ? MOTES_LOW_POWER : MOTES}
+        onRevealChange={onRevealChange}
+      />
       <Ground />
     </Canvas>
   );

@@ -1,9 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Inject,
+  Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Req,
@@ -17,93 +20,89 @@ import { z } from "zod";
 import {
   DEFAULT_LOCALE,
   LOCALES,
+  faydaCompleteDto,
   loginDto,
   registerDto,
   type Env,
+  type FaydaCallbackResponse,
+  type FaydaCompleteDto,
   type Locale,
   type LoginDto,
+  type ProvidersResponse,
   type RegisterDto,
+  type SessionItem,
 } from "@alkeva/shared";
 import { ENV } from "../core/core.module.js";
 import { ZodPipe } from "../core/zod.pipe.js";
+import { Auth, AuthGuard, REFRESH_COOKIE } from "./auth.guard.js";
+import { AuthService, type AccessPayload } from "./auth.service.js";
 import {
-  ACCESS_COOKIE,
-  Auth,
-  AuthGuard,
-  REFRESH_COOKIE,
-} from "./auth.guard.js";
-import { AuthService, type AccessPayload, type TokenPair } from "./auth.service.js";
+  clearFlowCookie,
+  clearSessionCookies,
+  clientContext,
+  setFlowCookie,
+  setSessionCookies,
+} from "./cookies.js";
+import { FaydaService } from "./fayda.service.js";
 import { GoogleAuthService } from "./google.service.js";
+import { SessionsService } from "./sessions.service.js";
+import { WebauthnService } from "./webauthn.service.js";
 
 const recoveryDto = z.object({ email: z.string().email() });
 const localeDto = z.object({ locale: z.enum(LOCALES) });
-const resetDto = z.object({ token: z.string().min(16), password: z.string().min(8) });
+const resetDto = z.object({ token: z.string().min(16), password: z.string().min(10).max(128) });
 const googleStartDto = z.object({
   intent: z.enum(["login", "register"]).default("login"),
   locale: z.enum(LOCALES).default(DEFAULT_LOCALE),
 });
-const googleCallbackDto = z.object({ code: z.string().min(1), state: z.string().min(1) });
+const oauthCallbackDto = z.object({
+  code: z.string().min(1).max(2048),
+  state: z.string().min(1).max(2048),
+});
+const codeDto = z.object({ code: z.string().regex(/^[0-9]{6}$/) });
+
+const GOOGLE_BIND_COOKIE = "alkeva_google_tx";
+const FAYDA_BIND_COOKIE = "alkeva_fayda_tx";
+const FLOW_TTL_SEC = 900;
 
 @Controller("auth")
 export class AuthController {
   constructor(
     private readonly auth: AuthService,
+    private readonly sessions: SessionsService,
     private readonly google: GoogleAuthService,
+    private readonly fayda: FaydaService,
+    private readonly webauthn: WebauthnService,
     @Inject(ENV) private readonly env: Env,
   ) {}
 
-  /** Which sign-in providers are configured — drives button visibility. */
+  /** Which sign-in and verification methods are live — drives the UI. */
   @Get("providers")
-  providers() {
+  providers(): ProvidersResponse {
     return {
+      fayda: this.fayda.signInEnabled,
+      password: this.auth.passwordEnabled,
       google: this.google.configured,
-      webauthn: this.env.WEBAUTHN_RP_ID.length > 0 && this.env.WEBAUTHN_ORIGIN.length > 0,
+      passkey: this.webauthn.configured,
+      webauthn: this.webauthn.configured,
+      kyc: {
+        fayda: this.fayda.verificationEnabled,
+        document: this.env.KYC_METHODS.includes("document"),
+      },
     };
   }
 
-  /** 302 to Google's consent screen. A navigation, not an XHR. */
-  @Get("google/start")
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  async googleStart(
-    @Req() req: Request,
-    @Res() res: Response,
-  ): Promise<void> {
-    const attempt = googleStartDto.safeParse({
-      intent: req.query.intent,
-      locale: req.query.locale,
-    });
-    const parsed = attempt.success
-      ? attempt.data
-      : { intent: "login" as const, locale: DEFAULT_LOCALE };
-    const url = await this.google.startUrl(parsed.intent, parsed.locale);
-    res.redirect(url);
-  }
-
-  /**
-   * The web callback page POSTs ?code&state here through the /api proxy so
-   * the session cookies land first-party — the same reason the proxy exists.
-   */
-  @Post("google/callback")
-  @HttpCode(200)
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  async googleCallback(
-    @Body(new ZodPipe(googleCallbackDto)) dto: { code: string; state: string },
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const userId = await this.google.handleCallback(dto.code, dto.state);
-    const { user, tokens } = await this.auth.issueSessionFor(userId);
-    this.setAuthCookies(res, tokens);
-    return user;
-  }
+  // ── password ────────────────────────────────────────────────────
 
   @Post("register")
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async register(
     @Body(new ZodPipe(registerDto)) dto: RegisterDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { user, tokens } = await this.auth.register(dto);
-    this.setAuthCookies(res, tokens);
+    const { user, tokens } = await this.auth.register(dto, clientContext(req));
+    setSessionCookies(res, this.env, tokens);
     return user;
   }
 
@@ -112,20 +111,26 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async login(
     @Body(new ZodPipe(loginDto)) dto: LoginDto,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { user, tokens } = await this.auth.login(dto);
-    this.setAuthCookies(res, tokens);
+    const { user, tokens } = await this.auth.login(dto, clientContext(req));
+    setSessionCookies(res, this.env, tokens);
     return user;
   }
 
+  // ── session ─────────────────────────────────────────────────────
+
   @Post("refresh")
   @HttpCode(200)
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const token = req.cookies?.[REFRESH_COOKIE] as string | undefined;
     if (!token) throw new UnauthorizedException("missing_refresh");
-    const { user, tokens } = await this.auth.refresh(token);
-    this.setAuthCookies(res, tokens);
+    const { user, tokens } = await this.auth.refresh(token, clientContext(req));
+    // null = another tab rotated this token a moment ago; the browser already
+    // holds the new cookies, so overwriting them would undo that rotation.
+    if (tokens) setSessionCookies(res, this.env, tokens);
     return user;
   }
 
@@ -133,10 +138,36 @@ export class AuthController {
   @HttpCode(200)
   @UseGuards(AuthGuard)
   async logout(@Auth() auth: AccessPayload, @Res({ passthrough: true }) res: Response) {
-    await this.auth.logout(auth.sub);
-    res.clearCookie(ACCESS_COOKIE, this.cookieOpts());
-    res.clearCookie(REFRESH_COOKIE, this.cookieOpts());
+    await this.auth.logout(auth);
+    clearSessionCookies(res, this.env);
     return { ok: true };
+  }
+
+  @Get("sessions")
+  @UseGuards(AuthGuard)
+  async listSessions(@Auth() auth: AccessPayload): Promise<{ sessions: SessionItem[] }> {
+    return { sessions: await this.sessions.listActive(auth.sub, auth.sid) };
+  }
+
+  /** Sign out one device. */
+  @Delete("sessions/:id")
+  @UseGuards(AuthGuard)
+  async revokeSession(
+    @Auth() auth: AccessPayload,
+    @Param("id", ParseUUIDPipe) id: string,
+  ): Promise<{ ok: true }> {
+    const mine = await this.sessions.listActive(auth.sub, auth.sid);
+    if (mine.some((s) => s.id === id)) await this.sessions.revoke(id, "user_revoked");
+    return { ok: true };
+  }
+
+  /** Sign out everywhere except this device. */
+  @Post("sessions/revoke-others")
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  async revokeOthers(@Auth() auth: AccessPayload): Promise<{ revoked: number }> {
+    const revoked = await this.sessions.revokeAllForUser(auth.sub, "user_revoked_all", auth.sid);
+    return { revoked };
   }
 
   @Get("me")
@@ -153,6 +184,26 @@ export class AuthController {
   ) {
     return this.auth.setLocale(auth.sub, dto.locale);
   }
+
+  // ── email verification ──────────────────────────────────────────
+
+  @Post("email/code")
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  sendEmailCode(@Auth() auth: AccessPayload) {
+    return this.auth.sendEmailCode(auth.sub);
+  }
+
+  @Post("email/verify")
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  verifyEmail(@Auth() auth: AccessPayload, @Body(new ZodPipe(codeDto)) dto: { code: string }) {
+    return this.auth.verifyEmail(auth.sub, dto.code);
+  }
+
+  // ── recovery ────────────────────────────────────────────────────
 
   @Post("recover")
   @HttpCode(202)
@@ -171,21 +222,101 @@ export class AuthController {
     return { ok: true };
   }
 
-  private setAuthCookies(res: Response, tokens: TokenPair) {
-    res.cookie(ACCESS_COOKIE, tokens.accessToken, {
-      ...this.cookieOpts(),
-      maxAge: this.env.ACCESS_TOKEN_TTL_SEC * 1000,
-    });
-    // Path stays "/" — the browser reaches the API through the Next.js
-    // rewrite proxy (/api/...), so a narrower path would strand the cookie.
-    res.cookie(REFRESH_COOKIE, tokens.refreshToken, {
-      ...this.cookieOpts(),
-      maxAge: this.env.REFRESH_TOKEN_TTL_SEC * 1000,
-    });
+  // ── Google ──────────────────────────────────────────────────────
+
+  /** 302 to Google's consent screen. A navigation, not an XHR. */
+  @Get("google/start")
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async googleStart(@Req() req: Request, @Res() res: Response): Promise<void> {
+    const attempt = googleStartDto.safeParse({ intent: req.query.intent, locale: req.query.locale });
+    const parsed = attempt.success
+      ? attempt.data
+      : { intent: "login" as const, locale: DEFAULT_LOCALE };
+    const { url, binding } = await this.google.startUrl(parsed.intent, parsed.locale);
+    setFlowCookie(res, this.env, GOOGLE_BIND_COOKIE, binding, FLOW_TTL_SEC);
+    res.redirect(url);
   }
 
-  private cookieOpts() {
-    const secure = this.env.WEB_ORIGIN.startsWith("https://");
-    return { httpOnly: true, sameSite: "lax" as const, secure };
+  /** The web callback page POSTs ?code&state here through the /api proxy. */
+  @Post("google/callback")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async googleCallback(
+    @Body(new ZodPipe(oauthCallbackDto)) dto: { code: string; state: string },
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const binding = req.cookies?.[GOOGLE_BIND_COOKIE] as string | undefined;
+    clearFlowCookie(res, this.env, GOOGLE_BIND_COOKIE);
+    const userId = await this.google.handleCallback(dto.code, dto.state, binding);
+    const { user, tokens } = await this.auth.issueSessionFor(userId, ["google"], clientContext(req));
+    setSessionCookies(res, this.env, tokens);
+    return user;
+  }
+
+  // ── Fayda (VeriFayda 2.0 / eSignet) ─────────────────────────────
+
+  /** Sign in / create an account with Fayda. Returns the authorize URL. */
+  @Post("fayda/start")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async faydaStart(@Res({ passthrough: true }) res: Response): Promise<{ url: string }> {
+    const { url, binding } = await this.fayda.start("signin", null);
+    setFlowCookie(res, this.env, FAYDA_BIND_COOKIE, binding, FLOW_TTL_SEC);
+    return { url };
+  }
+
+  /** Verify an existing, signed-in account with Fayda (the identity check). */
+  @Post("fayda/link")
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async faydaLink(
+    @Auth() auth: AccessPayload,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ url: string }> {
+    const { url, binding } = await this.fayda.start("link", auth.sub);
+    setFlowCookie(res, this.env, FAYDA_BIND_COOKIE, binding, FLOW_TTL_SEC);
+    return { url };
+  }
+
+  @Post("fayda/callback")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async faydaCallback(
+    @Body(new ZodPipe(oauthCallbackDto)) dto: { code: string; state: string },
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<FaydaCallbackResponse> {
+    const binding = req.cookies?.[FAYDA_BIND_COOKIE] as string | undefined;
+    const outcome = await this.fayda.callback(dto.code, dto.state, binding);
+    if (outcome.kind === "needs_profile") {
+      // Keep the binding cookie: /complete checks it again.
+      return { status: "needs_profile", token: outcome.token, profile: outcome.profile };
+    }
+    clearFlowCookie(res, this.env, FAYDA_BIND_COOKIE);
+    if (outcome.kind === "linked") {
+      return { status: "linked", user: await this.auth.me(outcome.userId) };
+    }
+    const { user, tokens } = await this.auth.issueSessionFor(outcome.userId, ["fayda"], clientContext(req));
+    setSessionCookies(res, this.env, tokens);
+    return { status: "signed_in", user };
+  }
+
+  /** New Fayda user: confirm an email and accept the terms → account + session. */
+  @Post("fayda/complete")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  async faydaComplete(
+    @Body(new ZodPipe(faydaCompleteDto)) dto: FaydaCompleteDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<FaydaCallbackResponse> {
+    const binding = req.cookies?.[FAYDA_BIND_COOKIE] as string | undefined;
+    const userId = await this.fayda.complete(dto.token, binding, dto.email, dto.locale);
+    clearFlowCookie(res, this.env, FAYDA_BIND_COOKIE);
+    const { user, tokens } = await this.auth.issueSessionFor(userId, ["fayda"], clientContext(req));
+    setSessionCookies(res, this.env, tokens);
+    return { status: "signed_in", user };
   }
 }

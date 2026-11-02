@@ -1,12 +1,13 @@
 import {
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
   UnprocessableEntityException,
 } from "@nestjs/common";
-import { and, desc, eq, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import {
   accounts,
   auditLogs,
@@ -156,15 +157,30 @@ export class OrdersService {
           return this.reject(tx, order, quote, "account_frozen");
         }
 
-        // 4b. KYC gate (Phase 4.3): trading requires a verified identity.
-        // Existing accounts were grandfathered to tier 1 by migration 0004.
-        if (await this.kycTierBelow(tx, userId, 1)) {
-          return this.reject(tx, order, quote, "kyc_required");
+        // 4b. Account gate (Phase 10): a customer account with a confirmed
+        // email and a verified identity. Staff accounts never trade.
+        const gate = await this.ledger.accountGate(tx, userId);
+        if (gate) return this.reject(tx, order, quote, gate);
+
+        // 4c. The user must actually have what they are trading BEFORE anything
+        // is parked for review — otherwise anyone can fill the compliance queue
+        // with orders they could never pay for. (Review approval re-checks it.)
+        const held = (id: string) => balances.get(id) ?? 0n;
+        if (quote.side === "buy" && held(userEtbId) < quote.totalCents) {
+          return this.reject(tx, order, quote, "insufficient_balance");
+        }
+        if (quote.side === "sell" && held(userMetalId) < quote.gramsMg) {
+          return this.reject(tx, order, quote, "insufficient_metal");
         }
 
-        // 5. Compliance pre-check (Q57): large orders route to review —
-        // quote consumed, nothing posted, resolution arrives in Phase 5.
-        if (quote.totalCents >= this.env.COMPLIANCE_REVIEW_THRESHOLD_CENTS) {
+        // 5. Compliance pre-check (Q57): large orders route to review — and so
+        // does the order that takes today's turnover across the line, so the
+        // review cannot be dodged by splitting one trade into several.
+        const turnoverToday = await this.turnoverToday(tx, userId);
+        const overLine = quote.totalCents >= this.env.COMPLIANCE_REVIEW_THRESHOLD_CENTS;
+        const overDaily =
+          turnoverToday + quote.totalCents >= this.env.COMPLIANCE_REVIEW_THRESHOLD_CENTS;
+        if (overLine || overDaily) {
           await tx.update(quotes).set({ status: "consumed" }).where(eq(quotes.id, quote.id));
           const reviewed = await tx
             .update(orders)
@@ -173,13 +189,14 @@ export class OrdersService {
             .returning();
           await tx.insert(complianceEvents).values({
             userId,
-            ruleKey: "txn_over_500k",
+            ruleKey: overLine ? "txn_over_500k" : "daily_turnover_500k",
             action: "review",
             evidence: {
               orderId: order.id,
               quoteId: quote.id,
               side: quote.side,
               totalCents: quote.totalCents.toString(),
+              turnoverTodayCents: turnoverToday.toString(),
             },
           });
           return { outcome: "review", order: reviewed[0] ?? order, quote };
@@ -290,7 +307,39 @@ export class OrdersService {
       });
     }
     if (result.outcome === "settled") this.emitReceipt(result.order, result.quote);
+    if (result.outcome === "review") {
+      void this.notifications.emit(userId, "order_in_review", {
+        side: result.quote.side,
+        asset: result.quote.asset,
+        gramsMg: result.quote.gramsMg.toString(),
+        totalCents: result.quote.totalCents.toString(),
+      });
+      void this.notifications.emitToStaff(["compliance", "administrator"], "staff_alert", {
+        kind: "order_review",
+        message: `An order of ${result.quote.totalCents / 100n} ETB is waiting for compliance review.`,
+        url: "/admin/reviews",
+      });
+    }
     return this.serialize(result.order, result.quote);
+  }
+
+  /**
+   * Today's (EAT) traded total for a user: settled orders plus those still
+   * waiting in review, so two parked orders cannot each slip under the line.
+   */
+  private async turnoverToday(tx: Tx, userId: string): Promise<bigint> {
+    const rows = await tx
+      .select({ total: sql<string>`coalesce(sum(${quotes.totalCents}), 0)::bigint` })
+      .from(orders)
+      .innerJoin(quotes, eq(orders.quoteId, quotes.id))
+      .where(
+        and(
+          eq(orders.userId, userId),
+          inArray(orders.status, ["settled", "review"]),
+          sql`${orders.createdAt} >= ${eatDayStartUtc().toISOString()}`,
+        ),
+      );
+    return BigInt(rows[0]?.total ?? "0");
   }
 
   /** Fire-and-forget receipt notification for a freshly settled order. */
@@ -330,6 +379,8 @@ export class OrdersService {
     const found = rows[0];
     if (!found) throw new NotFoundException("order_not_found");
     const { quote: peeked } = found;
+    // Non-negotiable #4: nobody decides on their own money.
+    if (found.order.userId === actorId) throw new ForbiddenException("cannot_approve_own");
 
     if (decision === "reject") {
       const claimed = await this.db
@@ -341,6 +392,9 @@ export class OrdersService {
       if (!rejected) throw new ConflictException("order_not_in_review");
       await this.resolveComplianceEvents(orderId, actorId);
       await this.auditReview(actorId, "review_rejected", orderId, note);
+      void this.notifications.emit(rejected.userId, "order_rejected", {
+        reason: "compliance_rejected",
+      });
       return this.serialize(rejected, peeked);
     }
 
@@ -385,10 +439,20 @@ export class OrdersService {
         const quote = quoteRows[0];
         if (!quote) return this.reject(tx, order, peeked, "quote_not_found");
 
+        // A review settles at the price the user confirmed — but only while
+        // that price is still recent. Hours later it would hand one side a
+        // free option on the market move; the user re-quotes instead.
+        const ageMin = (Date.now() - order.createdAt.getTime()) / 60_000;
+        if (ageMin > this.env.REVIEW_MAX_AGE_MIN) {
+          return this.reject(tx, order, quote, "review_expired");
+        }
+
         // Re-run every gate the review routing skipped or that time can break.
         if (await this.ledger.isFrozen(tx, userId)) {
           return this.reject(tx, order, quote, "account_frozen");
         }
+        const gate = await this.ledger.accountGate(tx, userId);
+        if (gate) return this.reject(tx, order, quote, gate);
         const tierCode = await this.checkTierCaps(tx, userId, quote.totalCents);
         if (tierCode) return this.reject(tx, order, quote, tierCode);
 
@@ -471,6 +535,7 @@ export class OrdersService {
     );
 
     if (result.outcome === "rejected") {
+      void this.notifications.emit(userId, "order_rejected", { reason: result.code });
       // The approval itself was refused by a money gate — surfaced to the
       // compliance officer as the same machine code a live order would show.
       throw new UnprocessableEntityException({
@@ -560,15 +625,6 @@ export class OrdersService {
     return { outcome: "rejected", order: updated[0] ?? order, quote, code };
   }
 
-  private async kycTierBelow(tx: Tx, userId: string, minTier: number): Promise<boolean> {
-    const rows = await tx
-      .select({ kycTier: users.kycTier })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-    return (rows[0]?.kycTier ?? 0) < minTier;
-  }
-
   /** Returns a rejection code when a tier cap is exceeded, else null. */
   private async checkTierCaps(
     tx: Tx,
@@ -581,12 +637,13 @@ export class OrdersService {
       .where(eq(users.id, userId))
       .limit(1);
     const tierName = userRows[0]?.holdingTier;
-    if (!tierName) return null; // no tier assigned yet → uncapped
-
+    // No cached tier yet (the cache is written when the portfolio is read):
+    // treat the account as the LOWEST tier, never as uncapped.
     const tierRows = await tx
       .select()
       .from(holdingTierConfig)
-      .where(eq(holdingTierConfig.name, tierName))
+      .where(tierName ? eq(holdingTierConfig.name, tierName) : undefined)
+      .orderBy(asc(holdingTierConfig.rank))
       .limit(1);
     const tier = tierRows[0];
     if (!tier) return null; // unknown tier name → uncapped

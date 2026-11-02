@@ -138,7 +138,7 @@ export function OrderTicket({
           <div
             className={cn(
               "flex h-12 items-center gap-2.5 rounded-md border border-border bg-panel-2 px-3.5 transition-[border-color,box-shadow] duration-150",
-              "focus-within:border-gold-500 focus-within:shadow-[0_0_0_3px_oklch(0.717_0.098_73.3/0.18)]",
+              "focus-within:border-gold-500 focus-within:shadow-[0_0_0_3px_var(--focus-ring)]",
               stage === "quote" && "opacity-60",
             )}
           >

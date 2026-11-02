@@ -278,7 +278,7 @@ export default async function WelcomePage() {
           <div className="relative isolate flex flex-col items-start gap-6 overflow-hidden rounded-[1.5rem] border border-gold-400/20 bg-card px-6 py-10 lg:flex-row lg:items-center lg:justify-between lg:px-12 lg:py-14">
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 -z-10 [background:radial-gradient(60%_140%_at_85%_50%,oklch(0.797_0.09_78.1/0.16),transparent_65%)]"
+              className="pointer-events-none absolute inset-0 -z-10 [background:radial-gradient(60%_140%_at_85%_50%,color-mix(in_oklch,var(--gold-glow)_16%,transparent),transparent_65%)]"
             />
             <div>
               <h2 className={`${h2} max-w-[18ch]`}>{t("ctaTitle")}</h2>

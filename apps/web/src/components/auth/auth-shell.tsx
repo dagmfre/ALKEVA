@@ -28,7 +28,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
         <aside className="relative isolate hidden flex-col justify-between overflow-hidden bg-bg-deep p-10 lg:flex xl:p-14">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 -z-10 [background:radial-gradient(70%_55%_at_30%_70%,oklch(0.797_0.09_78.1/0.14),transparent_70%)]"
+            className="pointer-events-none absolute inset-0 -z-10 [background:radial-gradient(70%_55%_at_30%_70%,color-mix(in_oklch,var(--gold-glow)_14%,transparent),transparent_70%)]"
           />
           <Link href="/welcome" className="flex items-center gap-3">
             <Mark size={34} />

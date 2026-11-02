@@ -1,20 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronDown } from "lucide-react";
 
 import { Mark } from "@/components/brand/mark";
 import { LiveClock, NotificationsBell, UserMenu } from "@/components/shell/header-actions";
 import { LocaleToggle } from "@/components/shell/locale-toggle";
 import { NavIcon, isActive, useNav, usePageTitle } from "@/components/shell/nav-items";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { WalletButton } from "@/components/shell/wallet-button";
 
 /**
  * The V2 tab bar (≥1024px). The bar is the deepest surface; the active tab is
@@ -67,13 +61,11 @@ export function TopBar() {
         <WalletTab />
       </nav>
 
-      <div className="ms-auto flex items-center gap-1 self-center">
-        <span className="hidden xl:flex">
+      <div className="ms-auto flex items-center gap-1.5 self-center">
+        <span className="hidden min-[1720px]:flex">
           <LiveClock withLabel />
         </span>
-        <span className="flex xl:hidden">
-          <LiveClock withLabel={false} />
-        </span>
+        <WalletButton />
         <NotificationsBell />
         <LocaleToggle />
         <UserMenu showName />
@@ -82,39 +74,29 @@ export function TopBar() {
   );
 }
 
-/** Wallet: one tab that opens Deposit / Withdraw / Identity check. */
+/**
+ * Wallet: one tab to the wallet overview (deposit, withdraw and identity are
+ * its sub-pages). The balances themselves are always visible in the header
+ * chip beside the bell.
+ */
 function WalletTab() {
   const pathname = usePathname();
-  const router = useRouter();
   const { wallet, walletLabel } = useNav();
-  const active = wallet.some((i) => isActive(pathname, i.href));
+  const active = pathname === "/wallet" || wallet.some((i) => isActive(pathname, i.href));
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        className="v2-tab outline-none focus-visible:[&>.v2-pill]:outline-2 focus-visible:[&>.v2-pill]:outline-ring data-[state=open]:[&>.v2-pill]:bg-white/5"
-        data-active={active}
-        title={walletLabel}
-      >
-        <span className="v2-pill">
-          <NavIcon name="wallet" />
-          <span className="sr-only xl:not-sr-only">{walletLabel}</span>
-          <ChevronDown className="size-3.5" aria-hidden="true" />
-        </span>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" sideOffset={4} className="min-w-[13rem]">
-        {wallet.map((item) => (
-          <DropdownMenuItem
-            key={item.key}
-            onSelect={() => router.push(item.href)}
-            className={isActive(pathname, item.href) ? "text-gold-300 [&_svg]:!text-gold-400" : undefined}
-          >
-            <NavIcon name={item.key} />
-            {item.label}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Link
+      href="/wallet"
+      className="v2-tab outline-none focus-visible:[&>.v2-pill]:outline-2 focus-visible:[&>.v2-pill]:outline-ring"
+      data-active={active}
+      aria-current={active ? "page" : undefined}
+      title={walletLabel}
+    >
+      <span className="v2-pill">
+        <NavIcon name="wallet" />
+        <span className="sr-only xl:not-sr-only">{walletLabel}</span>
+      </span>
+    </Link>
   );
 }
 
@@ -140,8 +122,8 @@ export function MobileHeader() {
       ) : (
         <h1 className="truncate text-[1.0625rem] font-bold">{title}</h1>
       )}
-      <span className="flex flex-none items-center">
-        <LiveClock withLabel={false} />
+      <span className="flex flex-none items-center gap-0.5">
+        <WalletButton compact />
         <NotificationsBell />
         <LocaleToggle className="[&>span]:hidden" />
         <UserMenu />

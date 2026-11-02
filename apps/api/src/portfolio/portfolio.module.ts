@@ -3,10 +3,11 @@ import { AuthModule } from "../auth/auth.module.js";
 import { LedgerModule } from "../ledger/ledger.module.js";
 import { PortfolioController } from "./portfolio.controller.js";
 import { PortfolioService } from "./portfolio.service.js";
+import { WalletController } from "./wallet.controller.js";
 
 @Module({
   imports: [AuthModule, LedgerModule],
-  controllers: [PortfolioController],
+  controllers: [PortfolioController, WalletController],
   providers: [PortfolioService],
   exports: [PortfolioService],
 })

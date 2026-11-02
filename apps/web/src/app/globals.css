@@ -6,8 +6,10 @@
  *
  * Layout and component craft follow RabbitX: a dense terminal of rounded
  * panels on a near-black ground, mono numbers, segmented controls with a
- * raised thumb. Colour follows FBS: black with muted champagne gold. Navigation
- * is the "V2" folder tab — the active tab is the page colour and flows into it.
+ * raised thumb. Colour: the FBS near-black ground with the bright pre-v2 gold
+ * family (restored 2026-11-01 by the owner — v2 first shipped a muted
+ * champagne). Navigation is the "V2" folder tab — the active tab is the page
+ * colour and flows into it.
  *
  * The approved comps live on the Design canvas "ALKEVA Redesign"
  * (claude.ai/artifact/PRjiDfuMxrHApTRGn8tjxf); this file is their tokens.
@@ -16,7 +18,7 @@
  * every screen re-skins at once; their meaning is restated below.
  */
 :root {
-  /* Ground → surfaces. Near-neutral, a hair warm toward the champagne. */
+  /* Ground → surfaces. Near-neutral, a hair warm toward the gold. */
   --bg-deep: oklch(0.123 0.002 75); /* #060607 — nav bar, deepest */
   --background: oklch(0.15 0.002 75); /* #0b0b0c — page; the active tab's colour */
   --card: oklch(0.187 0.002 75); /* #131314 — panels */
@@ -40,13 +42,23 @@
   --border: oklch(1 0 0 / 0.07);
   --input: oklch(1 0 0 / 0.12);
 
-  /* Champagne gold — FBS. Text uses 400, fills use the CTA gradient,
-     selected outlines use 400 at low alpha. */
-  --gold-300: oklch(0.877 0.068 82.2); /* #edd3a4 */
-  --gold-400: oklch(0.797 0.09 78.1); /* #ddb679 */
-  --gold-500: oklch(0.717 0.098 73.3); /* #c99a5b */
-  --gold-600: oklch(0.616 0.09 69.8); /* #a87b45 */
-  --gold-700: oklch(0.485 0.072 67.7); /* #7a5730 */
+  /* Bright gold — the pre-v2 family, restored 2026-11-01 on the v2 layout.
+     300–500 are the luminous golds (#ffe45c / #ffd92e / #f5d21a); 600/700 are
+     the metallic deep golds (#d9a900 / #c99600). The client's brand hexes
+     #d4a017 / #b8860b stay anchored in the CTA gradient's deep stops.
+     Text uses 400, fills use 500 or the CTA gradient — always with the dark
+     ink on top; white on gold never ships. Selected outlines use 400 at low
+     alpha. Every value round-trips to its hex. */
+  --gold-300: oklch(0.917 0.155 98); /* #ffe45c */
+  --gold-400: oklch(0.892 0.173 95.2); /* #ffd92e */
+  --gold-500: oklch(0.868 0.175 96.5); /* #f5d21a */
+  --gold-600: oklch(0.758 0.155 88.1); /* #d9a900 */
+  --gold-700: oklch(0.703 0.144 84.2); /* #c99600 */
+
+  /* Gold-derived tints. Components use these, never a literal, so the next
+     re-colour is the five lines above. */
+  --focus-ring: color-mix(in oklch, var(--gold-400) 18%, transparent); /* 3px halo on a focused field */
+  --gold-glow: var(--gold-500); /* radial washes behind heroes — alpha set per use with color-mix */
 
   /* Platinum — a cool silver, the second metal. */
   --platinum-400: oklch(0.862 0.012 259.8); /* #cdd2da */
@@ -54,7 +66,7 @@
   --platinum-600: oklch(0.71 0.018 259.4); /* #9ba2ad */
 
   --primary: var(--gold-500);
-  --primary-foreground: oklch(0.19 0.027 74.3); /* #1b1206 — ink on gold */
+  --primary-foreground: oklch(0.16 0.01 84); /* #0f0d08 — ink on gold */
   --secondary: var(--panel-2);
   --secondary-foreground: var(--foreground);
   --accent: var(--raised);
@@ -68,13 +80,19 @@
   --destructive-foreground: oklch(0.18 0.03 18);
   --caution: var(--platinum-400);
 
-  /* Sell is bone, buy is champagne: two strong actions, neither red nor green. */
+  /* Sell is bone, buy is gold: two strong actions, neither red nor green. */
   --bone: oklch(0.935 0.007 80.7); /* #ece9e4 */
   --bone-foreground: oklch(0.184 0.005 67.5); /* #141210 */
 
-  --cta: linear-gradient(180deg, #ecd09c 0%, #d2a668 46%, #ad7f47 100%);
-  --cta-hover: linear-gradient(180deg, #f2d9aa 0%, #dbb174 46%, #b88a50 100%);
-  --cta-gloss: inset 0 1px 0 rgb(255 255 255 / 0.35), 0 1px 2px rgb(0 0 0 / 0.5);
+  /* The primary action. Four stops: luminous highlight → #f5d21a → the
+     client's #d4a017 at 72% → #b8860b at 100%, so the brighter top never
+     dilutes the identity. Dark ink clears 4.5:1 on every stop (verify:contrast
+     asserts all four). Gloss is an inner specular edge + inner bottom shade. */
+  --cta: linear-gradient(180deg, #ffe45c 0%, #f5d21a 40%, #d4a017 72%, #b8860b 100%);
+  --cta-hover: linear-gradient(180deg, #ffed81 0%, #ffd92e 40%, #deac22 72%, #c49213 100%);
+  --cta-gloss:
+    inset 0 1px 0 oklch(0.97 0.09 100 / 0.55), inset 0 -1px 0 oklch(0 0 0 / 0.3),
+    0 1px 2px rgb(0 0 0 / 0.5);
   --shadow-pop: 0 18px 44px rgb(0 0 0 / 0.5), 0 2px 6px rgb(0 0 0 / 0.35);
   --shadow-thumb: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 2px 6px rgb(0 0 0 / 0.35);
 
@@ -194,8 +212,10 @@
     text-wrap: pretty;
   }
 
+  /* 20%, not 30%: the bright gold is lighter than champagne was, and
+     foreground text on the highlight must still clear 4.5:1. */
   ::selection {
-    background: oklch(0.797 0.09 78.1 / 0.3);
+    background: color-mix(in oklch, var(--gold-400) 20%, transparent);
   }
 
   * {
@@ -230,7 +250,7 @@
     border: 1px solid var(--border);
   }
 
-  /** The primary action: champagne gradient, dark ink, inner highlight. */
+  /** The primary action: gold gradient, dark ink, inner highlight. */
   .cta-gold {
     background: var(--cta);
     box-shadow: var(--cta-gloss);
@@ -252,7 +272,7 @@
 
   /** Live indicator dot: a soft ring, not a glow. */
   .glow-gold {
-    box-shadow: 0 0 0 3px oklch(0.797 0.09 78.1 / 0.18);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--gold-400) 18%, transparent);
   }
   .live-dot {
     box-shadow: 0 0 0 3px oklch(0.741 0.159 151.9 / 0.18);

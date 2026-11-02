@@ -20,7 +20,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import type { MeResponse } from "@alkeva/shared";
+import type { MeResponse, ProvidersResponse } from "@alkeva/shared";
 
 import { Mark } from "@/components/brand/mark";
 import { UserMenu } from "@/components/shell/header-actions";
@@ -80,6 +80,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const me = useResource<MeResponse>("/auth/me");
+  // The document KYC queue only matters when document upload is enabled
+  // (KYC_METHODS); with Fayda alone there is nothing to review.
+  const providers = useResource<ProvidersResponse>("/auth/providers");
+  const showKyc = providers.data?.kyc.document !== false;
   const rowRef = useRef<HTMLElement>(null);
 
   const role = me.data?.role;
@@ -144,7 +148,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const items = NAV.filter((item) => item.roles.includes(role as StaffRole));
+  const items = NAV.filter(
+    (item) => item.roles.includes(role as StaffRole) && (item.key !== "kyc" || showKyc),
+  );
   const roleLabel = t(`roles.${role}` as never);
 
   return (

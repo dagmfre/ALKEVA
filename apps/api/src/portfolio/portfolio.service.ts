@@ -16,6 +16,7 @@ import {
   type HoldingDto,
   type MetalAsset,
   type PortfolioResponse,
+  type ProgressResponse,
   type TierDto,
 } from "@alkeva/shared";
 import { DB, ENV } from "../core/core.module.js";
@@ -115,6 +116,35 @@ export class PortfolioService {
   }
 
   /**
+   * The header's "game level": the same holding tier and badges the
+   * portfolio shows (one computation, never two tier systems), plus what the
+   * next tier would change.
+   */
+  async progress(userId: string): Promise<ProgressResponse> {
+    const snapshot = await this.forUser(userId);
+    const bands = await this.db
+      .select()
+      .from(holdingTierConfig)
+      .orderBy(asc(holdingTierConfig.rank));
+    const nextBand = snapshot.tier.rank === null
+      ? bands[0]
+      : bands.find((b) => b.rank === (snapshot.tier.rank ?? 0) + 1);
+    return {
+      tier: snapshot.tier,
+      totalTiers: bands.length,
+      next: nextBand
+        ? {
+            name: nextBand.name,
+            perTxnCapCents: nextBand.perTxnCapCents === null ? null : nextBand.perTxnCapCents.toString(),
+            dailyCapCents: nextBand.dailyCapCents === null ? null : nextBand.dailyCapCents.toString(),
+            deliveryEligible: nextBand.deliveryEligible,
+          }
+        : null,
+      badges: snapshot.badges,
+    };
+  }
+
+  /**
    * Badges — computed on read from data this projection already owns; zero
    * writes (Phase 3.5, built at the production stage; the empty badge tables
    * from migration 0000 are superseded by this derivation).
@@ -175,7 +205,7 @@ export class PortfolioService {
         at: priceTicks.at,
       })
       .from(priceTicks)
-      .where(eq(priceTicks.asset, asset))
+      .where(and(eq(priceTicks.asset, asset), eq(priceTicks.suspect, false)))
       .orderBy(desc(priceTicks.at))
       .limit(1);
     return rows[0] ?? null;

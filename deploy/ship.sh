@@ -60,10 +60,16 @@ done
 # The `| sed` also swallowed ssh's exit status — the pipeline's status is
 # sed's, which is always 0 — so `set -e` never saw a remote failure and every
 # step "succeeded" no matter what happened on the VM. PIPESTATUS restores it.
+# Host key: trust on first use, then pinned. The first connection records the
+# VPS key in ~/.ssh/alkeva_known_hosts; any later change aborts the deploy
+# instead of handing root credentials and the source tree to whoever answers.
+# (It used to be StrictHostKeyChecking=no with /dev/null known_hosts.)
+KNOWN_HOSTS="${HOME}/.ssh/alkeva_known_hosts"
+SSH_OPTS=(-i "$SSH_KEY" -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile="$KNOWN_HOSTS")
+
 ssh_vm() {
   local status
-  ssh -n -i "$SSH_KEY" -o StrictHostKeyChecking=no \
-    -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 \
+  ssh -n "${SSH_OPTS[@]}" -o ConnectTimeout=30 \
     -o ServerAliveInterval=20 -o ServerAliveCountMax=6 \
     "${VM_USER}@${VM_HOST}" "$@" 2>&1 | sed '/^Warning: Permanently added/d'
   status=${PIPESTATUS[0]}
@@ -101,8 +107,7 @@ fi
 echo "  $(du -h "$BUNDLE" | cut -f1)"
 
 step "Uploading"
-scp -q -i "$SSH_KEY" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-    "$BUNDLE" "${VM_USER}@${VM_HOST}:~/alkeva-src.tar.gz"
+scp -q "${SSH_OPTS[@]}" "$BUNDLE" "${VM_USER}@${VM_HOST}:~/alkeva-src.tar.gz"
 
 step "Unpacking on the VM"
 # Extract beside the live tree, then swap. The running containers do not read
@@ -115,6 +120,12 @@ ssh_vm "set -e
   mv ${REMOTE}/app ${REMOTE}/app.old
   mv ${REMOTE}/app.new ${REMOTE}/app
   rm -f ~/alkeva-src.tar.gz"
+
+step "Writing caddy.env (edge proxy gets the domain, nothing else)"
+ssh_vm "set -e
+  grep -E '^(ALKEVA_DOMAIN|ALKEVA_ACME_EMAIL)=' ${REMOTE}/.env > ${REMOTE}/caddy.env
+  chmod 600 ${REMOTE}/caddy.env
+  wc -l < ${REMOTE}/caddy.env"
 
 step "Reclaiming disk before the build"
 # This used to run only AFTER the build, which is too late to help the build
@@ -141,6 +152,15 @@ run_step() {
 
 step "Building image (cached layers reused)"
 run_step "build" "${COMPOSE} build" 4
+
+step "Checking production settings against the new image"
+# Since Phase 10 the API and worker refuse to boot on unsafe production
+# settings (packages/shared/src/env.ts::productionEnvProblems). Run that same
+# check in a throwaway container BEFORE migrating or recreating anything: if
+# /opt/alkeva/.env is missing something, the deploy stops here and the old
+# containers keep serving, instead of being replaced by ones that crash.
+run_step "settings check" "${COMPOSE} run --rm --no-deps -T api node --input-type=module -e \
+  \"const m = await import('/app/packages/shared/dist/env.js'); m.loadEnv(); console.log('settings ok');\"" 1
 
 step "Applying migrations and restarting apps"
 # `up -d` runs the one-shot migrate container first (compose waits for it to
@@ -187,8 +207,7 @@ fi
 
 if [ "$TAIL_LOGS" -eq 1 ]; then
   step "Logs (ctrl-c to stop)"
-  ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-    "${VM_USER}@${VM_HOST}" "cd ${REMOTE}/app && ${COMPOSE} logs -f --tail=40 api web worker"
+  ssh "${SSH_OPTS[@]}" "${VM_USER}@${VM_HOST}" "cd ${REMOTE}/app && ${COMPOSE} logs -f --tail=40 api web worker"
 fi
 
 printf "\n\033[1m✓ shipped\033[0m  %s\n" "$SITE"

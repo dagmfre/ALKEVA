@@ -15,6 +15,11 @@ import {
   adminSearchDto,
   decisionNoteDto,
   freezeDto,
+  treasuryCapitalEntryDto,
+  treasuryVaultEntryDto,
+  type TreasuryCapitalEntryDto,
+  type TreasuryEntriesResponse,
+  type TreasuryVaultEntryDto,
   type AdminAnalyticsResponse,
   type AdminOverviewResponse,
   type AdminRevenueResponse,
@@ -32,6 +37,7 @@ import { ZodPipe } from "../core/zod.pipe.js";
 import { KycService } from "../kyc/kyc.service.js";
 import { OrdersService } from "../orders/orders.service.js";
 import { PayoutsService } from "../payouts/payouts.service.js";
+import { TreasuryEntriesService } from "../treasury/treasury-entries.service.js";
 import { AdminService } from "./admin.service.js";
 
 /**
@@ -44,12 +50,16 @@ import { AdminService } from "./admin.service.js";
  */
 @Controller("admin")
 @UseGuards(AuthGuard, RolesGuard)
+// Default-deny: a future route that forgets its own @RequireRoles is still
+// staff-only, never open to every signed-in customer.
+@RequireRoles("administrator", "compliance", "finance")
 export class AdminController {
   constructor(
     private readonly admin: AdminService,
     private readonly kyc: KycService,
     private readonly payouts: PayoutsService,
     private readonly orders: OrdersService,
+    private readonly treasuryEntries: TreasuryEntriesService,
   ) {}
 
   @Get("overview")
@@ -126,7 +136,12 @@ export class AdminController {
   async kycFile(@Param("id", ParseUUIDPipe) id: string, @Res() res: Response): Promise<void> {
     const { data, mime } = await this.kyc.file(id);
     res.setHeader("Content-Type", mime);
-    res.setHeader("Content-Disposition", "inline");
+    // Never rendered as a page on our origin: an <img> still displays it, a
+    // direct navigation downloads it, and the sandbox CSP strips any script.
+    res.setHeader("Content-Disposition", "attachment");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Content-Security-Policy", "default-src 'none'; sandbox");
+    res.setHeader("Cache-Control", "no-store");
     res.send(data);
   }
 
@@ -219,6 +234,33 @@ export class AdminController {
   @RequireRoles("administrator", "finance")
   treasury(): Promise<AdminTreasuryResponse> {
     return this.admin.treasuryDetail();
+  }
+
+  /** Real vault stock and capital movements — the only way either enters the books. */
+  @Get("treasury/entries")
+  @RequireRoles("administrator", "finance")
+  treasuryEntriesList(): Promise<TreasuryEntriesResponse> {
+    return this.treasuryEntries.list();
+  }
+
+  @Post("treasury/vault")
+  @RequireRoles("administrator")
+  async recordVault(
+    @Auth() auth: AccessPayload,
+    @Body(new ZodPipe(treasuryVaultEntryDto)) dto: TreasuryVaultEntryDto,
+  ): Promise<{ ok: true }> {
+    await this.treasuryEntries.recordVault(auth.sub, dto);
+    return { ok: true };
+  }
+
+  @Post("treasury/capital")
+  @RequireRoles("administrator")
+  async recordCapital(
+    @Auth() auth: AccessPayload,
+    @Body(new ZodPipe(treasuryCapitalEntryDto)) dto: TreasuryCapitalEntryDto,
+  ): Promise<{ ok: true }> {
+    await this.treasuryEntries.recordCapital(auth.sub, dto);
+    return { ok: true };
   }
 
   @Get("audit")

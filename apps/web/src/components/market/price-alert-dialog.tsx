@@ -122,7 +122,7 @@ export function PriceAlertButton({
           ]}
         />
 
-        <div className="flex h-12 items-center rounded-md border border-border bg-panel-2 transition-[border-color,box-shadow] focus-within:border-gold-500 focus-within:shadow-[0_0_0_3px_oklch(0.717_0.098_73.3/0.18)]">
+        <div className="flex h-12 items-center rounded-md border border-border bg-panel-2 transition-[border-color,box-shadow] focus-within:border-gold-500 focus-within:shadow-[0_0_0_3px_var(--focus-ring)]">
           <input
             inputMode="decimal"
             value={threshold}

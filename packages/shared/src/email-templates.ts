@@ -23,7 +23,51 @@ export type NotificationTemplate =
   | "delivery_requested"
   | "delivery_approved"
   | "delivery_scheduled"
-  | "delivery_rejected";
+  | "delivery_rejected"
+  // Phase 10
+  | "delivery_delivered"
+  | "payout_requested"
+  | "order_in_review"
+  | "order_rejected"
+  | "deposit_reversed"
+  | "fayda_verified"
+  | "new_sign_in"
+  | "passkey_added"
+  | "staff_alert"
+  // Codes: emailed directly, NEVER stored as a notification row (the payload
+  // carries the secret, exactly like the password-reset link).
+  | "email_code"
+  | "withdrawal_code";
+
+export type NotificationCategory = "alerts" | "money" | "security";
+
+/**
+ * Which preference switch governs a template. Security notices (new sign-in,
+ * passkey added, freezes) can turn off browser push but never email — the
+ * owner must hear about them.
+ */
+export function notificationCategory(template: NotificationTemplate): NotificationCategory {
+  switch (template) {
+    case "price_alert":
+      return "alerts";
+    case "new_sign_in":
+    case "passkey_added":
+    case "account_frozen":
+    case "account_unfrozen":
+    case "fayda_verified":
+    case "deposit_reversed":
+      return "security";
+    default:
+      return "money";
+  }
+}
+
+/** Templates that carry a secret and therefore must never be persisted. */
+export const SECRET_TEMPLATES: readonly NotificationTemplate[] = [
+  "password_reset",
+  "email_code",
+  "withdrawal_code",
+];
 
 export type NotificationPayload = Record<string, string>;
 
@@ -191,6 +235,85 @@ function copyFor(
           : `Your delivery request for ${fmtGrams(p.gramsMg)} g of ${metal} was declined.${p.note ? ` Reason: ${p.note}` : ""}`,
       };
     }
+    case "delivery_delivered": {
+      const metal = am ? (METAL_AM[p.asset ?? ""] ?? p.asset) : (METAL_EN[p.asset ?? ""] ?? p.asset);
+      return {
+        subject: am ? "አቅርቦት ተጠናቋል — ALKEVA" : "Delivery completed — ALKEVA",
+        body: am
+          ? `${fmtGrams(p.gramsMg)} ግ ${metal} ለእርስዎ ተረክቧል፤ ከመለያዎ ተቀንሷል።`
+          : `${fmtGrams(p.gramsMg)} g of ${metal} has been handed over to you and deducted from your holdings.`,
+      };
+    }
+    case "payout_requested":
+      return {
+        subject: am ? "የወጪ ጥያቄ ደርሷል — ALKEVA" : "Withdrawal request received — ALKEVA",
+        body: am
+          ? `የብር ${fmtEtb(p.amountCents)} ወጪ ጥያቄዎ ደርሷል፤ የፋይናንስ ቡድናችን ይገመግመዋል። ገንዘቡ እስከዚያው ተይዟል።`
+          : `Your withdrawal of ETB ${fmtEtb(p.amountCents)} was received and is waiting for our finance team. The amount is held until then.`,
+      };
+    case "order_in_review": {
+      const metal = am ? (METAL_AM[p.asset ?? ""] ?? p.asset) : (METAL_EN[p.asset ?? ""] ?? p.asset);
+      return {
+        subject: am ? "ትዕዛዝዎ በግምገማ ላይ ነው — ALKEVA" : "Your order is under review — ALKEVA",
+        body: am
+          ? `የ${fmtGrams(p.gramsMg)} ግ ${metal} (ብር ${fmtEtb(p.totalCents)}) ትዕዛዝዎ የተጣጣሚነት ግምገማ ይጠብቃል። ውሳኔው ሲሰጥ እናሳውቅዎታለን።`
+          : `Your order for ${fmtGrams(p.gramsMg)} g of ${metal} (ETB ${fmtEtb(p.totalCents)}) is waiting for a compliance review. We will tell you the outcome.`,
+      };
+    }
+    case "order_rejected":
+      return {
+        subject: am ? "ትዕዛዝዎ አልተፈጸመም — ALKEVA" : "Your order was not completed — ALKEVA",
+        body: am
+          ? `በግምገማ ላይ የነበረው ትዕዛዝዎ አልተፈጸመም${p.reason ? ` (${p.reason})` : ""}። ምንም ገንዘብ አልተንቀሳቀሰም።`
+          : `Your order under review was not completed${p.reason ? ` (${p.reason})` : ""}. No money moved.`,
+      };
+    case "deposit_reversed":
+      return {
+        subject: am ? "ገቢ ተመልሷል — ALKEVA" : "Deposit reversed — ALKEVA",
+        body: am
+          ? `የብር ${fmtEtb(p.amountCents)} ገቢዎ በክፍያ አቅራቢው ተመልሷል። መለያዎ ለግምገማ ታግዷል፤ ድጋፍን ያግኙ።`
+          : `Your deposit of ETB ${fmtEtb(p.amountCents)} was reversed by the payment provider. Your account is on hold for review; please contact support.`,
+      };
+    case "fayda_verified":
+      return {
+        subject: am ? "ማንነትዎ በፋይዳ ተረጋግጧል — ALKEVA" : "Identity verified with Fayda — ALKEVA",
+        body: am
+          ? `ማንነትዎ በብሔራዊ መታወቂያ (ፋይዳ) ተረጋግጧል${p.legalName ? ` (${p.legalName})` : ""}። አሁን ገቢ ማድረግ፣ መገበያየት እና ወጪ ማድረግ ይችላሉ።`
+          : `Your identity was verified with your national ID (Fayda)${p.legalName ? ` as ${p.legalName}` : ""}. You can now deposit, trade and withdraw.`,
+      };
+    case "new_sign_in":
+      return {
+        subject: am ? "አዲስ መግቢያ — ALKEVA" : "New sign-in to your account — ALKEVA",
+        body: am
+          ? `መለያዎ ከአዲስ መሳሪያ ተከፍቷል፦ ${p.device ?? ""}${p.ip ? ` (${p.ip})` : ""}። እርስዎ ካልሆኑ ወዲያውኑ በመለያ ገጽ "ከሁሉም መሳሪያዎች ውጣ" ይጫኑ እና ድጋፍን ያግኙ።`
+          : `Your account was signed in from a new device: ${p.device ?? ""}${p.ip ? ` (${p.ip})` : ""}. If this wasn't you, choose "Sign out everywhere" on your Account page now and contact support.`,
+      };
+    case "passkey_added":
+      return {
+        subject: am ? "አዲስ የይለፍ ቁልፍ ተጨምሯል — ALKEVA" : "A passkey was added — ALKEVA",
+        body: am
+          ? `ለመለያዎ አዲስ የይለፍ ቁልፍ (passkey) ተጨምሯል${p.label ? `፦ ${p.label}` : ""}። እርስዎ ካልሆኑ በመለያ ገጽ ያስወግዱት እና ድጋፍን ያግኙ።`
+          : `A new passkey was added to your account${p.label ? `: ${p.label}` : ""}. If this wasn't you, remove it on your Account page and contact support.`,
+      };
+    case "staff_alert":
+      return {
+        subject: am ? `የሰራተኛ ማስጠንቀቂያ፦ ${p.kind ?? ""} — ALKEVA` : `Staff alert: ${p.kind ?? ""} — ALKEVA`,
+        body: p.message ?? "",
+      };
+    case "email_code":
+      return {
+        subject: am ? `የማረጋገጫ ኮድዎ ${p.code ?? ""} — ALKEVA` : `Your verification code is ${p.code ?? ""} — ALKEVA`,
+        body: am
+          ? `የኢሜይል ማረጋገጫ ኮድዎ ${p.code ?? ""} ነው። ለ${p.minutes ?? "10"} ደቂቃ ይሰራል። ለማንም አያጋሩ — ALKEVA በጭራሽ አይጠይቅዎትም።`
+          : `Your email verification code is ${p.code ?? ""}. It works for ${p.minutes ?? "10"} minutes. Never share it — ALKEVA will never ask you for it.`,
+      };
+    case "withdrawal_code":
+      return {
+        subject: am ? "ወጪን ያረጋግጡ — ALKEVA" : "Confirm your withdrawal — ALKEVA",
+        body: am
+          ? `የብር ${fmtEtb(p.amountCents)} ወጪ ወደ ${p.accountNumber ?? ""} ለማረጋገጥ ይህን ኮድ ያስገቡ፦ ${p.code ?? ""}። ለ${p.minutes ?? "10"} ደቂቃ ይሰራል። ይህን ጥያቄ እርስዎ ካላቀረቡ ኮዱን አያስገቡ እና የይለፍ ቃልዎን ይቀይሩ።`
+          : `To confirm the withdrawal of ETB ${fmtEtb(p.amountCents)} to ${p.accountNumber ?? ""}, enter this code: ${p.code ?? ""}. It works for ${p.minutes ?? "10"} minutes. If you did not ask for this, do not enter the code and change your password.`,
+      };
   }
 }
 

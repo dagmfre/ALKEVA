@@ -48,6 +48,7 @@ export const txnKindEnum = pgEnum("txn_kind", [
   "sell",
   "withdrawal",
   "treasury",
+  "delivery",
 ]);
 export const orderSideEnum = pgEnum("order_side", ["buy", "sell"]);
 export const orderStatusEnum = pgEnum("order_status", [
@@ -63,6 +64,7 @@ export const paymentStatusEnum = pgEnum("payment_status", [
   "verified",
   "credited",
   "failed",
+  "reversed",
 ]);
 export const payoutStatusEnum = pgEnum("payout_status", [
   "requested",
@@ -86,11 +88,13 @@ export const deliveryStatusEnum = pgEnum("delivery_status", [
   "approved",
   "scheduled",
   "rejected",
+  "delivered",
 ]);
 export const notificationStatusEnum = pgEnum("notification_status", [
   "queued",
   "sent",
   "failed",
+  "skipped",
 ]);
 export const aiRoleEnum = pgEnum("ai_role", ["user", "assistant", "tool"]);
 export const alertDirectionEnum = pgEnum("alert_direction", ["above", "below"]);
@@ -116,9 +120,97 @@ export const users = pgTable(
     /** When the user accepted terms+privacy at registration (migration 0005).
         NULL for accounts that predate the consent gate — grandfathered. */
     termsAcceptedAt: timestamp("terms_accepted_at", { withTimezone: true }),
+    /** Confirmed with a 6-digit code (migration 0012). Money endpoints gate on it. */
+    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+    /** Notification channel preferences (migration 0013); {} = all on. */
+    notifyPrefs: jsonb("notify_prefs").notNull().default(sql`'{}'::jsonb`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex("user_email_uq").on(sql`lower(${t.email})`)],
+);
+
+/**
+ * Per-device sessions (migration 0012). The refresh token handed to the
+ * browser is `${id}.${secret}`; only sha256(secret) is stored. Rotation keeps
+ * the previous hash for a short grace so two tabs refreshing at once are not
+ * mistaken for theft; any other mismatch revokes the session.
+ * `user.refresh_token_hash` is dormant since this table exists.
+ */
+export const authSessions = pgTable(
+  "auth_session",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    refreshHash: text("refresh_hash").notNull(),
+    previousHash: text("previous_hash"),
+    rotatedAt: timestamp("rotated_at", { withTimezone: true }),
+    /** How the session was established: pwd | google | fayda | webauthn. */
+    amr: text("amr").array().notNull().default(sql`'{}'::text[]`),
+    authTime: timestamp("auth_time", { withTimezone: true }).notNull().defaultNow(),
+    userAgent: text("user_agent"),
+    ip: text("ip"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    revokedReason: text("revoked_reason"),
+  },
+  (t) => [index("auth_session_user_idx").on(t.userId)],
+);
+
+/**
+ * Verified national identity (Fayda / eSignet, migration 0012). One row per
+ * user. The PII a relying party receives lives here and nowhere else.
+ */
+export const identityVerifications = pgTable(
+  "identity_verification",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    provider: text("provider").notNull(),
+    subject: text("subject").notNull(),
+    legalName: text("legal_name").notNull(),
+    /** As Fayda returns it (YYYY/MM/DD or YYYY-MM-DD) — never re-formatted. */
+    birthdate: text("birthdate"),
+    gender: text("gender"),
+    phone: text("phone"),
+    email: text("email"),
+    address: jsonb("address"),
+    nationality: text("nationality"),
+    picture: bytea("picture"),
+    pictureMime: text("picture_mime"),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("identity_verification_user_uq").on(t.userId),
+    uniqueIndex("identity_verification_subject_uq").on(t.provider, t.subject),
+  ],
+);
+
+/**
+ * One-time email codes (migration 0012): email verification and withdrawal
+ * confirmation. sha256 of the code only; 10-minute life, 5 attempts.
+ */
+export const emailCodes = pgTable(
+  "email_code",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    purpose: text("purpose").notNull(),
+    codeHash: text("code_hash").notNull(),
+    payload: jsonb("payload"),
+    attempts: integer("attempts").notNull().default(0),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("email_code_user_purpose_idx").on(t.userId, t.purpose)],
 );
 
 /**
@@ -303,6 +395,8 @@ export const priceTicks = pgTable(
     etbCentsPerGram: bigint("etb_cents_per_gram", { mode: "bigint" }).notNull(),
     source: text("source").notNull(),
     fxSource: text("fx_source").notNull(),
+    /** Move the secondary feed could not confirm (migration 0012) — quotes refuse it. */
+    suspect: boolean("suspect").notNull().default(false),
     at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("tick_asset_at_idx").on(t.asset, t.at)],
@@ -555,9 +649,9 @@ export const deliveryRequests = pgTable(
     gramsMg: bigint("grams_mg", { mode: "bigint" }).notNull(),
     eligibilitySnapshot: jsonb("eligibility_snapshot"),
     status: deliveryStatusEnum("status").notNull().default("requested"),
-    /** Contact + review fields (migration 0008) — the request workflow.
-        This table records intent; it never posts ledger entries. The metal
-        handover ledger movement is the fulfilment step, out of scope here. */
+    /** Contact + review fields (migration 0008). Since migration 0012 the
+        approval moves the metal into system:delivery_hold:<asset> and
+        `delivered` moves it back to the vault with a vault outtake. */
     contactPhone: text("contact_phone"),
     address: text("address"),
     note: text("note"),
@@ -565,6 +659,8 @@ export const deliveryRequests = pgTable(
     reviewNote: text("review_note"),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     scheduledFor: timestamp("scheduled_for", { withTimezone: true }),
+    /** Handover recorded (migration 0012): hold → vault + vault outtake. */
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("delivery_user_idx").on(t.userId), index("delivery_status_idx").on(t.status)],
@@ -648,6 +744,12 @@ export const priceAlerts = pgTable(
   ],
 );
 
+/**
+ * One notice to one user (migration 0013 made it an outbox). The row is the
+ * in-app record; `status` is its EMAIL delivery and `push_status` its browser
+ * push delivery, both sent by the worker's dispatcher with retries — never
+ * inline in a request or in the price tick.
+ */
 export const notifications = pgTable(
   "notification",
   {
@@ -658,7 +760,34 @@ export const notifications = pgTable(
     payload: jsonb("payload"),
     status: notificationStatusEnum("status").notNull().default("queued"),
     sentAt: timestamp("sent_at", { withTimezone: true }),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    /** queued | sent | failed | skipped */
+    pushStatus: text("push_status").notNull().default("skipped"),
+    attempts: integer("attempts").notNull().default(0),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+    lastError: text("last_error"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("notif_user_idx").on(t.userId), index("notif_status_idx").on(t.status)],
+);
+
+/** Browser push subscriptions (Web Push / VAPID), migration 0013. */
+export const pushSubscriptions = pgTable(
+  "push_subscription",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    lastSuccessAt: timestamp("last_success_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("push_subscription_endpoint_uq").on(t.endpoint),
+    index("push_subscription_user_idx").on(t.userId),
+  ],
 );

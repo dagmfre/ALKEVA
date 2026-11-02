@@ -73,15 +73,27 @@ export interface ChapaBalance {
   ledger_balance: number;
 }
 
-/** A failed Chapa envelope, preserving their human message for audit trails. */
+/**
+ * A failed Chapa call, preserving their human message for audit trails.
+ *
+ * `definitive` is the money question: did Chapa itself, in a JSON answer,
+ * refuse the request? Only then is it safe to treat a transfer as never
+ * queued and refund the hold. A 5xx, a Cloudflare 52x, an HTML error page or
+ * a body that never finished arriving says nothing about whether the transfer
+ * went out — refunding on those could pay the customer twice.
+ */
 export class ChapaApiError extends Error {
   constructor(
     message: string,
     readonly httpStatus: number,
+    readonly definitive: boolean = false,
   ) {
     super(message);
   }
 }
+
+/** JSON refusals Chapa returns for requests it did not act on. */
+const DEFINITIVE_STATUSES = new Set([400, 401, 403, 404, 409, 422]);
 
 const BANKS_CACHE_KEY = "chapa:banks";
 const BANKS_CACHE_SECONDS = 3600;
@@ -292,7 +304,9 @@ export class ChapaService {
     try {
       envelope = (await res.json()) as ChapaEnvelope<T>;
     } catch {
-      throw new ChapaApiError(`non-JSON response (HTTP ${res.status})`, res.status);
+      // Not Chapa talking (gateway page, truncated body, timeout mid-read):
+      // never definitive.
+      throw new ChapaApiError(`non-JSON response (HTTP ${res.status})`, res.status, false);
     }
     if (!res.ok || envelope.status === "failed") {
       // Chapa's validation failures put an OBJECT in `message`
@@ -301,7 +315,8 @@ export class ChapaService {
       const raw = envelope.message;
       const msg =
         typeof raw === "string" ? raw : raw != null ? JSON.stringify(raw) : `HTTP ${res.status}`;
-      throw new ChapaApiError(msg, res.status);
+      const definitive = res.ok || DEFINITIVE_STATUSES.has(res.status);
+      throw new ChapaApiError(msg, res.status, definitive);
     }
     return envelope;
   }

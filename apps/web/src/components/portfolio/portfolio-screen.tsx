@@ -23,6 +23,7 @@ import { useTradeSheet } from "@/components/trade/trade-sheet-context";
 import { revalueHolding } from "@/lib/live-value";
 import { ARROW, SIGN, deltaClass, direction, grams, money, pctMilli, signedMoney } from "@/lib/format";
 import { useIsDesktop } from "@/lib/use-is-desktop";
+import { LoadFailed } from "@/components/system/load-failed";
 import { useResource } from "@/lib/use-resource";
 import { cn } from "@/lib/utils";
 
@@ -43,13 +44,14 @@ export function PortfolioScreen() {
   const { open, revision } = useTradeSheet();
   const isDesktop = useIsDesktop();
   const router = useRouter();
-  const { data, loading } = useResource<PortfolioResponse>("/portfolio", { revision });
+  const { data, loading, error, reload } = useResource<PortfolioResponse>("/portfolio", { revision });
   const xau = useAssetPrice("XAU");
   const xpt = useAssetPrice("XPT");
 
   const trade = (asset: MetalAsset, side: "buy" | "sell") =>
     isDesktop ? router.push(`/trade?asset=${asset}&side=${side}`) : open(asset, side);
 
+  if (!data && error && !loading) return <LoadFailed onRetry={reload} />;
   if (loading || !data) return <PortfolioSkeleton />;
 
   const held = data.holdings

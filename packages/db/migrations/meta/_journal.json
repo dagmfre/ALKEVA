@@ -85,6 +85,20 @@
       "when": 1786790000006,
       "tag": "0011_kyc_extraction",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786790000007,
+      "tag": "0012_real_money_readiness",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1786790000008,
+      "tag": "0013_notifications_outbox",
+      "breakpoints": true
     }
   ]
 }

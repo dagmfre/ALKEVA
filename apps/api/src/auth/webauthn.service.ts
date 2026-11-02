@@ -44,7 +44,11 @@ export class WebauthnService {
   ) {}
 
   get configured(): boolean {
-    return this.env.WEBAUTHN_RP_ID.length > 0 && this.env.WEBAUTHN_ORIGIN.length > 0;
+    return (
+      this.env.AUTH_METHODS.includes("passkey") &&
+      this.env.WEBAUTHN_RP_ID.length > 0 &&
+      this.env.WEBAUTHN_ORIGIN.length > 0
+    );
   }
 
   private guard(): void {
@@ -76,8 +80,9 @@ export class WebauthnService {
         id: c.credentialId,
         transports: c.transports ? (JSON.parse(c.transports) as never) : undefined,
       })),
-      // Discoverable REQUIRED so the passkey works usernameless at login.
-      authenticatorSelection: { residentKey: "required", userVerification: "preferred" },
+      // Discoverable REQUIRED so the passkey works usernameless at login;
+      // user verification REQUIRED so a passkey is never just "possession".
+      authenticatorSelection: { residentKey: "required", userVerification: "required" },
     });
 
     await this.redis.set(`webauthn:reg:${userId}`, options.challenge, "EX", CHALLENGE_TTL_SEC);
@@ -90,9 +95,8 @@ export class WebauthnService {
     label?: string,
   ): Promise<void> {
     this.guard();
-    const key = `webauthn:reg:${userId}`;
-    const expectedChallenge = await this.redis.get(key);
-    await this.redis.del(key);
+    // GETDEL: read-and-burn in one step, so a challenge can never be used twice.
+    const expectedChallenge = await this.redis.getdel(`webauthn:reg:${userId}`);
     if (!expectedChallenge) throw new BadRequestException("webauthn_challenge_expired");
 
     let verified = false;
@@ -103,7 +107,7 @@ export class WebauthnService {
         expectedChallenge,
         expectedOrigin: this.env.WEBAUTHN_ORIGIN,
         expectedRPID: this.env.WEBAUTHN_RP_ID,
-        requireUserVerification: false,
+        requireUserVerification: true,
       });
       verified = result.verified;
       info = result.registrationInfo;
@@ -138,7 +142,7 @@ export class WebauthnService {
     this.guard();
     const options = await generateAuthenticationOptions({
       rpID: this.env.WEBAUTHN_RP_ID,
-      userVerification: "preferred",
+      userVerification: "required",
       // No allowCredentials: discoverable/usernameless flow.
     });
     const sessionId = crypto.randomUUID();
@@ -152,9 +156,7 @@ export class WebauthnService {
     response: AuthenticationResponseJSON,
   ): Promise<string> {
     this.guard();
-    const key = `webauthn:login:${sessionId}`;
-    const expectedChallenge = await this.redis.get(key);
-    await this.redis.del(key);
+    const expectedChallenge = await this.redis.getdel(`webauthn:login:${sessionId}`);
     if (!expectedChallenge) throw new UnauthorizedException("webauthn_challenge_expired");
 
     const rows = await this.db
@@ -173,6 +175,7 @@ export class WebauthnService {
         expectedChallenge,
         expectedOrigin: this.env.WEBAUTHN_ORIGIN,
         expectedRPID: this.env.WEBAUTHN_RP_ID,
+        requireUserVerification: true,
         credential: {
           id: cred.credentialId,
           publicKey: new Uint8Array(cred.publicKey),
