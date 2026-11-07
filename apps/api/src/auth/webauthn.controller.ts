@@ -24,7 +24,7 @@ import type { Env } from "@alkeva/shared";
 import { ENV } from "../core/core.module.js";
 import { ZodPipe } from "../core/zod.pipe.js";
 import { NotificationsService } from "../notifications/notifications.service.js";
-import { Auth, AuthGuard } from "./auth.guard.js";
+import { Auth, AuthGuard, assertNotTelegramSession } from "./auth.guard.js";
 import { AuthService, type AccessPayload } from "./auth.service.js";
 import { clientContext, setSessionCookies } from "./cookies.js";
 import { WebauthnService } from "./webauthn.service.js";
@@ -58,6 +58,10 @@ export class WebauthnController {
    * minutes, and the owner is emailed whenever a passkey is added.
    */
   private assertRecentSignIn(auth: AccessPayload): void {
+    // A Telegram Mini App session must never mint a durable web credential:
+    // a hijacked Telegram account would otherwise keep the ALKEVA account
+    // after the owner disconnects Telegram.
+    assertNotTelegramSession(auth);
     const age = Date.now() / 1000 - (auth.auth_time ?? 0);
     if (age > STEP_UP_SEC) throw new ForbiddenException("reauth_required");
   }

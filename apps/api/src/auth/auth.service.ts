@@ -54,7 +54,7 @@ export interface AccessPayload {
 
 export type { TokenPair } from "./sessions.service.js";
 
-type UserRow = typeof users.$inferSelect;
+export type UserRow = typeof users.$inferSelect;
 
 @Injectable()
 export class AuthService {
@@ -111,6 +111,16 @@ export class AuthService {
   }
 
   async login(dto: LoginDto, ctx: ClientContext): Promise<{ user: MeResponse; tokens: TokenPair }> {
+    const user = await this.verifyPassword(dto);
+    return this.openSession(user, ["pwd"], ctx);
+  }
+
+  /**
+   * The password proof on its own — lockout, uniform errors and the
+   * method-disabled rule included — for callers that open a session
+   * themselves (login, and linking a Telegram account by password).
+   */
+  async verifyPassword(dto: LoginDto): Promise<UserRow> {
     const email = dto.email.toLowerCase();
     const lockKey = `login:fail:${email}`;
     const failures = Number((await this.redis.get(lockKey)) ?? "0");
@@ -150,8 +160,7 @@ export class AuthService {
     if (!this.passwordEnabled && user.role === "user") {
       throw new ForbiddenException("method_disabled");
     }
-
-    return this.openSession(user, ["pwd"], ctx);
+    return user;
   }
 
   /** Rotating refresh, per device. `tokens: null` = a racing tab; send no cookies. */
@@ -195,11 +204,12 @@ export class AuthService {
     userId: string,
     amr: AuthMethodRef[],
     ctx: ClientContext,
+    opts: { ttlSec?: number } = {},
   ): Promise<{ user: MeResponse; tokens: TokenPair }> {
     const found = await this.db.select().from(users).where(eq(users.id, userId)).limit(1);
     const user = found[0];
     if (!user) throw new UnauthorizedException("invalid_credentials");
-    return this.openSession(user, amr, ctx);
+    return this.openSession(user, amr, ctx, opts);
   }
 
   // ── email verification ──────────────────────────────────────────
@@ -322,8 +332,9 @@ export class AuthService {
     user: UserRow,
     amr: AuthMethodRef[],
     ctx: ClientContext,
+    opts: { ttlSec?: number } = {},
   ): Promise<{ user: MeResponse; tokens: TokenPair }> {
-    const { tokens, newDevice } = await this.sessions.create(user.id, user.role, amr, ctx);
+    const { tokens, newDevice } = await this.sessions.create(user.id, user.role, amr, ctx, opts);
     if (newDevice) {
       void this.notifications.emit(user.id, "new_sign_in", {
         device: describeUserAgent(ctx.userAgent),
@@ -363,7 +374,9 @@ export class AuthService {
 /** "Mozilla/5.0 (Linux; Android 14…) … Chrome/131…" → "Chrome on Android". */
 export function describeUserAgent(ua: string | null): string {
   if (!ua) return "Unknown device";
-  const browser = /Edg\//.test(ua)
+  const browser = /Telegram/i.test(ua)
+    ? "Telegram"
+    : /Edg\//.test(ua)
     ? "Edge"
     : /OPR\//.test(ua)
       ? "Opera"

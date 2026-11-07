@@ -11,7 +11,11 @@ import type {
   WalletResponse,
 } from "@alkeva/shared";
 
+import { TG_RESUME_EVENT } from "@/components/telegram/telegram-chrome";
 import { api, ApiError } from "@/lib/api";
+import { openAuthedStream } from "@/lib/authed-stream";
+import { tgRefresh } from "@/lib/telegram/session";
+import { isTelegramSurface } from "@/lib/telegram/webapp";
 import { useResource, type Resource } from "@/lib/use-resource";
 import { notificationDetail, notificationHref, notificationTitle } from "@/lib/notifications";
 
@@ -61,25 +65,51 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   tRef.current = t;
 
   useEffect(() => {
-    if (typeof EventSource === "undefined") return;
+    const telegram = isTelegramSurface();
+    if (!telegram && typeof EventSource === "undefined") return;
     let source: EventSource | null = null;
+    let closeStream: (() => void) | null = null;
     let retry: ReturnType<typeof setTimeout> | null = null;
     let closed = false;
 
+    const onNotice = (raw: string) => {
+      let template = "";
+      try {
+        template = (JSON.parse(raw) as { template?: string }).template ?? "";
+      } catch {
+        /* still refetch */
+      }
+      setNoteRev((n) => n + 1);
+      if (MONEY_TEMPLATES.test(template) || template === "price_alert") refreshMoney();
+      void announce(template);
+    };
+
     const connect = () => {
+      if (telegram) {
+        // The Mini App is cookie-less: same stream, bearer header, over fetch.
+        closeStream = openAuthedStream("/notifications/stream", {
+          onOpen: () => setStreamUp(true),
+          onEvent: (event, data) => {
+            if (event === "notification") onNotice(data);
+          },
+          onError: (status) => {
+            setStreamUp(false);
+            if (closed) return;
+            if (status === 401) {
+              // Refresh first; reconnect with the new token straight away.
+              void tgRefresh().then((ok) => {
+                if (!closed) retry = setTimeout(connect, ok ? 0 : 30_000);
+              });
+            } else {
+              retry = setTimeout(connect, 30_000);
+            }
+          },
+        });
+        return;
+      }
       source = new EventSource("/api/notifications/stream", { withCredentials: true });
       source.onopen = () => setStreamUp(true);
-      source.addEventListener("notification", (ev) => {
-        let template = "";
-        try {
-          template = (JSON.parse((ev as MessageEvent<string>).data) as { template?: string }).template ?? "";
-        } catch {
-          /* still refetch */
-        }
-        setNoteRev((n) => n + 1);
-        if (MONEY_TEMPLATES.test(template) || template === "price_alert") refreshMoney();
-        void announce(template);
-      });
+      source.addEventListener("notification", (ev) => onNotice((ev as MessageEvent<string>).data));
       source.onerror = () => {
         setStreamUp(false);
         source?.close();
@@ -101,6 +131,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       const detail = notificationDetail(tRef.current, latest);
       toast(title, { description: detail ?? undefined });
       if (
+        !telegram &&
         typeof document !== "undefined" &&
         document.visibilityState === "hidden" &&
         "Notification" in window &&
@@ -127,11 +158,20 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       if ((ev.data as { type?: string } | null)?.type === "alkeva:notification") setNoteRev((n) => n + 1);
     };
     navigator.serviceWorker?.addEventListener("message", onSwMessage);
+    // Back in the Mini App (e.g. from Chapa in the phone's browser): re-read
+    // balances and notices at once rather than waiting for the next poll.
+    const onResume = () => {
+      refreshMoney();
+      setNoteRev((n) => n + 1);
+    };
+    window.addEventListener(TG_RESUME_EVENT, onResume);
     return () => {
       closed = true;
       source?.close();
+      closeStream?.();
       if (retry) clearTimeout(retry);
       navigator.serviceWorker?.removeEventListener("message", onSwMessage);
+      window.removeEventListener(TG_RESUME_EVENT, onResume);
     };
   }, [refreshMoney]);
 

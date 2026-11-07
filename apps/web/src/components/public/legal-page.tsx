@@ -18,7 +18,7 @@ export async function LegalPage({ kind }: { kind: "terms" | "privacy" }) {
   const sections =
     kind === "terms"
       ? (["legalTerms1", "legalTerms2", "legalTerms3"] as const)
-      : (["legalPrivacy1", "legalPrivacy2", "legalPrivacy3"] as const);
+      : (["legalPrivacy1", "legalPrivacy2", "legalPrivacy3", "legalPrivacy4"] as const);
 
   return (
     <main className="flex min-h-dvh flex-col">

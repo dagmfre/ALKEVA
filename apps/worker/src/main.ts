@@ -271,7 +271,7 @@ async function tick(): Promise<void> {
       // Alerts fire on the tick that crossed them (F24). An alert failure
       // must never stop the price loop.
       try {
-        await checkAlerts(db, redis, pushReady, asset, etbCentsPerGram);
+        await checkAlerts(db, redis, pushReady, asset, etbCentsPerGram, telegramReady);
       } catch (err) {
         console.error(`[${asset}] alert check failed: ${(err as Error).message}`);
       }
@@ -282,6 +282,8 @@ async function tick(): Promise<void> {
 }
 
 const pushReady = env.WEB_PUSH_VAPID_PUBLIC_KEY.length > 0 && env.WEB_PUSH_VAPID_PRIVATE_KEY.length > 0;
+const telegramReady =
+  env.AUTH_METHODS.includes("telegram") && env.TELEGRAM_BOT_TOKEN.length > 0 && !!env.TELEGRAM_WEBAPP_ORIGIN;
 const dispatcher = new NotificationDispatcher(db, env);
 
 /**
@@ -289,7 +291,7 @@ const dispatcher = new NotificationDispatcher(db, env);
  * on its own loop so a slow SMTP server can never delay a price tick.
  */
 async function dispatchLoop(): Promise<void> {
-  console.log(`notification dispatcher: every 3s (email ${env.SMTP_HOST ? "on" : "off"}, push ${pushReady ? "on" : "off"})`);
+  console.log(`notification dispatcher: every 3s (email ${env.SMTP_HOST ? "on" : "off"}, push ${pushReady ? "on" : "off"}, telegram ${telegramReady ? "on" : "off"})`);
   while (running) {
     let handled = 0;
     try {

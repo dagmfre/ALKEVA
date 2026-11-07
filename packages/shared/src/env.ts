@@ -41,7 +41,7 @@ const flag = (fallback: "true" | "false") =>
     .default(fallback)
     .transform((v) => v === "true");
 
-export const AUTH_METHOD_KEYS = ["fayda", "password", "google", "passkey"] as const;
+export const AUTH_METHOD_KEYS = ["fayda", "password", "google", "passkey", "telegram"] as const;
 export type AuthMethod = (typeof AUTH_METHOD_KEYS)[number];
 export const KYC_METHOD_KEYS = ["fayda", "document"] as const;
 export type KycMethod = (typeof KYC_METHOD_KEYS)[number];
@@ -245,6 +245,41 @@ export const envSchema = z.object({
   WEB_PUSH_VAPID_PUBLIC_KEY: z.string().optional().default(""),
   WEB_PUSH_VAPID_PRIVATE_KEY: z.string().optional().default(""),
   WEB_PUSH_SUBJECT: z.string().default("mailto:support@alkeva.local"),
+
+  // Telegram Mini App + bot (Phase 11). Telegram sign-in is live only when
+  // "telegram" is in AUTH_METHODS AND the bot token, username, Mini App short
+  // name, webhook secret and Mini App origin are all set. The Mini App origin
+  // is a SEPARATE host (e.g. https://tg.allkeva.com): it is the only origin
+  // registered in BotFather (Bot API 10.2 origin lockdown) and the only one
+  // that may be framed by web.telegram.org — allkeva.com stays unframeable.
+  TELEGRAM_BOT_TOKEN: z.string().optional().default(""),
+  TELEGRAM_BOT_USERNAME: z
+    .string()
+    .regex(/^[A-Za-z0-9_]{0,64}$/, "bot username: letters, digits, underscore (no @)")
+    .optional()
+    .default(""),
+  TELEGRAM_MINIAPP_SHORT_NAME: z
+    .string()
+    .regex(/^[A-Za-z0-9_]{0,64}$/, "Mini App short name: letters, digits, underscore")
+    .optional()
+    .default(""),
+  // Sent by Telegram as X-Telegram-Bot-Api-Secret-Token; 1-256 of [A-Za-z0-9_-].
+  TELEGRAM_WEBHOOK_SECRET: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{0,256}$/, "webhook secret: A-Z a-z 0-9 _ - only")
+    .optional()
+    .default(""),
+  TELEGRAM_WEBAPP_ORIGIN: z.string().optional().default(""),
+  // initData is a bearer credential: it is accepted once (single-use hash)
+  // and only this many seconds after Telegram signed it.
+  TELEGRAM_INITDATA_MAX_AGE_SEC: z.coerce.number().int().min(30).max(86400).default(300),
+  // Absolute lifetime of a Telegram Mini App session (no sliding renewal).
+  TELEGRAM_SESSION_TTL_SEC: z.coerce.number().int().min(900).max(604800).default(43200),
+  // false = Telegram can only open accounts that already exist (linking).
+  TELEGRAM_SIGNUP_ENABLED: flag("true"),
+  // Telegram's separate test environment (/bot<token>/test/ API, test-server
+  // signing). Never in production.
+  TELEGRAM_TEST_ENV: flag("false"),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -279,11 +314,60 @@ export function productionEnvProblems(env: Env): string[] {
   if (env.FAYDA_USERINFO_JWKS_FALLBACK !== "strict") {
     problems.push("FAYDA_USERINFO_JWKS_FALLBACK must be strict in production");
   }
+  if (env.AUTH_METHODS.includes("telegram")) {
+    if (
+      !env.TELEGRAM_BOT_TOKEN ||
+      !env.TELEGRAM_BOT_USERNAME ||
+      !env.TELEGRAM_MINIAPP_SHORT_NAME ||
+      !env.TELEGRAM_WEBAPP_ORIGIN
+    ) {
+      problems.push(
+        "Telegram is enabled but TELEGRAM_BOT_TOKEN / _BOT_USERNAME / _MINIAPP_SHORT_NAME / _WEBAPP_ORIGIN are not all set",
+      );
+    }
+    if (env.TELEGRAM_WEBHOOK_SECRET.length < 32) {
+      problems.push("TELEGRAM_WEBHOOK_SECRET must be at least 32 characters");
+    }
+    if (env.TELEGRAM_TEST_ENV) problems.push("TELEGRAM_TEST_ENV must be false in production");
+  }
+  if (env.TELEGRAM_WEBAPP_ORIGIN) {
+    const tg = telegramOriginProblem(env.TELEGRAM_WEBAPP_ORIGIN, env.WEB_ORIGIN, true);
+    if (tg) problems.push(tg);
+  }
   const faydaOn = env.AUTH_METHODS.includes("fayda") || env.KYC_METHODS.includes("fayda");
   if (faydaOn && (!env.FAYDA_CLIENT_ID || !env.FAYDA_PRIVATE_KEY)) {
     problems.push("Fayda is enabled but FAYDA_CLIENT_ID / FAYDA_PRIVATE_KEY are not set");
   }
   return problems;
+}
+
+/**
+ * The Mini App origin must be a bare origin (scheme + host[:port], no path),
+ * and never the main site: allkeva.com refusing to be framed depends on it.
+ */
+export function telegramOriginProblem(
+  tgOrigin: string,
+  webOrigin: string,
+  requireHttps: boolean,
+): string | null {
+  let url: URL;
+  try {
+    url = new URL(tgOrigin);
+  } catch {
+    return "TELEGRAM_WEBAPP_ORIGIN is not a URL";
+  }
+  if (url.origin !== tgOrigin.replace(/\/$/, "")) {
+    return "TELEGRAM_WEBAPP_ORIGIN must be a bare origin (no path, query or trailing segments)";
+  }
+  if (requireHttps && url.protocol !== "https:") return "TELEGRAM_WEBAPP_ORIGIN must be https";
+  try {
+    if (new URL(webOrigin).host === url.host) {
+      return "TELEGRAM_WEBAPP_ORIGIN must be a different host from WEB_ORIGIN";
+    }
+  } catch {
+    /* WEB_ORIGIN is validated by the schema */
+  }
+  return null;
 }
 
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {

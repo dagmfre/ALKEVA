@@ -12,6 +12,7 @@ import type {
 import { useAssetPrice } from "@/components/market/price-provider";
 import { api, ApiError } from "@/lib/api";
 import { gramsToMg } from "@/lib/format";
+import { haptic, setClosingConfirmation } from "@/lib/telegram/webapp";
 import { useResource } from "@/lib/use-resource";
 
 /** Every machine-readable refusal the API can return (Phase 2, all verified). */
@@ -209,9 +210,11 @@ export function useTradeForm({
       });
       setOrder(placed);
       setStage("done");
+      haptic(placed.status === "settled" ? "success" : "warning");
       settled();
     } catch (err) {
       setErrorCode(codeFor(err));
+      haptic("error");
       settled();
     } finally {
       setBusy(false);
@@ -262,6 +265,13 @@ export function useTradeForm({
   function backToAmount() {
     setStage("amount");
   }
+
+  // Telegram: while a quote is on screen, closing the Mini App asks first.
+  useEffect(() => {
+    const live = stage === "quote";
+    setClosingConfirmation(live);
+    return () => setClosingConfirmation(false);
+  }, [stage]);
 
   const expired = quote !== null && secondsLeft <= 0;
   const isPlatformHalt = errorCode !== null && PLATFORM_HALTS.has(errorCode);

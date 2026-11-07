@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isTelegramHost } from "@/lib/surface-host";
 
 const ACCESS_COOKIE = "alkeva_access";
 const REFRESH_COOKIE = "alkeva_refresh";
@@ -15,6 +16,26 @@ const PUBLIC_PATHS = [
   "/auth/google/callback",
   // Fayda (eSignet) returns here — the redirect URI registered with Fayda.
   "/callback",
+  // Telegram Mini App → external browser legs (Phase 11). Both are pages
+  // that hold no session: /handoff carries a single-use ticket in its
+  // fragment, /telegram/return only links back into Telegram.
+  "/handoff",
+  "/telegram/return",
+];
+
+/**
+ * On the Mini App host the website's own entrances make no sense — Telegram
+ * is the entrance — and the staff console must not exist at all.
+ */
+const TELEGRAM_REDIRECT_HOME = [
+  "/login",
+  "/register",
+  "/welcome",
+  "/forgot-password",
+  "/reset-password",
+  "/auth/google/callback",
+  "/callback",
+  "/handoff",
 ];
 
 /** Public routes a signed-in visitor is bounced away from (back to the app). */
@@ -35,6 +56,23 @@ const AUTH_ONLY_WHEN_OUT = ["/login", "/register", "/welcome"];
  */
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  // Telegram Mini App host: no cookies exist here (bearer sessions only), so
+  // the cookie gate below does not apply — the client-side Telegram gate
+  // signs the person in from initData before any screen renders.
+  if (isTelegramHost((name) => req.headers.get(name))) {
+    if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+      return new NextResponse(null, { status: 404 });
+    }
+    if (TELEGRAM_REDIRECT_HOME.includes(pathname)) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
+
   const signedIn =
     req.cookies.has(ACCESS_COOKIE) || req.cookies.has(REFRESH_COOKIE);
 

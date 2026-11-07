@@ -56,6 +56,7 @@ function readNext(): string {
  */
 export function FaydaCallbackScreen() {
   const t = useTranslations("fayda");
+  const tt = useTranslations("telegram");
   const ta = useTranslations("auth");
   const tc = useTranslations("common");
   const locale = useLocale();
@@ -67,6 +68,8 @@ export function FaydaCallbackScreen() {
   const [busy, setBusy] = useState(false);
   const [consented, setConsented] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  // Telegram handoff: verified in this browser, confirmed back in the Mini App.
+  const [handoffReturn, setHandoffReturn] = useState<{ url: string | null } | null>(null);
 
   useEffect(() => {
     // Strict mode runs effects twice; the authorization code is single-use.
@@ -89,6 +92,10 @@ export function FaydaCallbackScreen() {
       body: JSON.stringify({ code, state }),
     })
       .then((res) => {
+        if (res.status === "handoff_parked") {
+          setHandoffReturn({ url: res.returnUrl });
+          return;
+        }
         if (res.status === "needs_profile") {
           setPending({ token: res.token, profile: res.profile });
           return;
@@ -141,7 +148,19 @@ export function FaydaCallbackScreen() {
   return (
     <AuthShell>
       <div className="flex flex-col gap-6">
-        {problem ? (
+        {handoffReturn ? (
+          <>
+            <h1 className="text-[1.5rem] leading-tight font-extrabold">{tt("handoffDoneTitle")}</h1>
+            <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">{tt("handoffDoneBody")}</p>
+            {handoffReturn.url ? (
+              <Button size="cta" asChild>
+                <a href={handoffReturn.url} rel="noopener noreferrer">
+                  {tt("backToTelegram")}
+                </a>
+              </Button>
+            ) : null}
+          </>
+        ) : problem ? (
           <>
             <h1 className="text-[1.5rem] leading-tight font-extrabold">{t("problemTitle")}</h1>
             <SystemBanner tone="critical">{problem}</SystemBanner>

@@ -9,6 +9,8 @@ import type { MeResponse, PortfolioResponse } from "@alkeva/shared";
 import { AlertsList } from "@/components/account/alerts-list";
 import { PasskeysCard } from "@/components/account/passkeys-card";
 import { SessionsCard } from "@/components/account/sessions-card";
+import { TelegramCard } from "@/components/account/telegram-card";
+import { useIsTelegram } from "@/lib/telegram/use-telegram";
 import { useTierName } from "@/components/portfolio/tier-gauge";
 import { isStaffRole } from "@/components/shell/header-actions";
 import { LocaleToggle } from "@/components/shell/locale-toggle";
@@ -27,6 +29,7 @@ import { useResource } from "@/lib/use-resource";
  *   preferences      │ passkeys        │ price alerts
  */
 export function AccountScreen() {
+  const inTelegram = useIsTelegram();
   const t = useTranslations("account");
   const tn = useTranslations("nav");
   const router = useRouter();
@@ -142,7 +145,7 @@ export function AccountScreen() {
                 <Link href="/notifications">{t("notificationsAction")}</Link>
               </Button>
             </Line>
-            {me.data?.hasPassword && (
+            {me.data?.hasPassword && !inTelegram && (
               <Line label={t("passwordLabel")} hint={t("passwordHint")}>
                 <Button variant="outline" size="sm" asChild>
                   <Link href="/forgot-password">
@@ -165,7 +168,10 @@ export function AccountScreen() {
           </div>
         </Panel>
         <SessionsCard />
-        <PasskeysCard />
+        <TelegramCard />
+        {/* A Telegram session can't enrol a passkey (API-enforced too): a
+            hijacked Telegram account must not mint a durable web credential. */}
+        {!inTelegram && <PasskeysCard />}
         <AlertsList />
       </div>
     </div>

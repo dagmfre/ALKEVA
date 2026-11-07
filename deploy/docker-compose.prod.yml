@@ -133,7 +133,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    # Only ALKEVA_DOMAIN and ALKEVA_ACME_EMAIL — the edge proxy has no business
+    # Only ALKEVA_DOMAIN, ALKEVA_ACME_EMAIL and TELEGRAM_DOMAIN — the edge proxy has no business
     # holding the payment, JWT and AI secrets. ship.sh writes this file from
     # /opt/alkeva/.env before every deploy.
     env_file: [/opt/alkeva/caddy.env]

@@ -9,7 +9,19 @@ import { DB, ENV, REDIS } from "../core/core.module.js";
 import type { AccessPayload } from "./auth.service.js";
 
 /** How a session was established — the OIDC `amr` vocabulary, loosely. */
-export type AuthMethodRef = "pwd" | "google" | "fayda" | "webauthn";
+export type AuthMethodRef = "pwd" | "google" | "fayda" | "webauthn" | "telegram";
+
+/**
+ * Which transport a refresh token belongs to. Web sessions refresh from the
+ * httpOnly cookie; Telegram Mini App sessions (amr contains "telegram") carry
+ * the token in the request body because the Mini App runs cookie-less. A
+ * token is only ever accepted on its own transport.
+ */
+export type SessionChannel = "cookie" | "telegram";
+
+export function isTelegramAmr(amr: readonly string[] | undefined | null): boolean {
+  return (amr ?? []).includes("telegram");
+}
 
 export interface ClientContext {
   userAgent: string | null;
@@ -53,7 +65,8 @@ export class SessionsService {
     role: Role,
     amr: AuthMethodRef[],
     ctx: ClientContext,
-  ): Promise<{ tokens: TokenPair; newDevice: boolean }> {
+    opts: { ttlSec?: number } = {},
+  ): Promise<{ tokens: TokenPair; newDevice: boolean; sessionId: string }> {
     // "New device" = this browser has never held a session for this user.
     // The first session an account ever has is not news.
     const prior = await this.db
@@ -73,12 +86,16 @@ export class SessionsService {
         amr,
         userAgent: ctx.userAgent?.slice(0, 400) ?? null,
         ip: ctx.ip,
-        expiresAt: new Date(Date.now() + this.env.REFRESH_TOKEN_TTL_SEC * 1000),
+        expiresAt: new Date(Date.now() + (opts.ttlSec ?? this.env.REFRESH_TOKEN_TTL_SEC) * 1000),
       })
       .returning();
     const session = inserted[0]!;
     const accessToken = await this.signAccess(userId, role, session.id, amr, session.authTime);
-    return { tokens: { accessToken, refreshToken: `${session.id}.${secret}` }, newDevice };
+    return {
+      tokens: { accessToken, refreshToken: `${session.id}.${secret}` },
+      newDevice,
+      sessionId: session.id,
+    };
   }
 
   /**
@@ -89,6 +106,7 @@ export class SessionsService {
   async rotate(
     refreshToken: string,
     ctx: ClientContext,
+    channel: SessionChannel = "cookie",
   ): Promise<{ userId: string; tokens: TokenPair | null }> {
     const [sessionId, secret] = refreshToken.split(".");
     if (!sessionId || !secret || !/^[0-9a-f-]{36}$/.test(sessionId)) {
@@ -105,6 +123,10 @@ export class SessionsService {
       throw new UnauthorizedException("invalid_refresh");
     }
     const { session, role } = found;
+    // A token only refreshes on its own transport (see SessionChannel).
+    if (isTelegramAmr(session.amr) !== (channel === "telegram")) {
+      throw new UnauthorizedException("invalid_refresh");
+    }
     const presented = sha256(secret);
 
     if (safeEqual(presented, session.refreshHash)) {

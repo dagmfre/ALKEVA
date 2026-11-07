@@ -43,11 +43,15 @@ interface Discovery {
   jwks_uri: string;
 }
 
+export type FaydaIntent = "signin" | "link" | "link_handoff";
+
 interface FaydaTx {
   nonce: string;
   verifier: string;
-  intent: "signin" | "link";
+  intent: FaydaIntent;
   userId: string | null;
+  /** link_handoff only: the Telegram handoff this flow belongs to. */
+  handoffId?: string;
   /** sha256 of the browser-binding cookie. */
   bh: string;
 }
@@ -69,7 +73,12 @@ export interface FaydaProfile {
 export type FaydaOutcome =
   | { kind: "signed_in"; userId: string }
   | { kind: "linked"; userId: string }
+  | { kind: "handoff_parked"; userId: string }
   | { kind: "needs_profile"; token: string; profile: FaydaProfileSummary };
+
+/** A Fayda result verified in an external browser, waiting for the Mini App's confirm. */
+const HANDOFF_PARK_TTL_SEC = 900;
+export const faydaHandoffKey = (handoffId: string) => `fayda:handoff:${handoffId}`;
 
 /**
  * VeriFayda 2.0 (eSignet) — Ethiopia's national ID as an OpenID Provider.
@@ -127,16 +136,20 @@ export class FaydaService {
 
   /** Builds the authorize URL; the caller sets the binding cookie. */
   async start(
-    intent: "signin" | "link",
+    intent: FaydaIntent,
     userId: string | null,
+    handoffId?: string,
   ): Promise<{ url: string; binding: string }> {
     if (intent === "signin" && !this.signInEnabled) {
       throw new ServiceUnavailableException("fayda_unconfigured");
     }
-    if (intent === "link" && !this.verificationEnabled && !this.signInEnabled) {
+    if (intent !== "signin" && !this.verificationEnabled && !this.signInEnabled) {
       throw new ServiceUnavailableException("fayda_unconfigured");
     }
-    if (intent === "link" && userId) {
+    if (intent === "link_handoff" && (!userId || !handoffId)) {
+      throw new UnauthorizedException("fayda_state_invalid");
+    }
+    if (intent !== "signin" && userId) {
       const linked = await this.db
         .select({ id: identityVerifications.id })
         .from(identityVerifications)
@@ -152,7 +165,7 @@ export class FaydaService {
     const challenge = createHash("sha256").update(verifier).digest("base64url");
     const binding = randomBytes(24).toString("base64url");
 
-    const tx: FaydaTx = { nonce, verifier, intent, userId, bh: sha256(binding) };
+    const tx: FaydaTx = { nonce, verifier, intent, userId, bh: sha256(binding), handoffId };
     await this.redis.set(`fayda:tx:${state}`, JSON.stringify(tx), "EX", TX_TTL_SEC);
 
     // name + birthdate are what the identity check needs; everything else is
@@ -207,6 +220,22 @@ export class FaydaService {
       .where(and(eq(authIdentities.provider, PROVIDER), eq(authIdentities.providerUserId, profile.sub)))
       .limit(1);
     const known = identity[0];
+
+    if (tx.intent === "link_handoff") {
+      // Verified in an external browser that holds NO session. Park the
+      // profile; only the Mini App, signed in as tx.userId, can commit it
+      // (commitHandoff). A leaked handoff ticket therefore attaches nothing.
+      if (!tx.userId || !tx.handoffId) throw new UnauthorizedException("fayda_state_invalid");
+      if (known && known.userId !== tx.userId) throw new ConflictException("fayda_linked_elsewhere");
+      this.assertAdult(profile);
+      await this.redis.set(
+        faydaHandoffKey(tx.handoffId),
+        JSON.stringify({ userId: tx.userId, profile }),
+        "EX",
+        HANDOFF_PARK_TTL_SEC,
+      );
+      return { kind: "handoff_parked", userId: tx.userId };
+    }
 
     if (tx.intent === "link") {
       if (!tx.userId) throw new UnauthorizedException("fayda_state_invalid");
@@ -275,6 +304,42 @@ export class FaydaService {
       console.error(`verification code send failed for ${userId}:`, err);
     });
     return userId;
+  }
+
+  /** The parked profile's display facts, for the owner to confirm — or null. */
+  async peekHandoff(
+    handoffId: string,
+    userId: string,
+  ): Promise<{ legalName: string; birthYear: string | null } | null> {
+    const raw = await this.redis.get(faydaHandoffKey(handoffId));
+    if (!raw) return null;
+    const parked = JSON.parse(raw) as { userId: string; profile: FaydaProfile };
+    if (parked.userId !== userId) return null;
+    const year = parked.profile.birthdate?.match(/^([0-9]{4})/)?.[1] ?? null;
+    return { legalName: parked.profile.legalName, birthYear: year };
+  }
+
+  /** The owner confirmed in the Mini App: attach exactly what Fayda verified. */
+  async commitHandoff(handoffId: string, userId: string): Promise<boolean> {
+    const key = faydaHandoffKey(handoffId);
+    const raw = await this.redis.get(key);
+    if (!raw) return false;
+    const parked = JSON.parse(raw) as { userId: string; profile: FaydaProfile };
+    // Someone else's handoff is invisible, and never consumed by a stranger.
+    if (parked.userId !== userId) return false;
+    if ((await this.redis.del(key)) !== 1) return false;
+    const existing = await this.db
+      .select({ userId: authIdentities.userId })
+      .from(authIdentities)
+      .where(
+        and(eq(authIdentities.provider, PROVIDER), eq(authIdentities.providerUserId, parked.profile.sub)),
+      )
+      .limit(1);
+    if (existing[0] && existing[0].userId !== userId) {
+      throw new ConflictException("fayda_linked_elsewhere");
+    }
+    if (!existing[0]) await this.attach(userId, parked.profile);
+    return true;
   }
 
   // ── internals ───────────────────────────────────────────────────

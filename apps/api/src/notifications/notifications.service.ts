@@ -1,7 +1,7 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, count, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
 import { Redis } from "ioredis";
-import { notifications, pushSubscriptions, users, type Db } from "@alkeva/db";
+import { notifications, pushSubscriptions, telegramChats, users, type Db } from "@alkeva/db";
 import {
   notificationCategory,
   SECRET_TEMPLATES,
@@ -22,9 +22,9 @@ import { DB, ENV, REDIS } from "../core/core.module.js";
 export const notifyChannel = (userId: string) => `notify:${userId}`;
 
 const DEFAULT_PREFS: NotifyPrefs = {
-  alerts: { email: true, push: true },
-  money: { email: true, push: true },
-  security: { push: true },
+  alerts: { email: true, push: true, telegram: true },
+  money: { email: true, push: true, telegram: true },
+  security: { push: true, telegram: true },
 };
 
 export function resolvePrefs(raw: unknown): NotifyPrefs {
@@ -83,6 +83,8 @@ export class NotificationsService {
           .from(pushSubscriptions)
           .where(eq(pushSubscriptions.userId, userId)))[0]!.n > 0;
 
+      const tgOn = prefs[category].telegram && (await this.canTelegram(userId));
+
       const inserted = await this.db
         .insert(notifications)
         .values({
@@ -92,6 +94,7 @@ export class NotificationsService {
           payload,
           status: emailOn ? "queued" : "skipped",
           pushStatus: hasPush ? "queued" : "skipped",
+          tgStatus: tgOn ? "queued" : "skipped",
         })
         .returning({ id: notifications.id });
       await this.redis
@@ -100,6 +103,21 @@ export class NotificationsService {
     } catch (err) {
       console.error(`notification emit failed (${template} → ${userId}):`, err);
     }
+  }
+
+  /**
+   * The bot may message this person: a linked Telegram account that allowed
+   * it and has not blocked the bot, and the bot is configured. Staff are never
+   * linked (Phase 11), so staff alerts never leave by Telegram.
+   */
+  private async canTelegram(userId: string): Promise<boolean> {
+    if (!this.env.TELEGRAM_BOT_TOKEN || !this.env.AUTH_METHODS.includes("telegram")) return false;
+    const rows = await this.db
+      .select({ ok: sql<boolean>`${telegramChats.canMessage} AND ${telegramChats.blockedAt} IS NULL` })
+      .from(telegramChats)
+      .where(eq(telegramChats.userId, userId))
+      .limit(1);
+    return rows[0]?.ok === true;
   }
 
   /** The same notice to every active staff member holding one of `roles`. */
@@ -193,10 +211,18 @@ export class NotificationsService {
 
   async setPrefs(userId: string, dto: NotifyPrefsDto): Promise<NotifyPrefs> {
     const current = await this.getPrefs(userId);
+    // A client written before the Telegram channel omits `telegram`; keep
+    // whatever was stored rather than flipping it.
     const next: NotifyPrefs = {
-      alerts: dto.alerts ?? current.alerts,
-      money: dto.money ?? current.money,
-      security: dto.security ?? current.security,
+      alerts: dto.alerts
+        ? { ...dto.alerts, telegram: dto.alerts.telegram ?? current.alerts.telegram }
+        : current.alerts,
+      money: dto.money
+        ? { ...dto.money, telegram: dto.money.telegram ?? current.money.telegram }
+        : current.money,
+      security: dto.security
+        ? { ...dto.security, telegram: dto.security.telegram ?? current.security.telegram }
+        : current.security,
     };
     await this.db.update(users).set({ notifyPrefs: next }).where(eq(users.id, userId));
     return next;

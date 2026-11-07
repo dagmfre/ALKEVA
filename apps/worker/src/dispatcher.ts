@@ -1,11 +1,15 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import { eq, inArray, sql } from "drizzle-orm";
 import webpush from "web-push";
-import { notifications, pushSubscriptions, users, type Db } from "@alkeva/db";
+import { notifications, pushSubscriptions, telegramChats, users, type Db } from "@alkeva/db";
 import {
   emailLocaleFor,
+  openAppKeyboard,
   renderNotification,
+  renderTelegramText,
+  TelegramBotApi,
   type Env,
+  type Locale,
   type NotificationPayload,
   type NotificationTemplate,
 } from "@alkeva/shared";
@@ -14,6 +18,18 @@ const BATCH = 20;
 const MAX_ATTEMPTS = 5;
 /** A claimed row is invisible to other passes for this long (crash safety). */
 const LEASE_SECONDS = 120;
+/** Telegram's broadcast ceiling is ~30 msg/s; stay under it with room to spare. */
+const TG_MIN_GAP_MS = 40;
+/** ...and about one message per second into any single chat. */
+const TG_PER_CHAT_GAP_MS = 1_100;
+
+const OPEN_LABEL: Record<Locale, string> = {
+  en: "Open ALKEVA",
+  am: "ALKEVAን ክፈት",
+  ti: "ALKEVA ክፈት",
+  om: "ALKEVA banuu",
+  so: "Fur ALKEVA",
+};
 
 /**
  * The notification outbox dispatcher (Phase 10C). Every row the API or the
@@ -28,12 +44,19 @@ const LEASE_SECONDS = 120;
 export class NotificationDispatcher {
   private transport: Transporter | null = null;
   private readonly pushReady: boolean;
+  private readonly tg: TelegramBotApi | null;
+  private tgLastSendAt = 0;
+  private readonly tgChatLastSendAt = new Map<string, number>();
 
   constructor(
     private readonly db: Db,
     private readonly env: Env,
   ) {
     this.pushReady = env.WEB_PUSH_VAPID_PUBLIC_KEY.length > 0 && env.WEB_PUSH_VAPID_PRIVATE_KEY.length > 0;
+    this.tg =
+      env.AUTH_METHODS.includes("telegram") && env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_WEBAPP_ORIGIN
+        ? new TelegramBotApi(env.TELEGRAM_BOT_TOKEN, { testEnv: env.TELEGRAM_TEST_ENV })
+        : null;
     if (this.pushReady) {
       webpush.setVapidDetails(
         env.WEB_PUSH_SUBJECT,
@@ -49,7 +72,8 @@ export class NotificationDispatcher {
       update notification set next_attempt_at = now() + make_interval(secs => ${LEASE_SECONDS})
       where id in (
         select id from notification
-        where (status = 'queued' or push_status = 'queued') and next_attempt_at <= now()
+        where (status = 'queued' or push_status = 'queued' or tg_status = 'queued')
+          and next_attempt_at <= now()
         order by created_at
         limit ${BATCH}
         for update skip locked
@@ -60,12 +84,13 @@ export class NotificationDispatcher {
     if (ids.length === 0) return 0;
 
     const rows = await this.db
-      .select({ n: notifications, email: users.email, locale: users.locale })
+      .select({ n: notifications, email: users.email, locale: users.locale, chat: telegramChats })
       .from(notifications)
       .innerJoin(users, eq(notifications.userId, users.id))
+      .leftJoin(telegramChats, eq(telegramChats.userId, notifications.userId))
       .where(inArray(notifications.id, ids));
 
-    for (const { n, email, locale } of rows) {
+    for (const { n, email, locale, chat } of rows) {
       const rendered = renderNotification(
         n.template as NotificationTemplate,
         emailLocaleFor(locale),
@@ -73,6 +98,8 @@ export class NotificationDispatcher {
       );
       let emailStatus = n.status;
       let pushStatus = n.pushStatus;
+      let tgStatus = n.tgStatus;
+      let retryAfterSec = 0;
       const errors: string[] = [];
 
       if (emailStatus === "queued") {
@@ -104,18 +131,57 @@ export class NotificationDispatcher {
         }
       }
 
+      if (tgStatus === "queued") {
+        // Re-checked at send time: the person may have unlinked or blocked
+        // the bot since the row was queued.
+        const text = renderTelegramText(
+          n.template as NotificationTemplate,
+          emailLocaleFor(locale),
+          (n.payload ?? {}) as NotificationPayload,
+        );
+        if (!this.tg || !chat || !chat.canMessage || chat.blockedAt || !text) {
+          tgStatus = "skipped";
+        } else {
+          const outcome = await this.sendTelegram(
+            chat.tgUserId,
+            text,
+            OPEN_LABEL[locale] ?? OPEN_LABEL.en,
+            targetUrl(n.template, n.payload),
+          );
+          if (outcome.ok) {
+            tgStatus = "sent";
+          } else if (outcome.kind === "blocked") {
+            tgStatus = "skipped";
+            await this.db
+              .update(telegramChats)
+              .set({ canMessage: false, blockedAt: sql`now()`, updatedAt: sql`now()` })
+              .where(eq(telegramChats.userId, chat.userId));
+          } else if (outcome.kind === "bad_request") {
+            // Retrying an identical request cannot succeed.
+            tgStatus = "failed";
+            console.warn(`[notify] telegram refused ${n.template}: ${outcome.description}`);
+          } else {
+            if (outcome.retryAfterSec) retryAfterSec = Math.max(retryAfterSec, outcome.retryAfterSec);
+            errors.push(`telegram: ${outcome.kind} ${outcome.description}`.slice(0, 300));
+          }
+        }
+      }
+
       const attempts = n.attempts + (errors.length > 0 ? 1 : 0);
       const giveUp = attempts >= MAX_ATTEMPTS;
       if (errors.length > 0 && giveUp) {
         if (emailStatus === "queued") emailStatus = "failed";
         if (pushStatus === "queued") pushStatus = "failed";
+        if (tgStatus === "queued") tgStatus = "failed";
       }
-      const backoffMin = 2 ** Math.min(attempts, 6); // 2, 4, 8 … 64 min
+      // 2, 4, 8 ... 64 min, or Telegram's retry_after, whichever is longer.
+      const backoffMin = Math.max(2 ** Math.min(attempts, 6), Math.ceil(retryAfterSec / 60));
       await this.db
         .update(notifications)
         .set({
           status: emailStatus,
           pushStatus,
+          tgStatus,
           attempts,
           lastError: errors.length > 0 ? errors.join(" | ") : null,
           sentAt: emailStatus === "sent" && n.status !== "sent" ? new Date() : n.sentAt,
@@ -125,6 +191,26 @@ export class NotificationDispatcher {
       if (errors.length > 0) console.warn(`[notify] ${n.template} → ${n.userId}: ${errors.join(" | ")}`);
     }
     return ids.length;
+  }
+
+  /** Paced under Telegram's global and per-chat limits; plain text, no parse_mode. */
+  private async sendTelegram(chatId: bigint, text: string, label: string, path: string) {
+    const key = chatId.toString();
+    const now = Date.now();
+    const wait = Math.max(
+      this.tgLastSendAt + TG_MIN_GAP_MS - now,
+      (this.tgChatLastSendAt.get(key) ?? 0) + TG_PER_CHAT_GAP_MS - now,
+      0,
+    );
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+    this.tgLastSendAt = Date.now();
+    this.tgChatLastSendAt.set(key, this.tgLastSendAt);
+    if (this.tgChatLastSendAt.size > 5_000) this.tgChatLastSendAt.clear();
+    return this.tg!.sendMessage(
+      chatId,
+      text,
+      openAppKeyboard(label, this.env.TELEGRAM_WEBAPP_ORIGIN, path),
+    );
   }
 
   private mailer(): Transporter {
@@ -199,5 +285,6 @@ function targetUrl(template: string, payload: unknown): string {
   if (template.startsWith("delivery_")) return "/portfolio";
   if (template === "price_alert") return "/trade";
   if (template === "new_sign_in" || template === "passkey_added") return "/account";
+  if (template === "telegram_linked" || template === "telegram_unlinked") return "/account";
   return "/notifications";
 }

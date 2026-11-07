@@ -15,6 +15,10 @@ export async function GET(req: Request): Promise<Response> {
       headers: {
         accept: "text/event-stream",
         cookie: req.headers.get("cookie") ?? "",
+        // The Telegram Mini App is cookie-less and sends a bearer token.
+        ...(req.headers.get("authorization")
+          ? { authorization: req.headers.get("authorization")! }
+          : {}),
       },
       signal: req.signal,
     });

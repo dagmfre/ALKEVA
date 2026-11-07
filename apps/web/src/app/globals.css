@@ -483,3 +483,20 @@
     box-shadow: none !important;
   }
 }
+
+/* ── Telegram Mini App surface (Phase 11) ─────────────────────────────
+   The tg host always uses the phone composition, whatever the window width
+   (Telegram Desktop can open the Mini App wide), and respects the insets
+   telegram-web-app.js publishes as CSS variables. */
+html[data-surface="telegram"] .tg-hide {
+  display: none !important;
+}
+html[data-surface="telegram"] .tg-show {
+  display: flex !important;
+}
+html[data-surface="telegram"] .tg-main {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom) + 1rem) !important;
+}
+html[data-surface="telegram"] body {
+  padding-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
+}

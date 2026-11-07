@@ -2,7 +2,8 @@
 # ALKEVA_ACME_EMAIL in /opt/alkeva/.env.
 #
 # One origin serves both apps, which is what keeps auth cookies first-party.
-# The split is by path, not by host:
+# (A second host, TELEGRAM_DOMAIN, serves the same apps as the Telegram Mini
+# App — see the last block.) The split is by path, not by host:
 #
 #   /api/*  → the NestJS API, prefix stripped
 #   /*      → Next.js
@@ -24,18 +25,66 @@
 	email {$ALKEVA_ACME_EMAIL}
 }
 
+# ── shared pieces ───────────────────────────────────────────────────
+
+# Telegram calls /webhooks/telegram from its published ranges only
+# (core.telegram.org/bots/webhooks). The secret-token header is still the
+# real check (TelegramBotService.verifySecret); this keeps everyone else from
+# even reaching it. Imported INSIDE `handle /api/*` on every host: Caddy runs
+# `handle` before `respond`, so at site level this would never fire. The
+# path is matched after `uri strip_prefix /api`.
+(telegram_webhook_guard) {
+	@tg_webhook_foreign {
+		path /webhooks/telegram
+		not remote_ip 149.154.160.0/20 91.108.4.0/22
+	}
+	respond @tg_webhook_foreign 403
+}
+
+# Secrets must never land in the access log. Caddy already omits Cookie and
+# Authorization; these are the ones it does not know about: Chapa's
+# webhook signature headers (one of them is a static value), Telegram's
+# webhook secret token, and any token or code that ends up in a query string.
+(access_log) {
+	log {
+		output file /data/access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+		format filter {
+			request>headers>Chapa-Signature delete
+			request>headers>X-Chapa-Signature delete
+			request>headers>X-Telegram-Bot-Api-Secret-Token delete
+			request>uri query {
+				delete token
+				delete code
+				delete state
+				delete t
+			}
+			wrap json
+		}
+	}
+}
+
+# ── the website ─────────────────────────────────────────────────────
+
 {$ALKEVA_DOMAIN} {
 	encode zstd gzip
 
 	handle /api/* {
 		uri strip_prefix /api
+		import telegram_webhook_guard
 		reverse_proxy api:4000 {
 			flush_interval -1
+			# Only the Mini App host may claim to be the Mini App.
+			header_up -X-Alkeva-Surface
 		}
 	}
 
 	handle {
-		reverse_proxy web:3000
+		reverse_proxy web:3000 {
+			header_up -X-Alkeva-Surface
+		}
 	}
 
 	header {
@@ -50,24 +99,48 @@
 		-Server
 	}
 
-	# Secrets must never land in the access log. Caddy already omits Cookie and
-	# Authorization; these are the ones it does not know about: Chapa's
-	# webhook signature headers (one of them is a static value), and any
-	# token or code that ends up in a query string.
-	log {
-		output file /data/access.log {
-			roll_size 10MiB
-			roll_keep 5
-		}
-		format filter {
-			request>headers>Chapa-Signature delete
-			request>headers>X-Chapa-Signature delete
-			request>uri query {
-				delete token
-				delete code
-				delete state
-			}
-			wrap json
+	import access_log
+}
+
+# ── the Telegram Mini App (Phase 11) ────────────────────────────────
+#
+# A separate origin on purpose. Bot API 10.2 (enforced 20 Jul 2026) blocks
+# Telegram.WebApp methods on any origin other than the one registered in
+# BotFather, and web.telegram.org runs Mini Apps inside an iframe — so THIS
+# origin, and only this one, may be framed, and only by web.telegram.org.
+# allkeva.com above keeps X-Frame-Options DENY. Same containers, same
+# routes; the web app learns it is the Mini App from X-Alkeva-Surface, which
+# only this block sets (the block above strips it from any client).
+# Unset TELEGRAM_DOMAIN falls back to a local-only name that never asks
+# Let's Encrypt for anything.
+{$TELEGRAM_DOMAIN:tg.localhost} {
+	encode zstd gzip
+
+	handle /api/* {
+		uri strip_prefix /api
+		import telegram_webhook_guard
+		reverse_proxy api:4000 {
+			flush_interval -1
+			header_up X-Alkeva-Surface telegram
 		}
 	}
+
+	handle {
+		reverse_proxy web:3000 {
+			header_up X-Alkeva-Surface telegram
+		}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Framed by Telegram Web only. No X-Frame-Options: it has no
+		# allow-list form, and frame-ancestors supersedes it.
+		Content-Security-Policy "frame-ancestors https://web.telegram.org; object-src 'none'; base-uri 'self'"
+		Permissions-Policy "camera=(self), microphone=(), geolocation=(), payment=()"
+		-Server
+	}
+
+	import access_log
 }

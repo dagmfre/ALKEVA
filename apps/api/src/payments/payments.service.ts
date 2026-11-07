@@ -114,7 +114,11 @@ export class PaymentsService implements OnModuleInit, OnApplicationShutdown {
     };
   }
 
-  async create(userId: string, dto: CreatePaymentDto): Promise<PaymentResponse> {
+  async create(
+    userId: string,
+    dto: CreatePaymentDto,
+    channel: "web" | "telegram" = "web",
+  ): Promise<PaymentResponse> {
     this.chapa.assertConfigured();
     await this.ledger.assertCanMoveMoney(userId);
     if (dto.amountCents < this.env.DEPOSIT_MIN_CENTS) {
@@ -145,7 +149,13 @@ export class PaymentsService implements OnModuleInit, OnApplicationShutdown {
         fullName: user.fullName,
         // The id (not tx_ref) rides the return URL: the poll + reconcile
         // endpoints are id-keyed and ownership-scoped.
-        returnUrl: `${this.env.WEB_ORIGIN}/deposit/return?id=${payment.id}`,
+        // Telegram: a static page on the main site that fetches nothing and
+        // only offers the t.me link back into the Mini App — the credit still
+        // comes solely from the verified webhook / reconcile path.
+        returnUrl:
+          channel === "telegram"
+            ? `${this.env.WEB_ORIGIN}/telegram/return?id=${payment.id}`
+            : `${this.env.WEB_ORIGIN}/deposit/return?id=${payment.id}`,
       });
       return { ...this.serialize(payment), checkoutUrl };
     } catch (err) {

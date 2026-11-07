@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { BellRing, Smartphone } from "lucide-react";
-import type { NotificationItem, NotificationsResponse, NotifyPrefs } from "@alkeva/shared";
+import type { NotificationItem, NotificationsResponse, NotifyPrefs, TelegramLinkStatusResponse } from "@alkeva/shared";
 
 import { useAppData } from "@/components/shell/app-data";
 import { Button } from "@/components/ui/button";
 import { Panel, PanelHeader } from "@/components/ui/panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SystemBanner } from "@/components/system/banner";
+import { useIsTelegram } from "@/lib/telegram/use-telegram";
 import { api } from "@/lib/api";
 import { eatStamp } from "@/lib/format";
 import { notificationDetail, notificationHref, notificationTitle } from "@/lib/notifications";
@@ -24,6 +25,7 @@ import { cn } from "@/lib/utils";
  * email — the owner must hear about a new sign-in.
  */
 export function NotificationsScreen() {
+  const inTelegram = useIsTelegram();
   const t = useTranslations("notifications");
   const tc = useTranslations("common");
   const { notifications, markRead } = useAppData();
@@ -105,7 +107,9 @@ export function NotificationsScreen() {
         </div>
       </Panel>
       <div className="flex flex-col gap-3">
-        <BrowserAlertsPanel />
+        {/* Web Push does not exist inside Telegram's webview; there the bot
+            delivers instead (the Telegram column below). */}
+        {!inTelegram && <BrowserAlertsPanel />}
         <PrefsPanel />
       </div>
     </div>
@@ -176,7 +180,11 @@ function BrowserAlertsPanel() {
 
 function PrefsPanel() {
   const t = useTranslations("notifications");
+  const tt = useTranslations("telegram");
   const prefs = useResource<NotifyPrefs>("/notifications/prefs");
+  // The Telegram column appears only when this account has Telegram linked.
+  const tg = useResource<TelegramLinkStatusResponse>("/auth/telegram/link");
+  const hasTg = !!tg.data?.available && !!tg.data.linked;
   const [saving, setSaving] = useState(false);
   const p = prefs.data;
 
@@ -208,6 +216,7 @@ function PrefsPanel() {
                 <th className="py-2 text-start font-medium" />
                 <th className="py-2 text-center font-medium">{t("channelEmail")}</th>
                 <th className="py-2 text-center font-medium">{t("channelBrowser")}</th>
+                {hasTg && <th className="py-2 text-center font-medium">{tt("channel")}</th>}
               </tr>
             </thead>
             <tbody>
@@ -234,6 +243,18 @@ function PrefsPanel() {
                       onChange={(e) => void save({ [r.key]: { ...p[r.key], push: e.target.checked } })}
                     />
                   </td>
+                  {hasTg && (
+                    <td className="py-2.5 text-center">
+                      <input
+                        type="checkbox"
+                        className="size-4 accent-(--gold-400)"
+                        checked={p[r.key].telegram}
+                        disabled={saving}
+                        aria-label={`${r.label} — ${tt("channel")}`}
+                        onChange={(e) => void save({ [r.key]: { ...p[r.key], telegram: e.target.checked } })}
+                      />
+                    </td>
+                  )}
                 </tr>
               ))}
               <tr className="border-t border-border">
@@ -246,9 +267,21 @@ function PrefsPanel() {
                     checked={p.security.push}
                     disabled={saving}
                     aria-label={`${t("prefSecurity")} — ${t("channelBrowser")}`}
-                    onChange={(e) => void save({ security: { push: e.target.checked } })}
+                    onChange={(e) => void save({ security: { ...p.security, push: e.target.checked } })}
                   />
                 </td>
+                {hasTg && (
+                  <td className="py-2.5 text-center">
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-(--gold-400)"
+                      checked={p.security.telegram}
+                      disabled={saving}
+                      aria-label={`${t("prefSecurity")} — ${tt("channel")}`}
+                      onChange={(e) => void save({ security: { ...p.security, telegram: e.target.checked } })}
+                    />
+                  </td>
+                )}
               </tr>
             </tbody>
           </table>

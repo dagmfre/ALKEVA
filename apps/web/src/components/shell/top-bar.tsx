@@ -25,7 +25,7 @@ export function TopBar() {
 
   return (
     <header
-      className="sticky top-0 z-(--z-index-sticky) hidden h-[3.75rem] items-end bg-bg-deep px-5 lg:flex"
+      className="tg-hide sticky top-0 z-(--z-index-sticky) hidden h-[3.75rem] items-end bg-bg-deep px-5 lg:flex"
       data-print="hide"
     >
       <Link
@@ -111,7 +111,7 @@ export function MobileHeader() {
 
   return (
     <header
-      className="sticky top-0 z-(--z-index-sticky) flex h-[3.75rem] items-center justify-between gap-2 bg-bg-deep ps-4 pe-2 lg:hidden"
+      className="tg-show sticky top-0 z-(--z-index-sticky) flex h-[3.75rem] items-center justify-between gap-2 bg-bg-deep ps-4 pe-2 lg:hidden"
       data-print="hide"
     >
       {pathname === "/" ? (

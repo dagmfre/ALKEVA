@@ -1,6 +1,6 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 import type { Redis } from "ioredis";
-import { notifications, priceAlerts, pushSubscriptions, users, type Db } from "@alkeva/db";
+import { notifications, priceAlerts, pushSubscriptions, telegramChats, users, type Db } from "@alkeva/db";
 import type { MetalAsset } from "@alkeva/shared";
 
 /**
@@ -18,6 +18,7 @@ export async function checkAlerts(
   pushReady: boolean,
   asset: MetalAsset,
   priceCentsPerGram: bigint,
+  telegramReady = false,
 ): Promise<void> {
   const due = await db
     .select({
@@ -43,9 +44,12 @@ export async function checkAlerts(
     );
 
   for (const alert of due) {
-    const prefs = (alert.prefs ?? {}) as { alerts?: { email?: boolean; push?: boolean } };
+    const prefs = (alert.prefs ?? {}) as {
+      alerts?: { email?: boolean; push?: boolean; telegram?: boolean };
+    };
     const emailOn = prefs.alerts?.email !== false;
     const pushOn = pushReady && prefs.alerts?.push !== false;
+    const tgWanted = telegramReady && prefs.alerts?.telegram !== false;
 
     const id = await db.transaction(async (tx) => {
       // The one-shot mutex: only the updater that stamps triggered_at proceeds.
@@ -63,6 +67,14 @@ export async function checkAlerts(
             .where(eq(pushSubscriptions.userId, alert.userId))
             .limit(1)
         : [];
+      // Telegram only to a linked chat that allowed the bot and has not blocked it.
+      const chat = tgWanted
+        ? await tx
+            .select({ ok: sql<boolean>`${telegramChats.canMessage} AND ${telegramChats.blockedAt} IS NULL` })
+            .from(telegramChats)
+            .where(eq(telegramChats.userId, alert.userId))
+            .limit(1)
+        : [];
       const inserted = await tx
         .insert(notifications)
         .values({
@@ -77,6 +89,7 @@ export async function checkAlerts(
           },
           status: emailOn ? "queued" : "skipped",
           pushStatus: subs.length > 0 ? "queued" : "skipped",
+          tgStatus: chat[0]?.ok === true ? "queued" : "skipped",
         })
         .returning({ id: notifications.id });
       return inserted[0]?.id ?? null;

@@ -99,6 +99,13 @@
       "when": 1786790000008,
       "tag": "0013_notifications_outbox",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1786790000009,
+      "tag": "0014_telegram",
+      "breakpoints": true
     }
   ]
 }

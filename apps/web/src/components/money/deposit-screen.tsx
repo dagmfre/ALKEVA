@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { ExternalLink } from "lucide-react";
 import type {
   BalancesResponse,
   DepositChannelsResponse,
@@ -17,6 +19,11 @@ import { SystemBanner } from "@/components/system/banner";
 import { api, ApiError } from "@/lib/api";
 import { grams, money } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
+import { TG_RESUME_EVENT } from "@/components/telegram/telegram-chrome";
+import { isTelegramSurface, openExternal } from "@/lib/telegram/webapp";
+
+/** The only host a Chapa checkout URL may point at before we open it. */
+const CHAPA_HOSTS = ["checkout.chapa.co"] as const;
 
 /** The top-ups people actually make, in whole birr. */
 const QUICK_ETB = ["1000", "5000", "10000", "50000"];
@@ -49,6 +56,17 @@ export function DepositScreen() {
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checkout, setCheckout] = useState<{ id: string; url: string } | null>(null);
+  const router = useRouter();
+
+  // Back from the phone's browser: go and check the deposit (the return page
+  // polls and asks the server to verify with Chapa — it never credits itself).
+  useEffect(() => {
+    if (!checkout?.id) return;
+    const onResume = () => router.push(`/deposit/return?id=${checkout.id}`);
+    window.addEventListener(TG_RESUME_EVENT, onResume);
+    return () => window.removeEventListener(TG_RESUME_EVENT, onResume);
+  }, [checkout?.id, router]);
 
   const needsKyc = kyc.data !== null && kyc.data.kycTier < 1;
 
@@ -67,6 +85,14 @@ export function DepositScreen() {
         body: JSON.stringify({ amountCents: String(Math.round(parsed * 100)) }),
       });
       if (payment.checkoutUrl) {
+        if (isTelegramSurface()) {
+          // Telegram: Chapa runs in the phone's browser, and Telegram only
+          // opens a link from a tap — so the next tap ("Continue to Chapa")
+          // opens it. The credit arrives server-side either way.
+          setCheckout({ id: payment.id, url: payment.checkoutUrl });
+          setBusy(false);
+          return;
+        }
         // Hand the browser to Chapa's hosted checkout; it returns to
         // /deposit/return?id=… when the user finishes or gives up.
         window.location.assign(payment.checkoutUrl);
@@ -86,6 +112,12 @@ export function DepositScreen() {
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_25.25rem]">
         {needsKyc ? (
           <KycGate title={t("kycGateTitle")} body={t("kycGateBody")} cta={t("kycGateCta")} />
+        ) : checkout ? (
+          <TelegramCheckout
+            url={checkout.url}
+            onCheck={() => router.push(`/deposit/return?id=${checkout.id}`)}
+            onCancel={() => setCheckout(null)}
+          />
         ) : (
           <Panel aria-label={t("amountLabel")}>
             <PanelHeader title={t("formTitle")} hint={t("viaChapa")} />
@@ -163,5 +195,55 @@ export function DepositScreen() {
         </Panel>
       </div>
     </div>
+  );
+}
+
+/**
+ * Telegram only: the payment exists, Chapa is one tap away in the phone's
+ * browser. That browser holds no ALKEVA session and needs none — Chapa
+ * tells our server, and the server verifies with Chapa before any credit.
+ */
+function TelegramCheckout({
+  url,
+  onCheck,
+  onCancel,
+}: {
+  url: string;
+  onCheck: () => void;
+  onCancel: () => void;
+}) {
+  const t = useTranslations("telegram");
+  const [opened, setOpened] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  return (
+    <Panel aria-label={t("checkoutTitle")}>
+      <PanelHeader title={t("checkoutTitle")} />
+      <div className="flex flex-1 flex-col gap-4 px-[1.125rem] pb-[1.125rem]">
+        <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
+          {opened ? t("checkoutWaiting") : t("checkoutBody")}
+        </p>
+        {blocked ? <SystemBanner tone="critical">{t("checkoutBadLink")}</SystemBanner> : null}
+        <Button
+          size="cta"
+          onClick={() => {
+            const ok = openExternal(url, CHAPA_HOSTS);
+            setBlocked(!ok);
+            if (ok) setOpened(true);
+          }}
+        >
+          <ExternalLink className="size-4" aria-hidden="true" />
+          {opened ? t("checkoutReopen") : t("checkoutOpen")}
+        </Button>
+        {opened ? (
+          <Button size="cta" variant="outline" onClick={onCheck}>
+            {t("checkoutCheck")}
+          </Button>
+        ) : (
+          <Button size="cta" variant="ghost" onClick={onCancel}>
+            {t("checkoutCancel")}
+          </Button>
+        )}
+      </div>
+    </Panel>
   );
 }

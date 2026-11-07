@@ -6,6 +6,9 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const API_URL = process.env.API_URL ?? "http://localhost:4000";
 
 const nextConfig: NextConfig = {
+  // Dev only: the Telegram Mini App host is tg.localhost (lib/surface-host).
+  // Next 15 refuses dev-server assets to origins it does not know.
+  allowedDevOrigins: ["tg.localhost"],
   // The browser only ever talks to this app's origin; /api/* is proxied
   // server-side to the NestJS API. Keeps auth cookies first-party
   // (onrender.com is on the Public Suffix List — subdomains are cross-site).

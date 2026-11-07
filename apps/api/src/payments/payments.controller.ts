@@ -37,7 +37,11 @@ export class PaymentsController {
     @Auth() auth: AccessPayload,
     @Body(new ZodPipe(createPaymentDto)) dto: CreatePaymentDto,
   ): Promise<PaymentResponse> {
-    return this.payments.create(auth.sub, dto);
+    // Where Chapa sends the browser back is decided by HOW this session was
+    // opened, never by anything the client asks for: a Telegram session paid
+    // in the phone's external browser, which holds no ALKEVA session.
+    const channel = (auth.amr ?? []).includes("telegram") ? "telegram" : "web";
+    return this.payments.create(auth.sub, dto, channel);
   }
 
   @Get(":id")

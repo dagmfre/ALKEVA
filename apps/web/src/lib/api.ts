@@ -13,6 +13,9 @@
  *  - When the session is really gone (refresh refused), send the browser to
  *    sign in instead of leaving every screen on its loading skeleton forever.
  */
+import { isTelegramSurface } from "@/lib/telegram/webapp";
+import { announceExpired, tgAccessToken, tgRefresh } from "@/lib/telegram/session";
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -26,6 +29,12 @@ export class ApiError extends Error {
 /** Requests that must never trigger the refresh-and-retry dance. */
 const NO_RETRY = [
   "/auth/refresh",
+  "/auth/telegram/session",
+  "/auth/telegram/refresh",
+  "/auth/telegram/signup",
+  "/auth/telegram/link/password",
+  "/auth/telegram/link/claim",
+  "/auth/telegram/link/claim-status",
   "/auth/login",
   "/auth/register",
   "/auth/google/callback",
@@ -51,16 +60,32 @@ const PUBLIC_PREFIXES = [
 let refreshing: Promise<boolean> | null = null;
 let redirecting = false;
 
+/**
+ * Credentials for a request to our own /api. The website uses its httpOnly
+ * cookies; the Telegram Mini App is cookie-less and sends a bearer token
+ * held in memory (lib/telegram/session.ts). Also used by the few callers
+ * that cannot go through `api()` (multipart uploads, streams).
+ */
+export function authInit(): { credentials: RequestCredentials; headers: Record<string, string> } {
+  if (isTelegramSurface()) {
+    const token = tgAccessToken();
+    return { credentials: "omit", headers: token ? { Authorization: `Bearer ${token}` } : {} };
+  }
+  return { credentials: "include", headers: {} };
+}
+
 async function rawFetch(path: string, init?: RequestInit): Promise<Response> {
+  const auth = authInit();
   return fetch(`/api${path}`, {
     ...init,
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    credentials: auth.credentials,
+    headers: { "Content-Type": "application/json", ...auth.headers, ...init?.headers },
   });
 }
 
 /** Single-flight: every concurrent 401 waits on the same refresh. */
 function refreshOnce(): Promise<boolean> {
+  if (isTelegramSurface()) return tgRefresh();
   refreshing ??= rawFetch("/auth/refresh", { method: "POST" })
     .then((r) => r.ok)
     .catch(() => false)
@@ -75,6 +100,12 @@ function refreshOnce(): Promise<boolean> {
 
 function sendToSignIn(): void {
   if (redirecting || typeof window === "undefined") return;
+  // Inside Telegram there is no sign-in page to go to: fresh initData only
+  // comes from reopening the Mini App, so the gate asks for exactly that.
+  if (isTelegramSurface()) {
+    announceExpired();
+    return;
+  }
   const here = window.location.pathname;
   if (PUBLIC_PREFIXES.some((p) => here === p || here.startsWith(p))) return;
   redirecting = true;

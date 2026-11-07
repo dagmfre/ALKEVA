@@ -146,7 +146,7 @@ export const authSessions = pgTable(
     refreshHash: text("refresh_hash").notNull(),
     previousHash: text("previous_hash"),
     rotatedAt: timestamp("rotated_at", { withTimezone: true }),
-    /** How the session was established: pwd | google | fayda | webauthn. */
+    /** How the session was established: pwd | google | fayda | webauthn | telegram. */
     amr: text("amr").array().notNull().default(sql`'{}'::text[]`),
     authTime: timestamp("auth_time", { withTimezone: true }).notNull().defaultNow(),
     userAgent: text("user_agent"),
@@ -763,12 +763,35 @@ export const notifications = pgTable(
     readAt: timestamp("read_at", { withTimezone: true }),
     /** queued | sent | failed | skipped */
     pushStatus: text("push_status").notNull().default("skipped"),
+    /** Telegram bot delivery (migration 0014): queued | sent | failed | skipped */
+    tgStatus: text("tg_status").notNull().default("skipped"),
     attempts: integer("attempts").notNull().default(0),
     nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
     lastError: text("last_error"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("notif_user_idx").on(t.userId), index("notif_status_idx").on(t.status)],
+);
+
+/**
+ * Who the bot may message (migration 0014). The sign-in mapping itself is the
+ * auth_identity row (provider 'telegram'); this holds only delivery state.
+ */
+export const telegramChats = pgTable(
+  "telegram_chat",
+  {
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => users.id),
+    tgUserId: bigint("tg_user_id", { mode: "bigint" }).notNull(),
+    username: text("username"),
+    firstName: text("first_name"),
+    canMessage: boolean("can_message").notNull().default(false),
+    blockedAt: timestamp("blocked_at", { withTimezone: true }),
+    linkedAt: timestamp("linked_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("telegram_chat_tg_user_uq").on(t.tgUserId)],
 );
 
 /** Browser push subscriptions (Web Push / VAPID), migration 0013. */

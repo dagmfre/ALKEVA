@@ -28,6 +28,14 @@ import { WebauthnService } from "./webauthn.service.js";
     SessionsService,
     FaydaService,
   ],
-  exports: [AuthService, AuthGuard, RolesGuard, JwtModule, EmailCodesService, SessionsService],
+  exports: [
+    AuthService,
+    AuthGuard,
+    RolesGuard,
+    JwtModule,
+    EmailCodesService,
+    SessionsService,
+    FaydaService,
+  ],
 })
 export class AuthModule {}

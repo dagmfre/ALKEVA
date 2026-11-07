@@ -17,6 +17,7 @@ import { PayoutsModule } from "./payouts/payouts.module.js";
 import { PortfolioModule } from "./portfolio/portfolio.module.js";
 import { PricesModule } from "./prices/prices.module.js";
 import { QuotesModule } from "./quotes/quotes.module.js";
+import { TelegramModule } from "./telegram/telegram.module.js";
 import { TreasuryModule } from "./treasury/treasury.module.js";
 import { WebhooksModule } from "./webhooks/webhooks.module.js";
 
@@ -41,6 +42,7 @@ import { WebhooksModule } from "./webhooks/webhooks.module.js";
     AiModule,
     AlertsModule,
     DeliveryModule,
+    TelegramModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

@@ -4,3 +4,4 @@ export * from "./locales.js";
 export * from "./dto.js";
 export * from "./email-layout.js";
 export * from "./email-templates.js";
+export * from "./telegram-bot.js";

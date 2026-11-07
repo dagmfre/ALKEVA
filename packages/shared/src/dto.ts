@@ -46,6 +46,14 @@ export interface ProvidersResponse {
   /** Same as `passkey` — kept for screens written before Phase 10. */
   webauthn: boolean;
   kyc: { fayda: boolean; document: boolean };
+  /** Telegram Mini App sign-in (Phase 11). Null fields = not configured. */
+  telegram: {
+    enabled: boolean;
+    botUsername: string | null;
+    appShortName: string | null;
+    /** The Mini App's own origin, e.g. https://tg.allkeva.com. */
+    origin: string | null;
+  };
 }
 
 /** One signed-in device (Account › Signed-in devices). */
@@ -68,6 +76,8 @@ export interface FaydaProfileSummary {
 export type FaydaCallbackResponse =
   | { status: "signed_in"; user: MeResponse }
   | { status: "linked"; user: MeResponse }
+  /** Telegram handoff: verified here, confirmed back inside the Mini App. */
+  | { status: "handoff_parked"; returnUrl: string | null }
   | { status: "needs_profile"; token: string; profile: FaydaProfileSummary };
 
 export const faydaCompleteDto = z.object({
@@ -584,15 +594,19 @@ export type MarkReadDto = z.infer<typeof markReadDto>;
 
 /** Channel preferences per category. Security notices always email. */
 export interface NotifyPrefs {
-  alerts: { email: boolean; push: boolean };
-  money: { email: boolean; push: boolean };
-  security: { push: boolean };
+  alerts: { email: boolean; push: boolean; telegram: boolean };
+  money: { email: boolean; push: boolean; telegram: boolean };
+  security: { push: boolean; telegram: boolean };
 }
 
 export const notifyPrefsDto = z.object({
-  alerts: z.object({ email: z.boolean(), push: z.boolean() }).optional(),
-  money: z.object({ email: z.boolean(), push: z.boolean() }).optional(),
-  security: z.object({ push: z.boolean() }).optional(),
+  alerts: z
+    .object({ email: z.boolean(), push: z.boolean(), telegram: z.boolean().optional() })
+    .optional(),
+  money: z
+    .object({ email: z.boolean(), push: z.boolean(), telegram: z.boolean().optional() })
+    .optional(),
+  security: z.object({ push: z.boolean(), telegram: z.boolean().optional() }).optional(),
 });
 export type NotifyPrefsDto = z.infer<typeof notifyPrefsDto>;
 
@@ -972,3 +986,97 @@ export interface AdminDeliveryItem extends DeliveryItem {
   /** The metal the user holds right now (approval checks it under lock). */
   heldMg: string;
 }
+
+// ── Telegram Mini App (Phase 11) ─────────────────────────────────
+// initData is Telegram's signed query string; 4096 bytes is far above what
+// Telegram sends and stops a megabyte "initData" before any hashing.
+const initDataField = z.string().min(16).max(4096);
+const pendingTokenField = z.string().regex(/^[A-Za-z0-9_-]{32,64}$/);
+
+export const telegramSessionDto = z.object({ initData: initDataField });
+export type TelegramSessionDto = z.infer<typeof telegramSessionDto>;
+
+export const telegramSignupDto = z.object({
+  pendingToken: pendingTokenField,
+  email: z.string().email().max(254),
+  fullName: z.string().trim().min(2).max(120),
+  locale: z.enum(LOCALES).default(DEFAULT_LOCALE),
+  acceptTerms: z.literal(true),
+});
+export type TelegramSignupDto = z.infer<typeof telegramSignupDto>;
+
+export const telegramPasswordLinkDto = z.object({
+  pendingToken: pendingTokenField,
+  email: z.string().email().max(254),
+  password: z.string().min(1).max(128),
+});
+export type TelegramPasswordLinkDto = z.infer<typeof telegramPasswordLinkDto>;
+
+export const telegramLinkClaimDto = z.object({
+  initData: initDataField,
+  linkToken: z.string().regex(/^[A-Za-z0-9_-]{32,64}$/),
+});
+export type TelegramLinkClaimDto = z.infer<typeof telegramLinkClaimDto>;
+
+export const telegramRefreshDto = z.object({
+  refreshToken: z.string().min(40).max(200),
+});
+
+/** The Telegram identity as shown to its owner — never more than this. */
+export interface TelegramIdentitySummary {
+  /** "@username" when the person has one, else their first name. */
+  display: string;
+  username: string | null;
+  firstName: string | null;
+}
+
+/** Tokens travel in the body: the Mini App is cookie-less (see SessionChannel). */
+export interface TelegramTokens {
+  accessToken: string;
+  refreshToken: string;
+  /** Seconds until the access token expires. */
+  expiresIn: number;
+}
+
+export type TelegramSessionResponse =
+  | { status: "signed_in"; user: MeResponse; tokens: TelegramTokens }
+  | {
+      status: "needs_account";
+      pendingToken: string;
+      telegram: TelegramIdentitySummary;
+      signupEnabled: boolean;
+    };
+
+export interface TelegramLinkStartResponse {
+  /** https://t.me/<bot>/<app>?startapp=link-<token> */
+  url: string;
+  expiresAt: string;
+}
+
+export interface TelegramLinkStatusResponse {
+  linked: TelegramIdentitySummary | null;
+  canMessage: boolean;
+  /** A Telegram account waiting for the owner's confirmation on the website. */
+  pending: TelegramIdentitySummary | null;
+  /** Whether the bot is configured at all (hides the card when false). */
+  available: boolean;
+  botUsername: string | null;
+}
+
+export const telegramHandoffDto = z.object({ purpose: z.enum(["fayda_link"]) });
+export const telegramHandoffConsumeDto = z.object({
+  ticket: z.string().regex(/^[A-Za-z0-9_-]{40,64}$/),
+});
+
+export interface TelegramHandoffStartResponse {
+  id: string;
+  /** Open with Telegram.WebApp.openLink — the ticket rides the fragment. */
+  url: string;
+  expiresAt: string;
+}
+
+export type TelegramHandoffStatus =
+  | { status: "waiting" }
+  | { status: "awaiting_confirmation"; legalName: string; birthYear: string | null }
+  | { status: "done" }
+  | { status: "expired" };

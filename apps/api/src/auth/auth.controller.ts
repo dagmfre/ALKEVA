@@ -61,9 +61,27 @@ const oauthCallbackDto = z.object({
 });
 const codeDto = z.object({ code: z.string().regex(/^[0-9]{6}$/) });
 
+/** What the UI needs to offer Telegram; nothing secret. */
+export function telegramProviderInfo(env: Env): ProvidersResponse["telegram"] {
+  const enabled =
+    env.AUTH_METHODS.includes("telegram") &&
+    !!env.TELEGRAM_BOT_TOKEN &&
+    !!env.TELEGRAM_BOT_USERNAME &&
+    !!env.TELEGRAM_MINIAPP_SHORT_NAME &&
+    !!env.TELEGRAM_WEBAPP_ORIGIN;
+  return {
+    enabled,
+    botUsername: enabled ? env.TELEGRAM_BOT_USERNAME : null,
+    appShortName: enabled ? env.TELEGRAM_MINIAPP_SHORT_NAME : null,
+    origin: enabled ? env.TELEGRAM_WEBAPP_ORIGIN : null,
+  };
+}
+
+export const FAYDA_BIND_COOKIE_NAME = "alkeva_fayda_tx";
+
 const GOOGLE_BIND_COOKIE = "alkeva_google_tx";
-const FAYDA_BIND_COOKIE = "alkeva_fayda_tx";
-const FLOW_TTL_SEC = 900;
+const FAYDA_BIND_COOKIE = FAYDA_BIND_COOKIE_NAME;
+export const FLOW_TTL_SEC = 900;
 
 @Controller("auth")
 export class AuthController {
@@ -89,6 +107,7 @@ export class AuthController {
         fayda: this.fayda.verificationEnabled,
         document: this.env.KYC_METHODS.includes("document"),
       },
+      telegram: telegramProviderInfo(this.env),
     };
   }
 
@@ -295,6 +314,16 @@ export class AuthController {
       return { status: "needs_profile", token: outcome.token, profile: outcome.profile };
     }
     clearFlowCookie(res, this.env, FAYDA_BIND_COOKIE);
+    if (outcome.kind === "handoff_parked") {
+      // This browser holds no session and gets none: it only says "go back
+      // to Telegram", where the owner confirms what Fayda verified.
+      const info = telegramProviderInfo(this.env);
+      const returnUrl =
+        info.botUsername && info.appShortName
+          ? `https://t.me/${info.botUsername}/${info.appShortName}?startapp=kyc`
+          : null;
+      return { status: "handoff_parked", returnUrl };
+    }
     if (outcome.kind === "linked") {
       return { status: "linked", user: await this.auth.me(outcome.userId) };
     }

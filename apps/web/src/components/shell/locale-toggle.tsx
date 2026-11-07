@@ -12,6 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { authInit } from "@/lib/api";
+import { isTelegramSurface } from "@/lib/telegram/webapp";
 import { cn } from "@/lib/utils";
 
 const LOCALE_COOKIE = "ALKEVA_LOCALE";
@@ -30,6 +32,19 @@ const LOCALE_COOKIE = "ALKEVA_LOCALE";
  * leave the mail in whatever language was picked at registration. It is
  * fire-and-forget: a signed-out visitor 401s and the UI switch still works.
  */
+/**
+ * The UI-language cookie. Inside web.telegram.org the Mini App is a framed,
+ * third-party context where a SameSite=Lax cookie is never sent back, so on
+ * the Telegram surface it is a partitioned SameSite=None cookie instead. It
+ * holds a language code and nothing else.
+ */
+export function writeLocaleCookie(next: string): void {
+  const attrs = isTelegramSurface()
+    ? "samesite=none; secure; partitioned"
+    : "samesite=lax";
+  document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; ${attrs}`;
+}
+
 export function LocaleToggle({ className }: { className?: string }) {
   const active = useLocale();
   const t = useTranslations("common");
@@ -38,10 +53,12 @@ export function LocaleToggle({ className }: { className?: string }) {
 
   function choose(next: Locale) {
     if (next === active) return;
-    document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
+    writeLocaleCookie(next);
+    const auth = authInit();
     void fetch("/api/auth/me/locale", {
       method: "PATCH",
-      headers: { "content-type": "application/json" },
+      credentials: auth.credentials,
+      headers: { "content-type": "application/json", ...auth.headers },
       body: JSON.stringify({ locale: next }),
     }).catch(() => {});
     startTransition(() => router.refresh());

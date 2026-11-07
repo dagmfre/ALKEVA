@@ -121,9 +121,9 @@ ssh_vm "set -e
   mv ${REMOTE}/app.new ${REMOTE}/app
   rm -f ~/alkeva-src.tar.gz"
 
-step "Writing caddy.env (edge proxy gets the domain, nothing else)"
+step "Writing caddy.env (edge proxy gets the domains, nothing else)"
 ssh_vm "set -e
-  grep -E '^(ALKEVA_DOMAIN|ALKEVA_ACME_EMAIL)=' ${REMOTE}/.env > ${REMOTE}/caddy.env
+  grep -E '^(ALKEVA_DOMAIN|ALKEVA_ACME_EMAIL|TELEGRAM_DOMAIN)=' ${REMOTE}/.env > ${REMOTE}/caddy.env
   chmod 600 ${REMOTE}/caddy.env
   wc -l < ${REMOTE}/caddy.env"
 

@@ -37,7 +37,7 @@ export function BottomNav() {
   return (
     <>
       <nav
-        className="fixed inset-x-0 bottom-0 z-(--z-index-sticky) flex h-[calc(4.5rem+env(safe-area-inset-bottom))] items-start bg-bg-deep px-2 pb-[env(safe-area-inset-bottom)] lg:hidden"
+        className="tg-show fixed inset-x-0 bottom-0 z-(--z-index-sticky) flex h-[calc(4.5rem+env(safe-area-inset-bottom))] items-start bg-bg-deep px-2 pb-[env(safe-area-inset-bottom)] lg:hidden"
         aria-label={t("primary")}
         data-print="hide"
       >

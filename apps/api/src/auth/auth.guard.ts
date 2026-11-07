@@ -98,11 +98,26 @@ export class RolesGuard implements CanActivate {
     const current = rows[0];
     if (!current || current.status !== "active") throw new ForbiddenException("insufficient_role");
     if (!required.includes(current.role)) throw new ForbiddenException("insufficient_role");
+    // Staff work happens on the website only (Phase 11): a session opened
+    // through Telegram never reaches a staff route, whatever the role.
+    if ((req.auth.amr ?? []).includes("telegram")) {
+      throw new ForbiddenException("telegram_session_not_allowed");
+    }
     if (this.env.STAFF_REQUIRE_PASSKEY && !(req.auth.amr ?? []).includes("webauthn")) {
       throw new ForbiddenException("passkey_required");
     }
     req.auth = { ...req.auth, role: current.role };
     return true;
+  }
+}
+
+/**
+ * Website-only operations (adding a passkey, starting or confirming a
+ * Telegram link) refuse a session that was opened through Telegram.
+ */
+export function assertNotTelegramSession(auth: AccessPayload): void {
+  if ((auth.amr ?? []).includes("telegram")) {
+    throw new ForbiddenException("telegram_session_not_allowed");
   }
 }
 

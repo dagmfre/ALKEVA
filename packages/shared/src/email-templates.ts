@@ -34,6 +34,9 @@ export type NotificationTemplate =
   | "new_sign_in"
   | "passkey_added"
   | "staff_alert"
+  // Phase 11 — Telegram account link changes (security: always emailed).
+  | "telegram_linked"
+  | "telegram_unlinked"
   // Codes: emailed directly, NEVER stored as a notification row (the payload
   // carries the secret, exactly like the password-reset link).
   | "email_code"
@@ -52,6 +55,8 @@ export function notificationCategory(template: NotificationTemplate): Notificati
       return "alerts";
     case "new_sign_in":
     case "passkey_added":
+    case "telegram_linked":
+    case "telegram_unlinked":
     case "account_frozen":
     case "account_unfrozen":
     case "fayda_verified":
@@ -295,6 +300,20 @@ function copyFor(
           ? `ለመለያዎ አዲስ የይለፍ ቁልፍ (passkey) ተጨምሯል${p.label ? `፦ ${p.label}` : ""}። እርስዎ ካልሆኑ በመለያ ገጽ ያስወግዱት እና ድጋፍን ያግኙ።`
           : `A new passkey was added to your account${p.label ? `: ${p.label}` : ""}. If this wasn't you, remove it on your Account page and contact support.`,
       };
+    case "telegram_linked":
+      return {
+        subject: am ? "ቴሌግራም ተገናኝቷል — ALKEVA" : "Telegram connected to your account — ALKEVA",
+        body: am
+          ? `የቴሌግራም መለያ${p.telegram ? ` ${p.telegram}` : ""} ከALKEVA መለያዎ ጋር ተገናኝቷል። አሁን ALKEVAን በቴሌግራም መክፈት ይችላሉ። እርስዎ ካልሆኑ በመለያ ገጽ ቴሌግራምን ያላቅቁ፣ "ከሁሉም መሳሪያዎች ውጣ" ይጫኑ እና ድጋፍን ያግኙ።`
+          : `The Telegram account${p.telegram ? ` ${p.telegram}` : ""} was connected to your ALKEVA account and can now open it inside Telegram. If this wasn't you, disconnect Telegram on your Account page, choose "Sign out everywhere" and contact support.`,
+      };
+    case "telegram_unlinked":
+      return {
+        subject: am ? "ቴሌግራም ተላቅቋል — ALKEVA" : "Telegram disconnected — ALKEVA",
+        body: am
+          ? `የቴሌግራም መለያ${p.telegram ? ` ${p.telegram}` : ""} ከALKEVA መለያዎ ተላቅቋል፤ በቴሌግራም የተከፈቱ ክፍለ-ጊዜዎች ተዘግተዋል።`
+          : `The Telegram account${p.telegram ? ` ${p.telegram}` : ""} was disconnected from your ALKEVA account, and every session opened through Telegram was signed out.`,
+      };
     case "staff_alert":
       return {
         subject: am ? `የሰራተኛ ማስጠንቀቂያ፦ ${p.kind ?? ""} — ALKEVA` : `Staff alert: ${p.kind ?? ""} — ALKEVA`,
@@ -315,6 +334,23 @@ function copyFor(
           : `To confirm the withdrawal of ETB ${fmtEtb(p.amountCents)} to ${p.accountNumber ?? ""}, enter this code: ${p.code ?? ""}. It works for ${p.minutes ?? "10"} minutes. If you did not ask for this, do not enter the code and change your password.`,
       };
   }
+}
+
+/**
+ * The same copy as a Telegram bot message: PLAIN TEXT, sent with no
+ * parse_mode, so nothing in a payload (a name, a reason) can be read as
+ * markup. Secret-bearing templates are refused outright — codes and reset
+ * links never travel over Telegram.
+ */
+export function renderTelegramText(
+  template: NotificationTemplate,
+  locale: "am" | "en",
+  p: NotificationPayload,
+): string | null {
+  if (SECRET_TEMPLATES.includes(template)) return null;
+  const copy = copyFor(template, locale, p);
+  const heading = copy.subject.replace(/\s+—\s+ALKEVA$/u, "");
+  return `${heading}\n\n${copy.body}`.slice(0, 4000);
 }
 
 export function renderNotification(

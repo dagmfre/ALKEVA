@@ -13,7 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Panel, PanelHeader } from "@/components/ui/panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SystemBanner } from "@/components/system/banner";
-import { api, ApiError } from "@/lib/api";
+import { TelegramFaydaPanel } from "@/components/telegram/telegram-fayda";
+import { api, ApiError, authInit } from "@/lib/api";
+import { isTelegramSurface } from "@/lib/telegram/webapp";
 import { eatStamp } from "@/lib/format";
 import { useResource } from "@/lib/use-resource";
 import { cn } from "@/lib/utils";
@@ -110,7 +112,7 @@ export function KycScreen() {
           </Panel>
         ) : (
           <div className="flex flex-col gap-3">
-            {methods.fayda && <FaydaPanel />}
+            {methods.fayda && <FaydaPanel onDone={me.reload} />}
             {methods.document && (
               <DocumentForm
                 onDone={me.reload}
@@ -162,7 +164,14 @@ export function KycScreen() {
 }
 
 /** The national-ID check: one button, Fayda's own pages, back here verified. */
-function FaydaPanel() {
+function FaydaPanel({ onDone }: { onDone: () => void }) {
+  // Inside Telegram, eSignet cannot run in the webview: hand off to the
+  // phone's browser and confirm the result back here.
+  if (isTelegramSurface()) return <TelegramFaydaPanel onDone={onDone} />;
+  return <WebFaydaPanel />;
+}
+
+function WebFaydaPanel() {
   const t = useTranslations("kyc");
   const tc = useTranslations("common");
   const [busy, setBusy] = useState(false);
@@ -245,7 +254,13 @@ function DocumentForm({
       const form = new FormData();
       form.set("file", file);
       form.set("docType", docType);
-      const res = await fetch("/api/kyc", { method: "POST", body: form, credentials: "include" });
+      const auth = authInit();
+      const res = await fetch("/api/kyc", {
+        method: "POST",
+        body: form,
+        credentials: auth.credentials,
+        headers: auth.headers,
+      });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { message?: string } | null;
         throw new ApiError(res.status, body?.message ?? `http_${res.status}`, body);
