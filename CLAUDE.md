@@ -282,3 +282,20 @@ Rules inside the loop: progress/decisions are logged here as they happen (not at
   - Local `.env` gained a clearly fake dev bot token + `telegram` in `AUTH_METHODS` (backup in the session scratchpad).
   - **User-owned:** create the bot in BotFather (token only into `/opt/alkeva/.env`), the `tg.allkeva.com` A record, run `docs/deploy/TELEGRAM.md`, native-speaker review of the new ti/om/so (and am) strings. Telegram's terms §4.4 encryption-at-rest (netcup disk) stays an open compliance item.
   - Nothing committed or deployed — awaiting Dagmfre's joint verification (`docs/manual-tests/phase-11.md`).
+- 2026-11-07 19:30 — **Phase 11 shipped to production, with Telegram still off** (Dagmfre: "commit, push and deploy to production"). Commit `55e1cc7` pushed to `main`; `docs/fayda/` deliberately left uncommitted (a copied partner-portal page).
+  - **First `ship.sh` run stopped at the settings preflight** with the old containers still serving. Dagmfre had pasted the TELEGRAM.md env block into `/opt/alkeva/.env`, and `TELEGRAM_WEBHOOK_SECRET` was still the literal `<openssl rand -hex 32>`. Dagmfre generated the secret on the VPS (backup `.env.bak-phase11-20261107191955`). Inline `# …` comments in that block are harmless: Compose strips them, as `docker compose config` confirmed.
+  - `AUTH_METHODS` appears twice in `/opt/alkeva/.env`. The later line (`password,google,passkey`) wins, so Telegram is off.
+  - **Verified on https://allkeva.com:**
+    - settings ok; migration 0014 applied (`telegram_chat` table, `notification.tg_status` column); all 6 services running; healthz db/redis/priceFeed ok;
+    - main host still sends `X-Frame-Options: DENY` + `frame-ancestors 'none'`, and a forged `X-Alkeva-Surface` header still renders `data-surface="web"`;
+    - `POST /api/webhooks/telegram` from a non-Telegram IP → 403;
+    - `/auth/providers` reports `telegram.enabled:false`, and `/auth/telegram/session` → 503 `telegram_unconfigured`;
+    - `/telegram/return`, `/handoff`, `/welcome`, `/login`, `/privacy` → 200;
+    - worker logs "dispatcher … telegram off".
+  - Caddy is trying to get a certificate for `tg.allkeva.com`, which has no DNS record yet. It will keep retrying until the A record exists; the main host is unaffected.
+  - **Next (user-owned):**
+    - add the `tg` A record;
+    - delete the duplicate top `AUTH_METHODS` line and add `telegram` to the remaining one;
+    - restart, then run `scripts/telegram-setup.mjs` per `docs/deploy/TELEGRAM.md` §4–5;
+    - finish the joint verification in `docs/manual-tests/phase-11.md`.
+  — done
