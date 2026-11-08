@@ -79,7 +79,8 @@ export function telegramProviderInfo(env: Env): ProvidersResponse["telegram"] {
 
 export const FAYDA_BIND_COOKIE_NAME = "alkeva_fayda_tx";
 
-const GOOGLE_BIND_COOKIE = "alkeva_google_tx";
+export const GOOGLE_BIND_COOKIE_NAME = "alkeva_google_tx";
+const GOOGLE_BIND_COOKIE = GOOGLE_BIND_COOKIE_NAME;
 const FAYDA_BIND_COOKIE = FAYDA_BIND_COOKIE_NAME;
 export const FLOW_TTL_SEC = 900;
 
@@ -267,7 +268,13 @@ export class AuthController {
   ) {
     const binding = req.cookies?.[GOOGLE_BIND_COOKIE] as string | undefined;
     clearFlowCookie(res, this.env, GOOGLE_BIND_COOKIE);
-    const userId = await this.google.handleCallback(dto.code, dto.state, binding);
+    const { userId, telegramFlow, approval } = await this.google.handleCallback(dto.code, dto.state, binding);
+    if (telegramFlow && approval) {
+      // Started from the Telegram Mini App: this browser gets NO session. It
+      // gets a one-time approval token, and must say yes to the Telegram
+      // account that asked before anything is linked.
+      return { telegram: { returnUrl: this.google.telegramReturnUrl(), ...approval } };
+    }
     const { user, tokens } = await this.auth.issueSessionFor(userId, ["google"], clientContext(req));
     setSessionCookies(res, this.env, tokens);
     return user;

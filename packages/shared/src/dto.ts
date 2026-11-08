@@ -1018,6 +1018,61 @@ export const telegramLinkClaimDto = z.object({
 });
 export type TelegramLinkClaimDto = z.infer<typeof telegramLinkClaimDto>;
 
+/**
+ * Google from inside the Mini App. Google refuses embedded webviews, so the
+ * sign-in runs in the phone's browser and the Mini App confirms the result.
+ * "register" sits behind the terms checkbox, as on the website.
+ */
+export const telegramGoogleStartDto = z.object({
+  pendingToken: pendingTokenField,
+  intent: z.enum(["login", "register"]),
+  locale: z.enum(LOCALES).default(DEFAULT_LOCALE),
+  acceptTerms: z.boolean().optional(),
+});
+export type TelegramGoogleStartDto = z.infer<typeof telegramGoogleStartDto>;
+
+export const telegramGoogleFlowDto = z.object({
+  pendingToken: pendingTokenField,
+  flowId: z.string().uuid(),
+});
+export type TelegramGoogleFlowDto = z.infer<typeof telegramGoogleFlowDto>;
+
+export interface TelegramGoogleStartResponse {
+  flowId: string;
+  /** Open with Telegram.WebApp.openLink — the ticket rides the fragment. */
+  url: string;
+  expiresAt: string;
+}
+
+export type TelegramGoogleStatus =
+  | { status: "waiting" }
+  /** Google answered; `account` is the masked email the Mini App asks the person to confirm. */
+  | { status: "ready"; account: string }
+  | { status: "failed"; code: string }
+  | { status: "expired" };
+
+/**
+ * POST /auth/google/callback for a flow started in the Mini App: no session.
+ * The browser that proved Google must approve the Telegram account that
+ * asked (`telegram`) before anything is linked, using the one-time `token`.
+ */
+export interface GoogleCallbackTelegramResponse {
+  telegram: {
+    returnUrl: string | null;
+    flowId: string;
+    token: string;
+    telegram: string;
+    account: string;
+  };
+}
+
+export const telegramGoogleApproveDto = z.object({
+  flowId: z.string().uuid(),
+  token: z.string().regex(/^[A-Za-z0-9_-]{40,64}$/),
+  decision: z.enum(["approve", "reject"]),
+});
+export type TelegramGoogleApproveDto = z.infer<typeof telegramGoogleApproveDto>;
+
 export const telegramRefreshDto = z.object({
   refreshToken: z.string().min(40).max(200),
 });

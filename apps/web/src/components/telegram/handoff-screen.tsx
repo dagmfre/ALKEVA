@@ -15,8 +15,9 @@ let consumed = false;
  * The ticket arrives in the URL FRAGMENT, which no browser sends to a
  * server, so it is in no access log and no Referer. It is read, wiped from
  * the address bar at once, and spent on one request whose only power is to
- * start the Fayda identity flow for the person who asked from Telegram. This
- * browser receives no ALKEVA session — it only carries Fayda's binding cookie.
+ * start the Fayda identity flow (#t=) or a Google sign-in (#g=) for the
+ * person who asked from Telegram. This browser receives no ALKEVA session —
+ * only the identity provider's browser-binding cookie.
  */
 export function HandoffScreen() {
   const t = useTranslations("telegram");
@@ -25,14 +26,17 @@ export function HandoffScreen() {
   useEffect(() => {
     if (consumed) return;
     consumed = true;
-    const ticket = new URLSearchParams(window.location.hash.slice(1)).get("t") ?? "";
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    // #t= starts the Fayda identity check, #g= a Google sign-in for the Mini App.
+    const google = fragment.has("g");
+    const ticket = (google ? fragment.get("g") : fragment.get("t")) ?? "";
     // Gone from the address bar (and from any later Referer) before anything else.
     window.history.replaceState(null, "", window.location.pathname);
     if (!/^[A-Za-z0-9_-]{40,64}$/.test(ticket)) {
       setProblem(true);
       return;
     }
-    void fetch("/api/telegram/handoff/consume", {
+    void fetch(google ? "/api/auth/telegram/google/consume" : "/api/telegram/handoff/consume", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

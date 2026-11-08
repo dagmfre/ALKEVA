@@ -203,3 +203,8 @@ export function useAppData(): AppData {
   if (!v) throw new Error("useAppData must be used inside AppDataProvider");
   return v;
 }
+
+/** The same data when inside the customer shell; null elsewhere (the staff console). */
+export function useOptionalAppData(): AppData | null {
+  return useContext(Ctx);
+}

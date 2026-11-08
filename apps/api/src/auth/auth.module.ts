@@ -30,6 +30,7 @@ import { WebauthnService } from "./webauthn.service.js";
   ],
   exports: [
     AuthService,
+    GoogleAuthService,
     AuthGuard,
     RolesGuard,
     JwtModule,

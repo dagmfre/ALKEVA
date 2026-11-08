@@ -8,7 +8,7 @@ import { Bell, BellRing, ChevronDown, LogOut, ShieldCheck, UserRound } from "luc
 import type { MeResponse } from "@alkeva/shared";
 
 import { usePrices } from "@/components/market/price-provider";
-import { useAppData } from "@/components/shell/app-data";
+import { useAppData, useOptionalAppData } from "@/components/shell/app-data";
 import { Achievements, TierCard, TierGem, tierRing } from "@/components/shell/tier-progress";
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { api } from "@/lib/api";
+import { signOut } from "@/lib/sign-out";
 import { eatStamp, eatTime } from "@/lib/format";
 import { notificationDetail, notificationHref, notificationTitle } from "@/lib/notifications";
 import { currentSubscription, enablePush, pushSupported } from "@/lib/push";
@@ -234,15 +235,18 @@ function PushQuickToggle() {
  * Account, the staff console for staff (RolesGuard is the real boundary —
  * this is a door, not a lock), and sign-out.
  */
-export function UserMenu({ showName = false }: { showName?: boolean }) {
+export function UserMenu({ showName = false, me: meProp }: { showName?: boolean; me?: MeResponse }) {
   const tn = useTranslations("nav");
   const tc = useTranslations("common");
   const tt = useTranslations("tier");
   const router = useRouter();
-  const { me: meRes, progress } = useAppData();
-  const me = meRes.data;
+  // The staff console has no customer data provider (no wallet, no tier): it
+  // passes `me` in, and the menu shows identity, the doors and sign-out only.
+  const app = useOptionalAppData();
+  const me = meProp ?? app?.me.data;
+  const progressData = app?.progress.data;
   const staff = isStaffRole(me?.role);
-  const tierName = progress.data?.tier.name ?? null;
+  const tierName = progressData?.tier.name ?? null;
 
   const initials =
     me?.fullName
@@ -252,15 +256,6 @@ export function UserMenu({ showName = false }: { showName?: boolean }) {
       .map((w) => w.charAt(0))
       .join("")
       .toUpperCase() || "·";
-
-  async function signOut() {
-    try {
-      await api("/auth/logout", { method: "POST" });
-    } finally {
-      router.replace("/login");
-      router.refresh();
-    }
-  }
 
   return (
     <DropdownMenu>
@@ -305,11 +300,11 @@ export function UserMenu({ showName = false }: { showName?: boolean }) {
             <DropdownMenuSeparator />
           </>
         )}
-        {!staff && progress.data && (
+        {!staff && progressData && (
           <>
             <div className="flex flex-col gap-4 px-2 py-2">
-              <TierCard progress={progress.data} compact />
-              <Achievements badges={progress.data.badges} dense />
+              <TierCard progress={progressData} compact />
+              <Achievements badges={progressData.badges} dense />
             </div>
             <DropdownMenuSeparator />
           </>
@@ -325,7 +320,7 @@ export function UserMenu({ showName = false }: { showName?: boolean }) {
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onSelect={() => void signOut()}>
+        <DropdownMenuItem variant="destructive" onSelect={() => void signOut(router)}>
           <LogOut />
           {tc("logout")}
         </DropdownMenuItem>

@@ -17,6 +17,9 @@ import { SkipThrottle, Throttle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
 import { z } from "zod";
 import {
+  telegramGoogleApproveDto,
+  telegramGoogleFlowDto,
+  telegramGoogleStartDto,
   telegramHandoffConsumeDto,
   telegramHandoffDto,
   telegramLinkClaimDto,
@@ -25,6 +28,11 @@ import {
   telegramSessionDto,
   telegramSignupDto,
   type Env,
+  type TelegramGoogleApproveDto,
+  type TelegramGoogleFlowDto,
+  type TelegramGoogleStartDto,
+  type TelegramGoogleStartResponse,
+  type TelegramGoogleStatus,
   type TelegramHandoffStartResponse,
   type TelegramHandoffStatus,
   type TelegramLinkClaimDto,
@@ -37,7 +45,7 @@ import {
 import { ENV } from "../core/core.module.js";
 import { ZodPipe } from "../core/zod.pipe.js";
 import { Auth, AuthGuard } from "../auth/auth.guard.js";
-import { FAYDA_BIND_COOKIE_NAME, FLOW_TTL_SEC } from "../auth/auth.controller.js";
+import { FAYDA_BIND_COOKIE_NAME, FLOW_TTL_SEC, GOOGLE_BIND_COOKIE_NAME } from "../auth/auth.controller.js";
 import type { AccessPayload } from "../auth/auth.service.js";
 import { clientContext, setFlowCookie } from "../auth/cookies.js";
 import { TelegramAuthService } from "./telegram-auth.service.js";
@@ -54,7 +62,10 @@ const claimStatusDto = z.object({ claimToken: z.string().regex(/^[A-Za-z0-9_-]{3
  */
 @Controller("auth/telegram")
 export class TelegramAuthController {
-  constructor(private readonly tg: TelegramAuthService) {}
+  constructor(
+    private readonly tg: TelegramAuthService,
+    @Inject(ENV) private readonly env: Env,
+  ) {}
 
   /** initData → a session (linked) or a pending token (not linked yet). */
   @Post("session")
@@ -86,6 +97,78 @@ export class TelegramAuthController {
     @Req() req: Request,
   ): Promise<TelegramSessionResponse> {
     return this.tg.linkWithPassword(dto, clientContext(req));
+  }
+
+  /** Google, step 1 (Mini App): a single-use ticket for the phone's browser. */
+  @Post("google/start")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  googleStart(
+    @Body(new ZodPipe(telegramGoogleStartDto)) dto: TelegramGoogleStartDto,
+  ): Promise<TelegramGoogleStartResponse> {
+    return this.tg.googleStart(dto);
+  }
+
+  /**
+   * Google, step 2: the phone's browser (allkeva.com/handoff#g=...). Public by
+   * design: the ticket is the authorisation, and it can only start a Google
+   * sign-in whose result the Mini App must confirm. Sets Google's
+   * browser-binding cookie for THIS browser; no session.
+   */
+  @Post("google/consume")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async googleConsume(
+    @Body(new ZodPipe(telegramHandoffConsumeDto)) dto: { ticket: string },
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ url: string }> {
+    const { url, binding } = await this.tg.googleConsume(dto.ticket, clientContext(req));
+    setFlowCookie(res, this.env, GOOGLE_BIND_COOKIE_NAME, binding, FLOW_TTL_SEC);
+    return { url };
+  }
+
+  /**
+   * Google, step 3 (the phone's browser, after Google): the account owner
+   * approves or refuses the Telegram account that asked. Public: the one-time
+   * token from the Google callback is the authorisation.
+   */
+  @Post("google/approve")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  googleApprove(
+    @Body(new ZodPipe(telegramGoogleApproveDto)) dto: TelegramGoogleApproveDto,
+    @Req() req: Request,
+  ): Promise<{ status: "approved" | "declined" }> {
+    return this.tg.googleApprove(dto, clientContext(req));
+  }
+
+  /** Google, step 4 (Mini App): poll until the browser has approved. */
+  @Post("google/status")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  googleStatus(
+    @Body(new ZodPipe(telegramGoogleFlowDto)) dto: TelegramGoogleFlowDto,
+  ): Promise<TelegramGoogleStatus> {
+    return this.tg.googleStatus(dto);
+  }
+
+  /** Google, step 5 (Mini App): sign in once the browser approved. */
+  @Post("google/confirm")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  googleConfirm(
+    @Body(new ZodPipe(telegramGoogleFlowDto)) dto: TelegramGoogleFlowDto,
+    @Req() req: Request,
+  ): Promise<TelegramSessionResponse> {
+    return this.tg.googleConfirm(dto, clientContext(req));
+  }
+
+  @Post("google/cancel")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  googleCancel(@Body(new ZodPipe(telegramGoogleFlowDto)) dto: TelegramGoogleFlowDto): Promise<{ ok: true }> {
+    return this.tg.googleCancel(dto);
   }
 
   /** Link path (b), step 1 — website: a one-time t.me link. */

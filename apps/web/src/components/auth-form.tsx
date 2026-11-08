@@ -282,7 +282,7 @@ function Divider({ label }: { label: string }) {
 }
 
 /** The four-color G, inline — no external asset, no tracking pixel. */
-function GoogleMark() {
+export function GoogleMark() {
   return (
     <svg viewBox="0 0 24 24" className="size-4.5" aria-hidden="true">
       <path

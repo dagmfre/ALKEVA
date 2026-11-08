@@ -46,6 +46,11 @@ TELEGRAM_SIGNUP_ENABLED=true                      # false = Telegram can only op
 TELEGRAM_TEST_ENV=false
 ```
 
+When you copy the block above into the file:
+- Copy **only** the `KEY=value` part. Leave out the `# …` comments and every `<…>` placeholder.
+- `TELEGRAM_MINIAPP_SHORT_NAME` must be the short name you actually gave the direct link in BotFather, the last part of `t.me/<bot>/<short name>`.
+- Each key may appear **once**. If `AUTH_METHODS` already exists further down the file, edit that line. Don't add a second one: the **last** copy wins.
+
 The production boot guard refuses to start if:
 - Telegram is enabled and any of these values is missing;
 - the webhook secret is shorter than 32 characters;
@@ -57,11 +62,25 @@ The production boot guard refuses to start if:
 ## 4. Deploy, then register the webhook
 
 ```bash
-bash deploy/ship.sh                 # migration 0014 runs automatically
+bash deploy/ship.sh                 # from the laptop; migration 0014 runs automatically
 ssh -i ~/.ssh/alkeva_vps root@159.195.85.255
-cd /opt/alkeva/app && set -a && . ../.env && set +a
-node scripts/telegram-setup.mjs     # webhook + commands + descriptions (5 languages) + menu button
-node scripts/telegram-setup.mjs --check
+cd /opt/alkeva/app
+C="docker compose -f deploy/docker-compose.prod.yml --env-file ../.env"
+$C run --rm --no-deps api node scripts/telegram-setup.mjs           # webhook + commands + descriptions (5 languages) + menu button
+$C run --rm --no-deps api node scripts/telegram-setup.mjs --check
+```
+
+Run the script **inside the app image, as above**. Do not run it in a bare shell:
+- The VPS host has no `node`. It only exists inside the image.
+- `set -a && . ../.env` fails in bash, because `MAIL_FROM=ALKEVA <no-reply@…>` is unquoted.
+- Compose reads the same file correctly: it strips inline `# …` comments and keeps `<…>` values.
+- Running the script on the laptop is refused ("Telegram requires https origins"), because the local `.env` holds the dev values.
+
+**If you add the DNS record after Caddy has started**, Caddy's first certificate attempts fail with NXDOMAIN, and it backs off. Telegram then shows `ERR_SSL_PROTOCOL_ERROR`. To make it retry right away, with no downtime:
+
+```bash
+$C exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile --force
+$C logs --since 2m caddy | grep tg.allkeva | grep -c "certificate obtained successfully"   # → 1
 ```
 
 `--check` must show:

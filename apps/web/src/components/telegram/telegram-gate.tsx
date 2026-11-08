@@ -3,15 +3,24 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Loader2, Send } from "lucide-react";
-import type { ProvidersResponse, TelegramSessionResponse } from "@alkeva/shared";
+import { Loader2, LogOut, Send, Unlink } from "lucide-react";
+import type { MeResponse, ProvidersResponse, TelegramSessionResponse } from "@alkeva/shared";
 
 import { TelegramChrome } from "@/components/telegram/telegram-chrome";
 import { TelegramClaim } from "@/components/telegram/telegram-claim";
 import { TelegramOnboarding } from "@/components/telegram/telegram-onboarding";
 import { TgFrame } from "@/components/telegram/tg-frame";
+import { SystemBanner } from "@/components/system/banner";
 import { Button } from "@/components/ui/button";
-import { setTgTokens, storedRefreshToken, TG_EXPIRED_EVENT, tgRefresh } from "@/lib/telegram/session";
+import { api } from "@/lib/api";
+import {
+  clearTgTokens,
+  setTgTokens,
+  storedRefreshToken,
+  TG_EXPIRED_EVENT,
+  TG_SIGNOUT_EVENT,
+  tgRefresh,
+} from "@/lib/telegram/session";
 import { parseStartParam, type StartTarget } from "@/lib/telegram/start-param";
 import { prepareChrome, webApp } from "@/lib/telegram/webapp";
 
@@ -22,7 +31,10 @@ type GateState =
   | { s: "needs_account"; data: Extract<TelegramSessionResponse, { status: "needs_account" }> }
   | { s: "claim"; claimToken: string; account: string }
   | { s: "expired" }
-  | { s: "refused"; code: string };
+  | { s: "refused"; code: string }
+  /** A menu asked to sign out: choose how. The session is still live. */
+  | { s: "sign_out" }
+  | { s: "signed_out"; disconnected: boolean };
 
 /** Pages anyone may read without an account (linked from the signup form). */
 const OPEN_PATHS = ["/terms", "/privacy", "/copyright"];
@@ -111,11 +123,16 @@ export function TelegramGate({ children }: { children: React.ReactNode }) {
     void boot.then((next) => {
       if (live) setState(next);
     });
-    const onExpired = () => setState({ s: "expired" });
+    const onExpired = () =>
+      // Signing out revokes the session on purpose; that is not "expired".
+      setState((prev) => (prev.s === "signed_out" ? prev : { s: "expired" }));
+    const onSignOut = () => setState((prev) => (prev.s === "ready" ? { s: "sign_out" } : prev));
     window.addEventListener(TG_EXPIRED_EVENT, onExpired);
+    window.addEventListener(TG_SIGNOUT_EVENT, onSignOut);
     return () => {
       live = false;
       window.removeEventListener(TG_EXPIRED_EVENT, onExpired);
+      window.removeEventListener(TG_SIGNOUT_EVENT, onSignOut);
     };
   }, []);
 
@@ -145,6 +162,15 @@ export function TelegramGate({ children }: { children: React.ReactNode }) {
           onExpired={() => setState({ s: "expired" })}
         />
       );
+    case "sign_out":
+      return (
+        <SignOutChoice
+          onCancel={signedIn}
+          onDone={(disconnected) => setState({ s: "signed_out", disconnected })}
+        />
+      );
+    case "signed_out":
+      return <SignedOut disconnected={state.disconnected} />;
     case "outside":
       return <OutsideTelegram />;
     case "expired":
@@ -232,6 +258,89 @@ function OutsideTelegram() {
           </a>
         </Button>
       ) : null}
+    </TgFrame>
+  );
+}
+
+/**
+ * Sign-out inside Telegram. There is no sign-in page here: the Telegram
+ * account itself signs the person in, so "sign out" alone would be undone by
+ * the next open. Two honest choices instead — end this session, or also
+ * disconnect Telegram from the account so a different one can be used.
+ */
+function SignOutChoice({ onCancel, onDone }: { onCancel: () => void; onDone: (disconnected: boolean) => void }) {
+  const t = useTranslations("telegram");
+  const [email, setEmail] = useState<string | null>(null);
+  const [busy, setBusy] = useState<"out" | "unlink" | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    api<MeResponse>("/auth/me")
+      .then((me) => setEmail(me.email))
+      .catch(() => undefined);
+  }, []);
+
+  async function run(kind: "out" | "unlink") {
+    setBusy(kind);
+    setError(false);
+    try {
+      if (kind === "unlink") {
+        // Removes the link and revokes every Telegram session of this account.
+        await api("/auth/telegram/link", { method: "DELETE" });
+      } else {
+        await api("/auth/logout", { method: "POST" });
+      }
+    } catch {
+      if (kind === "unlink") {
+        setBusy(null);
+        setError(true);
+        return;
+      }
+      /* sign-out: the local session is dropped below either way */
+    }
+    clearTgTokens();
+    onDone(kind === "unlink");
+  }
+
+  return (
+    <TgFrame>
+      <h1 className="text-[1.375rem] font-bold">{t("signOutTitle")}</h1>
+      {email ? (
+        <p className="text-[0.9375rem] text-muted-foreground">{t("signOutAccount", { email })}</p>
+      ) : null}
+      {error ? <SystemBanner tone="critical">{t("genericError")}</SystemBanner> : null}
+      <div className="flex flex-col gap-1.5">
+        <Button size="cta" variant="destructive" disabled={busy !== null} onClick={() => void run("out")}>
+          {busy === "out" ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <LogOut />}
+          {t("signOutOnly")}
+        </Button>
+        <p className="text-[0.8125rem] leading-relaxed text-muted-foreground">{t("signOutOnlyHint")}</p>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Button size="cta" variant="outline" disabled={busy !== null} onClick={() => void run("unlink")}>
+          {busy === "unlink" ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Unlink />}
+          {t("signOutDisconnect")}
+        </Button>
+        <p className="text-[0.8125rem] leading-relaxed text-muted-foreground">{t("signOutDisconnectHint")}</p>
+      </div>
+      <Button variant="ghost" size="sm" disabled={busy !== null} onClick={onCancel}>
+        {t("cancel")}
+      </Button>
+    </TgFrame>
+  );
+}
+
+function SignedOut({ disconnected }: { disconnected: boolean }) {
+  const t = useTranslations("telegram");
+  return (
+    <TgFrame>
+      <h1 className="text-[1.375rem] font-bold">{t("signedOutTitle")}</h1>
+      <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
+        {disconnected ? t("signedOutDisconnectedBody") : t("signedOutBody")}
+      </p>
+      <Button size="cta" onClick={() => webApp()?.close()}>
+        {t("closeApp")}
+      </Button>
     </TgFrame>
   );
 }

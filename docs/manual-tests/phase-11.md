@@ -56,6 +56,12 @@ There are two ways to run this.
 24. Notifications page: inside the Mini App the "Browser alerts" card is gone, and the preferences table has a **Telegram** column. It also shows on the website once Telegram is connected.
 25. Account → Telegram → **Disconnect Telegram** → **Disconnect**. Inside the Mini App, the app ends with "Please reopen ALKEVA". Opening a new launch shows onboarding again. Mailpit has "Telegram disconnected".
 
+## F2. Signing out, Google, and the staff console (added 8 Nov)
+25a. Mini App → profile menu → **Log out**. You get two choices. **Sign out**: "You're signed out"; reopening from Telegram signs you straight back in. **Sign out and disconnect Telegram**: the next open shows "Welcome to ALKEVA" again, and the owner gets a "Telegram disconnected" email.
+25b. On the "Welcome to ALKEVA" screen, both tabs show **Continue with Google** (on Create account, only after ticking the terms). Tap it, then **Continue to Google**: the phone's browser opens Google. After Google, the browser says "Signed in with Google — go back to Telegram". It holds no ALKEVA session.
+25c. Back in the Mini App: "Is this your account? Google signed you in as d***@…". **Not my account** links nothing. **Yes, connect** signs you in, and the owner gets a "Telegram connected" email. A Google account with no ALKEVA account, on the "I have an account" tab, says so instead.
+25d. `https://allkeva.com/admin` signed out, or signed in as a customer: an ordinary 404 page. Signed in as staff: the console, with a working profile menu (no "Application error").
+
 ## G. Real Telegram (production, after TELEGRAM.md)
 26. iPhone, Android, Telegram Desktop **and** web.telegram.org (the iframe): open the bot → Start → the welcome message has an "Open ALKEVA" button. `/price` gives the live price. `/help` lists the commands. Commands appear in your Telegram language.
 27. In each client: sign in or create an account, then check that safe areas look right (nothing under the notch or the home bar) and that Telegram's ← Back button appears below the main tabs and works.

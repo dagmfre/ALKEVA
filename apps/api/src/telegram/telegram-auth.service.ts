@@ -1,5 +1,6 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Inject,
@@ -20,6 +21,11 @@ import {
   type TelegramLinkStartResponse,
   type TelegramLinkStatusResponse,
   type TelegramPasswordLinkDto,
+  type TelegramGoogleApproveDto,
+  type TelegramGoogleFlowDto,
+  type TelegramGoogleStartDto,
+  type TelegramGoogleStartResponse,
+  type TelegramGoogleStatus,
   type TelegramSessionResponse,
   type TelegramSignupDto,
   type TelegramTokens,
@@ -29,6 +35,7 @@ import { NotificationsService } from "../notifications/notifications.service.js"
 import { assertNotTelegramSession } from "../auth/auth.guard.js";
 import { AuthService, type AccessPayload } from "../auth/auth.service.js";
 import { EmailCodesService } from "../auth/email-codes.service.js";
+import { GoogleAuthService, safeEqual, telegramGoogleFlowKey, type TelegramGoogleFlow } from "../auth/google.service.js";
 import { isTelegramAmr, SessionsService, type ClientContext, type TokenPair } from "../auth/sessions.service.js";
 import { InitDataError, telegramDisplay, verifyInitData, type TelegramWebAppUser, type VerifiedInitData } from "./init-data.js";
 
@@ -58,6 +65,16 @@ interface ClaimState {
 const FRESH_AUTH_SEC = 10 * 60;
 const PENDING_TTL_SEC = 10 * 60;
 const WEBLINK_TTL_SEC = 10 * 60;
+/** The Google ticket only has to survive the hop into the phone's browser. */
+const GOOGLE_TICKET_TTL_SEC = 120;
+
+interface GoogleTicket {
+  flowId: string;
+  intent: "login" | "register";
+  locale: Locale;
+}
+
+const googleTicketKey = (ticket: string) => `tg:google:ticket:${createHash("sha256").update(ticket).digest("hex")}`;
 
 const sha256 = (v: string) => createHash("sha256").update(v).digest("hex");
 const token = () => randomBytes(32).toString("base64url");
@@ -89,6 +106,7 @@ export class TelegramAuthService {
     private readonly sessions: SessionsService,
     private readonly codes: EmailCodesService,
     private readonly notifications: NotificationsService,
+    private readonly google: GoogleAuthService,
   ) {}
 
   /** Listed in AUTH_METHODS and fully configured. */
@@ -252,6 +270,140 @@ export class TelegramAuthService {
       ttlSec: this.env.TELEGRAM_SESSION_TTL_SEC,
     });
     return { status: "signed_in", user, tokens: this.wire(tokens) };
+  }
+
+  // -- Google, run in the phone's browser ---------------------------
+  //
+  // Proofs: the pending token (from fresh initData) proves the Telegram side;
+  // a verified Google id_token proves the ALKEVA side. They are bound by a
+  // flow id that only this Mini App's pending token can read or confirm. The
+  // ticket that starts the browser leg rides a URL fragment, lasts 120 s and
+  // works once; the browser leg itself never receives an ALKEVA session.
+  //
+  // The decisive click belongs to the GOOGLE side: after Google, that browser
+  // is shown which Telegram account asked and must approve it (one-time token
+  // returned only to it). A confirm on the Telegram side would let whoever
+  // sends a victim the handoff link take over the victim's account with one
+  // click in Google's account chooser (security review, 8 Nov 2026).
+
+  async googleStart(dto: TelegramGoogleStartDto): Promise<TelegramGoogleStartResponse> {
+    this.assertEnabled();
+    if (!this.google.configured) throw new ServiceUnavailableException("auth_google_unconfigured");
+    const pending = await this.readPending(dto.pendingToken);
+    if (dto.intent === "register") {
+      if (!this.env.TELEGRAM_SIGNUP_ENABLED) throw new ForbiddenException("telegram_signup_disabled");
+      // A new account needs the terms accepted here, before Google.
+      if (dto.acceptTerms !== true) throw new BadRequestException("terms_required");
+    }
+    const flowId = randomUUID();
+    const ticket = token();
+    const rec: GoogleTicket = { flowId, intent: dto.intent, locale: dto.locale };
+    const flow: TelegramGoogleFlow = {
+      pendingSha: sha256(dto.pendingToken),
+      telegram: summary(pending).display,
+      state: "waiting",
+    };
+    await this.redis
+      .multi()
+      .set(googleTicketKey(ticket), JSON.stringify(rec), "EX", GOOGLE_TICKET_TTL_SEC)
+      .set(telegramGoogleFlowKey(flowId), JSON.stringify(flow), "EX", PENDING_TTL_SEC)
+      .exec();
+    return {
+      flowId,
+      url: `${this.env.WEB_ORIGIN}/handoff#g=${ticket}`,
+      expiresAt: new Date(Date.now() + GOOGLE_TICKET_TTL_SEC * 1000).toISOString(),
+    };
+  }
+
+  /** The browser leg: spend the ticket, get Google's consent URL (+ the binding for its cookie). */
+  async googleConsume(ticket: string, ctx: ClientContext): Promise<{ url: string; binding: string }> {
+    this.assertEnabled();
+    const raw = await this.redis.getdel(googleTicketKey(ticket));
+    if (!raw) throw new UnauthorizedException("handoff_invalid");
+    const rec = JSON.parse(raw) as GoogleTicket;
+    const key = telegramGoogleFlowKey(rec.flowId);
+    const flowRaw = await this.redis.get(key);
+    const flow = flowRaw ? (JSON.parse(flowRaw) as TelegramGoogleFlow) : null;
+    if (!flow || flow.state !== "waiting") throw new UnauthorizedException("handoff_invalid");
+    await this.redis.set(key, JSON.stringify({ ...flow, state: "started" }), "KEEPTTL");
+    await this.audit(null, "telegram_google_started", rec.flowId, {
+      intent: rec.intent,
+      ip: ctx.ip,
+      userAgent: ctx.userAgent?.slice(0, 200) ?? null,
+    });
+    return this.google.startUrl(rec.intent, rec.locale, rec.flowId);
+  }
+
+  /**
+   * The browser that completed Google approves (or refuses) the Telegram
+   * account that asked. Public: the one-time token, returned only to that
+   * browser by the Google callback, is the authorisation.
+   */
+  async googleApprove(dto: TelegramGoogleApproveDto, ctx: ClientContext): Promise<{ status: "approved" | "declined" }> {
+    this.assertEnabled();
+    const key = telegramGoogleFlowKey(dto.flowId);
+    const raw = await this.redis.get(key);
+    const flow = raw ? (JSON.parse(raw) as TelegramGoogleFlow) : null;
+    if (!flow || flow.state !== "verified" || !flow.approveSha || !flow.userId || !safeEqual(sha256(dto.token), flow.approveSha)) {
+      throw new UnauthorizedException("telegram_google_expired");
+    }
+    const approved = dto.decision === "approve";
+    const next: TelegramGoogleFlow = approved
+      ? { ...flow, state: "done", approveSha: undefined }
+      : { ...flow, state: "failed", code: "google_declined", approveSha: undefined, userId: undefined };
+    await this.redis.set(key, JSON.stringify(next), "KEEPTTL");
+    await this.audit(flow.userId, approved ? "telegram_google_approved" : "telegram_google_declined", flow.userId, {
+      telegram: flow.telegram,
+      ip: ctx.ip,
+      userAgent: ctx.userAgent?.slice(0, 200) ?? null,
+    });
+    return { status: approved ? "approved" : "declined" };
+  }
+
+  /** Mini App polling. Another Mini App's pending token learns nothing ("expired"). */
+  async googleStatus(dto: TelegramGoogleFlowDto): Promise<TelegramGoogleStatus> {
+    this.assertEnabled();
+    const raw = await this.redis.get(telegramGoogleFlowKey(dto.flowId));
+    const flow = raw ? (JSON.parse(raw) as TelegramGoogleFlow) : null;
+    if (!flow || flow.pendingSha !== sha256(dto.pendingToken)) return { status: "expired" };
+    if (flow.state === "failed") return { status: "failed", code: flow.code ?? "google_failed" };
+    if (flow.state === "done" && flow.userId) {
+      const user = await this.mustGetUser(flow.userId);
+      return { status: "ready", account: maskEmail(user.email) };
+    }
+    return { status: "waiting" };
+  }
+
+  /** The decisive step: the person confirmed the account inside the Mini App. */
+  async googleConfirm(dto: TelegramGoogleFlowDto, ctx: ClientContext): Promise<TelegramSessionResponse> {
+    this.assertEnabled();
+    const pending = await this.readPending(dto.pendingToken);
+    const key = telegramGoogleFlowKey(dto.flowId);
+    const raw = await this.redis.get(key);
+    const flow = raw ? (JSON.parse(raw) as TelegramGoogleFlow) : null;
+    if (!flow || flow.pendingSha !== sha256(dto.pendingToken) || flow.state !== "done" || !flow.userId) {
+      throw new UnauthorizedException("telegram_google_expired");
+    }
+    // Single use: of two racing confirms, only the one that deletes it goes on.
+    if ((await this.redis.del(key)) !== 1) throw new UnauthorizedException("telegram_google_expired");
+
+    const account = await this.mustGetUser(flow.userId);
+    if (account.role !== "user") throw new ForbiddenException("telegram_staff_refused");
+    await this.commitLink(account.id, pending, "google", ctx);
+    await this.redis.del(`tg:pending:${sha256(dto.pendingToken)}`);
+    const { user, tokens } = await this.auth.issueSessionFor(account.id, ["telegram"], ctx, {
+      ttlSec: this.env.TELEGRAM_SESSION_TTL_SEC,
+    });
+    return { status: "signed_in", user, tokens: this.wire(tokens) };
+  }
+
+  /** The person does not recognise the account Google returned: forget it. */
+  async googleCancel(dto: TelegramGoogleFlowDto): Promise<{ ok: true }> {
+    const key = telegramGoogleFlowKey(dto.flowId);
+    const raw = await this.redis.get(key);
+    const flow = raw ? (JSON.parse(raw) as TelegramGoogleFlow) : null;
+    if (flow && flow.pendingSha === sha256(dto.pendingToken)) await this.redis.del(key);
+    return { ok: true };
   }
 
   // ── link path (b): started and confirmed on the website ──────────
@@ -492,7 +644,7 @@ export class TelegramAuthService {
   private async commitLink(
     userId: string,
     pending: PendingTelegram,
-    via: "password" | "web_confirm",
+    via: "password" | "web_confirm" | "google",
     ctx: ClientContext,
   ): Promise<void> {
     if (await this.findLinkOf(userId)) throw new ConflictException("account_has_telegram");

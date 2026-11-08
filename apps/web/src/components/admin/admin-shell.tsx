@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { notFound, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
@@ -28,7 +28,6 @@ import { LocaleToggle } from "@/components/shell/locale-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/lib/api";
 import { useResource } from "@/lib/use-resource";
 
 type StaffRole = "administrator" | "compliance" | "finance";
@@ -77,7 +76,6 @@ function isActive(pathname: string, href: string) {
  */
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations("admin");
-  const router = useRouter();
   const pathname = usePathname();
   const me = useResource<MeResponse>("/auth/me");
   // The document KYC queue only matters when document upload is enabled
@@ -97,15 +95,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     row.scrollLeft = tab.offsetLeft - (row.clientWidth - tab.offsetWidth) / 2;
   }, [pathname, isStaff]);
 
-  async function signOut() {
-    try {
-      await api("/auth/logout", { method: "POST" });
-    } finally {
-      router.replace("/login");
-      router.refresh();
-    }
-  }
-
   if (!me.data) {
     return (
       <div className="flex min-h-dvh items-center justify-center">
@@ -114,39 +103,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // A non-staff visitor is told why, and by which identity. This used to be a
-  // silent router.replace("/") — indistinguishable from a broken route, and it
-  // hid the only thing worth knowing: which account the browser is holding.
-  // The API's RolesGuard is the real boundary, so showing this costs nothing.
-  if (!isStaff) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center px-4">
-        <div className="flex max-w-[26rem] flex-col items-center gap-3 rounded-lg border border-border bg-card p-6 text-center">
-          <Mark size={34} />
-          <h1 className="text-lg font-bold">{t("notStaffTitle")}</h1>
-          <p className="text-[0.9375rem] leading-relaxed text-muted-foreground">
-            {t("notStaffBody", {
-              email: me.data.email,
-              role: t(`roles.${role ?? "user"}` as never),
-            })}
-          </p>
-          <div className="flex flex-wrap justify-center gap-2 pt-1">
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/">
-                <ArrowLeft />
-                {t("backToApp")}
-              </Link>
-            </Button>
-            {/* Sign out rather than a /login link: middleware bounces a
-                signed-in visitor away from /login, so the link would loop. */}
-            <Button variant="gold" size="sm" onClick={() => void signOut()}>
-              {t("signInAsStaff")}
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Not staff: the console does not exist for this person. The server layout
+  // already answers 404 when it can read the role; this covers a session
+  // whose access token had to be refreshed in the browser first.
+  if (!isStaff) notFound();
 
   const items = NAV.filter(
     (item) => item.roles.includes(role as StaffRole) && (item.key !== "kyc" || showKyc),
@@ -201,7 +161,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </Link>
           </Button>
           <LocaleToggle />
-          <UserMenu showName />
+          <UserMenu showName me={me.data} />
         </div>
       </header>
 
@@ -219,7 +179,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </Link>
             </Button>
             <LocaleToggle className="[&>span]:hidden" />
-            <UserMenu />
+            <UserMenu me={me.data} />
           </span>
         </div>
         <nav

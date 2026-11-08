@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import type { TelegramSessionResponse } from "@alkeva/shared";
+import type { ProvidersResponse, TelegramSessionResponse } from "@alkeva/shared";
 import { LOCALES, type Locale } from "@alkeva/shared/locales";
 
 import { Field } from "@/components/auth/field";
 import { SystemBanner } from "@/components/system/banner";
+import { TelegramGoogle } from "@/components/telegram/telegram-google";
 import { TgFrame } from "@/components/telegram/tg-frame";
 import { Button } from "@/components/ui/button";
 import { Segmented } from "@/components/ui/segmented";
@@ -35,11 +36,41 @@ async function post(path: string, body: unknown): Promise<{ data?: TelegramSessi
   }
 }
 
+/** Whether Google sign-in is on (AUTH_METHODS + configured). */
+function useGoogleEnabled(): boolean {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    let live = true;
+    fetch("/api/auth/providers", { credentials: "omit" })
+      .then((r) => (r.ok ? (r.json() as Promise<ProvidersResponse>) : null))
+      .then((p) => {
+        if (live) setOn(p?.google === true);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
+  return on;
+}
+
+/** "or" between the form and Google. */
+function OrDivider() {
+  const ta = useTranslations("auth");
+  return (
+    <div className="flex items-center gap-3 text-[0.75rem] text-subtle" aria-hidden="true">
+      <span className="h-px flex-1 bg-border" />
+      {ta("orDivider")}
+      <span className="h-px flex-1 bg-border" />
+    </div>
+  );
+}
+
 /**
  * First open of the Mini App by a Telegram account that opens no ALKEVA
  * account yet. Two honest choices: create a new account here, or prove an
- * existing one with its password. Accounts that have no password (Google,
- * Fayda, passkey) connect from the website instead, where they can sign in.
+ * existing one with its password or with Google (run in the phone's browser).
+ * Accounts with neither (Fayda, passkey) connect from the website instead.
  */
 export function TelegramOnboarding({
   data,
@@ -50,6 +81,7 @@ export function TelegramOnboarding({
 }) {
   const t = useTranslations("telegram");
   const [mode, setMode] = useState<"create" | "link">(data.signupEnabled ? "create" : "link");
+  const google = useGoogleEnabled();
 
   return (
     <TgFrame>
@@ -74,9 +106,9 @@ export function TelegramOnboarding({
       ) : null}
 
       {mode === "create" ? (
-        <CreateAccount data={data} onSignedIn={onSignedIn} />
+        <CreateAccount data={data} google={google} onSignedIn={onSignedIn} />
       ) : (
-        <LinkWithPassword data={data} onSignedIn={onSignedIn} />
+        <LinkWithPassword data={data} google={google} onSignedIn={onSignedIn} />
       )}
     </TgFrame>
   );
@@ -112,7 +144,15 @@ function errorText(t: ReturnType<typeof useTranslations>, code: string, body?: u
   }
 }
 
-function CreateAccount({ data, onSignedIn }: { data: NeedsAccount; onSignedIn: () => void }) {
+function CreateAccount({
+  data,
+  google,
+  onSignedIn,
+}: {
+  data: NeedsAccount;
+  google: boolean;
+  onSignedIn: () => void;
+}) {
   const t = useTranslations("telegram");
   const ta = useTranslations("auth");
   const tc = useTranslations("common");
@@ -195,11 +235,31 @@ function CreateAccount({ data, onSignedIn }: { data: NeedsAccount; onSignedIn: (
       <Button type="submit" size="cta" disabled={busy || !consented}>
         {busy ? tc("loading") : t("createButton")}
       </Button>
+      {google ? (
+        <>
+          <OrDivider />
+          <TelegramGoogle
+            pendingToken={data.pendingToken}
+            telegramName={data.telegram.display}
+            intent="register"
+            consented={consented}
+            onSignedIn={onSignedIn}
+          />
+        </>
+      ) : null}
     </form>
   );
 }
 
-function LinkWithPassword({ data, onSignedIn }: { data: NeedsAccount; onSignedIn: () => void }) {
+function LinkWithPassword({
+  data,
+  google,
+  onSignedIn,
+}: {
+  data: NeedsAccount;
+  google: boolean;
+  onSignedIn: () => void;
+}) {
   const t = useTranslations("telegram");
   const ta = useTranslations("auth");
   const tc = useTranslations("common");
@@ -255,6 +315,17 @@ function LinkWithPassword({ data, onSignedIn }: { data: NeedsAccount; onSignedIn
       <Button type="submit" size="cta" disabled={busy}>
         {busy ? tc("loading") : t("linkButton")}
       </Button>
+      {google ? (
+        <>
+          <OrDivider />
+          <TelegramGoogle
+            pendingToken={data.pendingToken}
+            telegramName={data.telegram.display}
+            intent="login"
+            onSignedIn={onSignedIn}
+          />
+        </>
+      ) : null}
       <p className="text-[0.8125rem] leading-relaxed text-muted-foreground">{t("linkNoPassword")}</p>
     </form>
   );

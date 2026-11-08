@@ -10,6 +10,7 @@ import { AlertsList } from "@/components/account/alerts-list";
 import { PasskeysCard } from "@/components/account/passkeys-card";
 import { SessionsCard } from "@/components/account/sessions-card";
 import { TelegramCard } from "@/components/account/telegram-card";
+import { signOut } from "@/lib/sign-out";
 import { useIsTelegram } from "@/lib/telegram/use-telegram";
 import { useTierName } from "@/components/portfolio/tier-gauge";
 import { isStaffRole } from "@/components/shell/header-actions";
@@ -19,7 +20,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Panel, PanelHeader, Stat, StatStrip } from "@/components/ui/panel";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/lib/api";
 import { useResource } from "@/lib/use-resource";
 
 /**
@@ -37,14 +37,7 @@ export function AccountScreen() {
   const me = useResource<MeResponse>("/auth/me");
   const portfolio = useResource<PortfolioResponse>("/portfolio");
 
-  async function logout() {
-    try {
-      await api("/auth/logout", { method: "POST" });
-    } finally {
-      router.replace("/login");
-      router.refresh();
-    }
-  }
+  const logout = () => signOut(router);
 
   const staff = isStaffRole(me.data?.role);
   const initials =

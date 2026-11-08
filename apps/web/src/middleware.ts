@@ -76,6 +76,12 @@ export function middleware(req: NextRequest) {
   const signedIn =
     req.cookies.has(ACCESS_COOKIE) || req.cookies.has(REFRESH_COOKIE);
 
+  // The staff console is not advertised: a signed-out visitor is not sent to
+  // /login (that would confirm it exists) — the admin layout answers 404.
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    return NextResponse.next();
+  }
+
   if (!signedIn && !PUBLIC_PATHS.includes(pathname)) {
     const url = req.nextUrl.clone();
     url.pathname = pathname === "/" ? "/welcome" : "/login";

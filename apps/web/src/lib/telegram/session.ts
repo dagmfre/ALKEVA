@@ -96,3 +96,10 @@ export function announceExpired(): void {
   clearTgTokens();
   if (typeof window !== "undefined") window.dispatchEvent(new Event(TG_EXPIRED_EVENT));
 }
+
+/** A menu asked to sign out: the gate shows the sign-out choices. */
+export const TG_SIGNOUT_EVENT = "alkeva:tg-signout";
+
+export function requestTelegramSignOut(): void {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(TG_SIGNOUT_EVENT));
+}
