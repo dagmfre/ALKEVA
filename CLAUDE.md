@@ -336,3 +336,16 @@ Rules inside the loop: progress/decisions are logged here as they happen (not at
   - **Outside view of production:** only 22/80/443 open; SSH is key-only; TLS 1.3 only (1.0/1.1 refused); HSTS, XFO, nosniff and Referrer-Policy present; no `.env`/`.git`/swagger exposed; CORS pinned to allkeva.com; login throttled after 5/min and recovery after 3/min. `X-Powered-By` leaks Next.js/Express. No CAA record or security.txt.
   - **Services research:** Fayda's production onboarding guide says the relying party must be **hosted within Ethiopia** (production is on netcup, Germany), and Fayda checks now cost money (reportedly 10–20 Br each). Brevo free is 300 emails/day. Gemini free tier lets Google use the prompts. Chapa takes about 2.5% per local payment (third-party figure). gold-api.com allows commercial use. The Swissquote fallback has no official terms. open.er-api.com requires attribution.
   - Nothing committed or deployed.
+- 2026-11-08 03:10 — **Fix round shipped to production** (Dagmfre: "deploy"). Commit `e2f044e` pushed to `main`; `docs/fayda/` still left out. `ship.sh` passed the settings preflight; no new migrations; all 6 services running; `/welcome`, `/api/healthz` and `/api/prices/latest` 200; disk 19% after the prune.
+  - **Verified on https://allkeva.com:**
+    - signed-out `/admin`, `/admin/users` and `/admin/kyc` → 404 with no redirect, showing the not-found page; `tg.allkeva.com/admin` → 404;
+    - all six `/auth/telegram/google/*` routes are mapped (400 on an empty body), and `approve` with an unknown flow → 401 `telegram_google_expired`;
+    - providers: password, google, passkey and telegram (`alkeva_bot`/`alkeva`) on; Fayda off, KYC by document;
+    - `/handoff`, `/auth/google/callback`, `/telegram/return`, `/login` and the tg host → 200;
+    - worker: "dispatcher … email on, push on, telegram on", no errors.
+  - Email is fixed since Dagmfre authenticated allkeva.com in Brevo (brevo-code TXT, brevo1/brevo2 DKIM, DMARC). Test mail arrived.
+  - **Not checkable from outside, so Dagmfre must check:**
+    - the staff console signed in as staff (no "Application error");
+    - a customer's `/admin` → 404;
+    - Telegram sign-out (both choices);
+    - "Continue with Google" in the Mini App end to end with a real Google account (`docs/manual-tests/phase-11.md` F2 + G).
